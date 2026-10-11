@@ -1,0 +1,33 @@
+﻿{% extends "base.html" %}
+{% block tieu_de %}Tổng quan{% endblock %}
+{% block noi_dung %}
+<h1>Tổng quan garage</h1>
+<p class="mo-ta">Tình hình hoạt động tại thời điểm hiện tại.</p>
+
+<ul class="the-so">
+  <li><span>Phiếu sửa chữa</span><b>{{ kpi.tong_phieu }}</b></li>
+  <li><span>Đang xử lý</span><b>{{ kpi.dang_xu_ly }}</b></li>
+  <li><span>Lịch hẹn sắp tới</span><b>{{ kpi.lich_hen }}</b></li>
+  <li><span>Đã thu</span><b>{{ format_tien(kpi.da_thu) }} đ</b></li>
+  <li><span>Chưa thu</span><b>{{ format_tien(kpi.chua_thu) }} đ</b></li>
+  {% if quyen['ai.review'] %}<li><span>AI chờ duyệt</span><b>{{ kpi.cho_duyet_ai }}</b></li>{% endif %}
+</ul>
+
+<h2>Phiếu theo trạng thái</h2>
+<table class="bang"><thead><tr><th scope="col">Trạng thái</th><th scope="col">Số phiếu</th></tr></thead>
+<tbody>
+{% for t in trang_thai %}
+<tr><td><span class="the-nhan tt-{{ t.status }}">{{ ten_trang_thai(t.status) }}</span></td><td>{{ t.n }}</td></tr>
+{% endfor %}
+</tbody></table>
+
+<h2>Phiếu mới nhất</h2>
+<table class="bang"><thead><tr><th scope="col">Mã</th><th scope="col">Biển số</th>
+<th scope="col">Trạng thái</th><th scope="col">Ngày tạo</th></tr></thead><tbody>
+{% for g in gan_nhat %}
+<tr><td><a href="/repair-orders/{{ g.id }}">{{ g.id }}</a></td><td>{{ g.plate }}</td>
+<td><span class="the-nhan tt-{{ g.status }}">{{ ten_trang_thai(g.status) }}</span></td>
+<td>{{ format_ngay(g.created_at) }}</td></tr>
+{% endfor %}
+</tbody></table>
+{% endblock %}

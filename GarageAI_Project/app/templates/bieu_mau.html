@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block tieu_de %}{{ 'Sửa' if id else 'Thêm mới' }} {{ tieu_de }}{% endblock %}
+{% block noi_dung %}
+
+<h1>{{ 'Sửa' if id else 'Thêm mới' }} {{ tieu_de|lower }}</h1>
+
+<form class="bieu-mau" method="post" action="/{{ ten }}/save" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  {% if id %}<input type="hidden" name="id" value="{{ id }}">{% endif %}
+
+  {% if loi %}
+  <div class="thong-bao loi" role="alert">
+    {% for danh_sach in loi.values() %}{% for m in danh_sach %}<p>{{ m }}</p>{% endfor %}{% endfor %}
+  </div>
+  {% endif %}
+
+  {% for ten_truong, nhan, kieu, bat_buoc in truong %}
+  {% set gt = (b[ten_truong] if b and ten_truong in b else '') %}
+  <label class="truong{% if loi.get(ten_truong) %} co-loi{% endif %}">
+    <span>{{ nhan }}{% if bat_buoc %} <abbr title="bắt buộc">*</abbr>{% endif %}</span>
+
+    {% if kieu == 'select' %}
+      <select name="{{ ten_truong }}" {% if bat_buoc %}required{% endif %}
+              {% if loi.get(ten_truong) %}aria-invalid="true"{% endif %}>
+        <option value="">— Chọn —</option>
+        {% for chon in lua_chon.get(ten_truong, []) %}
+        <option value="{{ chon.id }}" {% if gt|string == chon.id|string %}selected{% endif %}>{{ chon.ten }}</option>
+        {% endfor %}
+      </select>
+
+    {% elif kieu == 'fixed' %}
+      <select name="{{ ten_truong }}">
+        {% for gt_lich, ten_lich in [('SCHEDULED','Đã đặt'), ('CONFIRMED','Đã xác nhận'),
+                                    ('CANCELLED','Đã huỷ'), ('DONE','Đã hoàn thành')] %}
+        <option value="{{ gt_lich }}" {% if (gt and gt == gt_lich) or (not gt and gt_lich == 'SCHEDULED') %}selected{% endif %}>{{ ten_lich }}</option>
+        {% endfor %}
+      </select>
+
+    {% elif kieu == 'bool' %}
+      <select name="{{ ten_truong }}">
+        <option value="1" {% if gt in ('1', 1, true) %}selected{% endif %}>Có</option>
+        <option value="0" {% if gt in ('0', 0, false) %}selected{% endif %}>Không</option>
+      </select>
+
+    {% elif kieu == 'int' %}
+      <input type="number" name="{{ ten_truong }}" min="0" value="{{ gt if gt is not none else '' }}"
+             {% if bat_buoc %}required{% endif %}
+             {% if loi.get(ten_truong) %}aria-invalid="true"{% endif %}>
+
+    {% else %}
+      <input type="text" name="{{ ten_truong }}" value="{{ gt if gt is not none else '' }}"
+             {% if bat_buoc %}required{% endif %} maxlength="200"
+             {% if loi.get(ten_truong) %}aria-invalid="true"{% endif %}>
+    {% endif %}
+
+    {% if loi.get(ten_truong) %}
+      <small class="loi-truong">{{ loi[ten_truong]|join(' ') }}</small>
+    {% endif %}
+  </label>
+  {% endfor %}
+
+  <div class="hanh-dong">
+    <button type="submit" class="nut">Lưu</button>
+    <a class="nut nut-phu" href="/{{ ten }}">Huỷ</a>
+  </div>
+</form>
+{% endblock %}

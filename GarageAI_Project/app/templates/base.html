@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="same-origin">
+  <title>{% block tieu_de %}{{ APP_NAME }}{% endblock %}</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<a class="bo-qua" href="#noi-dung">Bỏ qua tới nội dung chính</a>
+
+<header class="dau-trang">
+  <a class="thuong-hieu" href="/dashboard">GarageTools AI</a>
+  <nav aria-label="Điều hướng chính">
+    {% if quyen['dashboard.view'] %}<a href="/dashboard">Tổng quan</a>{% endif %}
+    {% if quyen['customer.view'] %}<a href="/customers">Khách hàng</a>{% endif %}
+    {% if quyen['vehicle.view'] %}<a href="/vehicles">Phương tiện</a>{% endif %}
+    {% if quyen['appointment.view'] %}<a href="/appointments">Lịch hẹn</a>{% endif %}
+    {% if quyen['catalog.view'] %}<a href="/services">Danh mục</a>{% endif %}
+    {% if quyen['order.view'] %}<a href="/repair-orders">Phiếu sửa chữa</a>{% endif %}
+    {% if quyen['report.view'] %}<a href="/invoices">Hoá đơn</a>
+      <a href="/reports/doanh-thu">Báo cáo</a>{% endif %}
+    {% if quyen['history.view'] %}<a href="/history">Lịch sử</a>{% endif %}
+    {% if quyen['ai.history'] %}<a href="/ai">Trợ lý AI</a>{% endif %}
+    {% if quyen['ai.review'] %}<a href="/ai/results">Duyệt AI</a>{% endif %}
+    {% if quyen['shop.view'] %}<a href="/shop">Cửa hàng</a>{% endif %}
+  </nav>
+  {% if user %}
+  <div class="nguoi-dung">
+    <span>{{ user.full_name }} · {{ vai_tro_ten(user.role) }}</span>
+    <form method="post" action="/accounts/logout" class="truc-tuyen">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button type="submit" class="nut nut-nho">Đăng xuất</button>
+    </form>
+  </div>
+  {% endif %}
+</header>
+
+{% if flash and not flash.rong %}
+  <div class="hop-thong-bao" role="status" aria-live="polite">
+    {% if flash.loi %}<p class="loi">{{ flash.loi }}</p>{% endif %}
+    {% if flash.thong_bao %}<p class="thanh-cong">{{ flash.thong_bao }}</p>{% endif %}
+  </div>
+{% endif %}
+
+<main id="noi-dung" class="noi-dung">
+{% block noi_dung %}{% endblock %}
+</main>
+
+<footer class="chan-trang">GarageTools AI — Nhóm 23 · Học phần Ứng dụng Trí tuệ Nhân tạo</footer>
+
+<script>
+/* Nút xoá dùng POST kèm mã CSRF, thêm bước xác nhận trước khi gửi.
+   Tắt JavaScript thì form vẫn gửi được — chỉ mất bước xác nhận. */
+document.addEventListener('submit', function (e) {
+  var hop = e.target.getAttribute('data-xac-nhan');
+  if (hop && !window.confirm(hop)) e.preventDefault();
+});
+</script>
+</body>
+</html>

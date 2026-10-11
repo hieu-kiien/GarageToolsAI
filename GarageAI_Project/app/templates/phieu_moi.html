@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block tieu_de %}Tiếp nhận xe{% endblock %}
+{% block noi_dung %}
+<h1>Tiếp nhận xe</h1>
+<p class="mo-ta">Tạo phiếu sửa chữa mới. Phiếu bắt đầu ở trạng thái <strong>Đã tiếp nhận</strong>.</p>
+
+<form class="bieu-mau" method="post" action="/repair-orders/create">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <label class="truong"><span>Phương tiện</span>
+    <select name="vehicle_id" required>
+      <option value="">— Chọn xe —</option>
+      {% for v in xe %}<option value="{{ v.id }}">{{ v.plate }} — {{ v.brand }} {{ v.model }}</option>{% endfor %}
+    </select></label>
+  <label class="truong"><span>Kỹ thuật viên phụ trách</span>
+    <select name="technician_id">
+      <option value="">— Chưa phân công —</option>
+      {% for k in ktv %}<option value="{{ k.id }}">{{ k.full_name }}</option>{% endfor %}
+    </select></label>
+  <label class="truong"><span>Tình trạng ban đầu, yêu cầu của khách</span>
+    <input type="text" name="technical_notes" maxlength="1000"
+           placeholder="Ví dụ: khách báo rung phía trước"></label>
+  <div class="hanh-dong">
+    <button type="submit" class="nut">Tạo phiếu</button>
+    <a class="nut nut-phu" href="/repair-orders">Huỷ</a>
+  </div>
+</form>
+{% endblock %}

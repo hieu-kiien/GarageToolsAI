@@ -1,0 +1,51 @@
+﻿{% extends "base.html" %}
+{% block tieu_de %}Trợ lý AI{% endblock %}
+{% block noi_dung %}
+<h1>Trợ lý AI</h1>
+<p class="mo-ta">Chế độ đang chạy: <strong>{{ provider }}</strong></p>
+<p class="canh-bao" role="note">
+Kết quả AI chỉ là nội dung hỗ trợ nhân viên, không phải kết luận kỹ thuật và không
+phải kết luận kỹ thuật chẩn đoán. Mọi kết quả lưu ở trạng thái <strong>PENDING</strong>
+và phải được quản lý duyệt. AI không thêm hạng mục và không tự tính tiền.
+</p>
+
+<div class="the-chuc-nang">
+<form class="the" method="post" action="/ai/history">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <h2>AI01 · Tóm tắt lịch sử</h2>
+  <label class="truong"><span>Chọn xe</span>
+    <select name="vehicle_id" required>{% for v in xe %}<option value="{{ v.id }}">{{ v.plate }} — {{ v.brand }} {{ v.model }}</option>{% endfor %}</select></label>
+  <button type="submit" class="nut">Chạy</button>
+</form>
+
+<form class="the" method="post" action="/ai/explain">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <h2>AI02 · Giải thích dịch vụ</h2>
+  <label class="truong"><span>Chọn dịch vụ</span>
+    <select name="service_id" required>{% for d in dich_vu %}<option value="{{ d.id }}">{{ d.name }}</option>{% endfor %}</select></label>
+  <button type="submit" class="nut">Chạy</button>
+</form>
+
+<form class="the" method="post" action="/ai/quote">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <h2>AI03 · Báo giá nháp</h2>
+  <label class="truong"><span>Chọn phiếu</span>
+    <select name="repair_order_id" required>
+      {% for p in phieu_list %}<option value="{{ p.id }}">Phiếu {{ p.id }} — {{ p.plate }}</option>{% endfor %}
+    </select></label>
+  <button type="submit" class="nut">Chạy</button>
+</form>
+</div>
+
+<h2>Kết quả gần đây</h2>
+{% for k in ket_qua %}
+<article class="ket-qua">
+  <p class="dau-ket-qua"><strong>{{ ten_kinh_ai(k.kind) }}</strong>
+    {% if k.plate %} — xe {{ k.plate }}{% endif %}
+    <span class="the-nhan tt-{{ k.review_status }}">{{ ten_trang_thai(k.review_status) }}</span></p>
+  <pre>{{ k.output_text }}</pre>
+</article>
+{% else %}<p class="trong">Chưa có kết quả nào.</p>{% endfor %}
+
+{% if quyen['ai.review'] %}<p><a class="nut nut-phu" href="/ai/results">Sang màn hình duyệt kết quả AI</a></p>{% endif %}
+{% endblock %}

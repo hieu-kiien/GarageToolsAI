@@ -1,0 +1,112 @@
+﻿{% extends "base.html" %}
+{% block tieu_de %}Phiếu sửa chữa số {{ p.id }}{% endblock %}
+{% block noi_dung %}
+<h1>Phiếu sửa chữa số {{ p.id }}</h1>
+<p class="mo-ta">
+  Xe {{ p.plate }} — {{ p.brand }} {{ p.model }} ·
+  <span class="the-nhan tt-{{ p.status }}">{{ ten_trang_thai(p.status) }}</span> ·
+  Tạo {{ format_ngay(p.created_at) }} · Kỹ thuật viên: {{ p.ky_thuat_vien or 'chưa phân công' }}
+</p>
+
+<h2>Hạng mục sửa chữa</h2>
+<table class="bang">
+<thead><tr><th scope="col">#</th><th scope="col">Hạng mục</th><th scope="col">Loại</th>
+<th scope="col">SL</th><th scope="col">Đơn giá đã chốt</th><th scope="col">Thành tiền</th>
+{% if co_the_sua %}<th scope="col">Thao tác</th>{% endif %}</tr></thead>
+<tbody>
+{% for i in items %}
+<tr><td>{{ i.id }}</td><td>{{ i.ten }}</td><td>{{ 'Dịch vụ' if i.service_id else 'Phụ tùng' }}</td>
+<td>{{ i.qty }}</td><td>{{ format_tien(i.unit_price) }}</td><td>{{ format_tien(i.thanh_tien) }}</td>
+{% if co_the_sua %}<td>
+<form method="post" action="/repair-orders/{{ p.id }}/items/{{ i.id }}/remove" class="truc-tuyen">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<button class="nut nut-nho nut-do" type="submit">Gỡ</button></form></td>{% endif %}</tr>
+{% else %}<tr><td colspan="7" class="trong">Chưa có hạng mục.</td></tr>{% endfor %}
+</tbody>
+<tfoot><tr><th scope="row" colspan="5" class="can-phai">Tổng tiền do hệ thống tính</th>
+<th>{{ format_tien(p.tong) }} đ</th>{% if co_the_sua %}<th></th>{% endif %}</tr></tfoot>
+</table>
+
+{% if co_the_sua and p.status not in ('COMPLETED','CANCELLED') %}
+<form class="bo-loc" method="post" action="/repair-orders/{{ p.id }}/items">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <label>Loại<select name="loai"><option value="dich_vu">Dịch vụ</option><option value="phu_tung">Phụ tùng</option></select></label>
+  <label>Danh mục<select name="ma" required>
+    <optgroup label="Dịch vụ">{% for d in dich_vu %}<option value="{{ d.id }}">{{ d.name }} — {{ format_tien(d.price) }} đ</option>{% endfor %}</optgroup>
+    <optgroup label="Phụ tùng">{% for t in phu_tung %}<option value="{{ t.id }}">{{ t.name }} — {{ format_tien(t.price) }} đ (còn {{ t.stock }})</option>{% endfor %}</optgroup>
+  </select></label>
+  <label>Số lượng<input type="number" name="qty" value="1" min="1" required></label>
+  <button type="submit" class="nut">Thêm hạng mục</button>
+</form>
+{% endif %}
+
+<h2>Thao tác</h2>
+<div class="hanh-dong">
+{% if co_doi_trang_thai and lua_chon_trang_thai %}
+<form method="post" action="/repair-orders/{{ p.id }}/status" class="truc-tuyen">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <select name="status" class="truc-tuyen">{% for t in lua_chon_trang_thai %}
+  <option value="{{ t }}">{{ ten_trang_thai(t) }}</option>{% endfor %}</select>
+  <button class="nut" type="submit">Đổi trạng thái</button></form>
+{% endif %}
+{% if co_gan_cong %}
+<form method="post" action="/repair-orders/{{ p.id }}/assign" class="truc-tuyen">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <select name="technician_id" class="truc-tuyen"><option value="">— Bỏ phân công —</option>
+  {% for k in ktv %}<option value="{{ k.id }}" {% if p.technician_id == k.id %}selected{% endif %}>{{ k.full_name }}</option>{% endfor %}</select>
+  <button class="nut nut-phu" type="submit">Phân công</button></form>
+{% endif %}
+{% if co_lap_hoa_don and not hoa_don %}
+<form method="post" action="/repair-orders/{{ p.id }}/invoice" class="truc-tuyen">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <button class="nut" type="submit">Lập hoá đơn {{ format_tien(p.tong) }} đ</button></form>
+{% endif %}
+{% if quyen['ai.quote'] %}<a class="nut nut-phu" href="/ai">Tạo báo giá nháp bằng AI</a>{% endif %}
+</div>
+
+{% if hoa_don %}
+<h2>Hoá đơn và thanh toán</h2>
+<table class="bang"><thead><tr><th scope="col">Số</th><th scope="col">Tổng</th>
+<th scope="col">Đã thu</th><th scope="col">Còn phải thu</th><th scope="col">Trạng thái</th></tr></thead>
+<tbody><tr><td>#{{ hoa_don.id }}</td><td>{{ format_tien(hoa_don.total) }} đ</td>
+<td>{{ format_tien(hoa_don.paid) }} đ</td><td>{{ format_tien(hoa_don.total - hoa_don.paid) }} đ</td>
+<td><span class="the-nhan tt-{{ hoa_don.status }}">{{ ten_trang_thai(hoa_don.status) }}</span></td></tr></tbody></table>
+
+<table class="bang"><thead><tr><th scope="col">#</th><th scope="col">Số tiền</th>
+<th scope="col">Hình thức</th><th scope="col">Thời điểm</th></tr></thead><tbody>
+{% for t in khoan_thu %}<tr><td>{{ t.id }}</td><td>{{ format_tien(t.amount) }} đ</td>
+<td>{{ ten_hinh_thuc(t.method) }}</td><td>{{ format_ngay(t.paid_at) }}</td></tr>
+{% else %}<tr><td colspan="4" class="trong">Chưa ghi nhận thanh toán.</td></tr>{% endfor %}
+</tbody></table>
+
+{% if co_thu_tien and hoa_don.paid < hoa_don.total %}
+<form class="bieu-mau" method="post" action="/invoices/{{ hoa_don.id }}/pay">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <h3>Ghi nhận thanh toán</h3>
+  <label class="truong"><span>Số tiền (tối đa {{ format_tien(hoa_don.total - hoa_don.paid) }} đồng)</span>
+    <input type="number" name="amount" min="1" max="{{ hoa_don.total - hoa_don.paid }}" required></label>
+  <label class="truong"><span>Hình thức</span><select name="method">
+    {% for gt, ten in [('CASH','Tiền mặt'), ('CARD','Thẻ'), ('TRANSFER','Chuyển khoản'), ('ZALO','Ví điện tử')] %}
+    <option value="{{ gt }}">{{ ten }}</option>{% endfor %}</select></label>
+  <button type="submit" class="nut">Ghi nhận</button>
+</form>
+{% endif %}
+{% endif %}
+
+<h2>Nhật ký kỹ thuật</h2>
+<table class="bang"><thead><tr><th scope="col">#</th><th scope="col">Thời điểm</th>
+<th scope="col">Người ghi</th><th scope="col">Nội dung</th></tr></thead><tbody>
+{% for l in logs %}<tr><td>{{ l.id }}</td><td>{{ format_ngay(l.created_at) }}</td>
+<td>{{ l.full_name or '—' }}</td><td>{{ l.note }}</td></tr>
+{% else %}<tr><td colspan="4" class="trong">Chưa có nhật ký.</td></tr>{% endfor %}
+</tbody></table>
+
+{% if co_the_sua %}
+<form class="bieu-mau" method="post" action="/repair-orders/{{ p.id }}/logs">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <label class="truong"><span>Nội dung nhật ký</span>
+    <input type="text" name="note" required maxlength="1000"></label>
+  <button type="submit" class="nut">Lưu nhật ký</button>
+</form>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,16 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Đăng nhập — GarageTools AI</title><link rel="stylesheet" href="/static/style.css"></head>
+<body class="trang-dang-nhap">
+<form method="post" action="/accounts/login" class="the">
+  <h1>GarageTools AI</h1>
+  {% if loi_dang_nhap %}<p class="thong-bao loi" role="alert">{{ loi_dang_nhap }}</p>{% endif %}
+  <label class="truong"><span>Tên đăng nhập</span>
+    <input type="text" name="username" required autofocus autocomplete="username" autocapitalize="none"></label>
+  <label class="truong"><span>Mật khẩu</span>
+    <input type="password" name="password" required autocomplete="current-password"></label>
+  <input type="hidden" name="next" value="{{ next or '/' }}">
+  <button type="submit" class="nut">Đăng nhập</button>
+</form>
+</body></html>

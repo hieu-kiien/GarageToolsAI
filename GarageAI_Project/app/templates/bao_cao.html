@@ -1,0 +1,26 @@
+﻿{% extends "base.html" %}
+{% block tieu_de %}Báo cáo{% endblock %}
+{% block noi_dung %}
+<h1>Báo cáo</h1>
+<p class="mo-ta">Số liệu tổng hợp trực tiếp từ cơ sở dữ liệu.</p>
+<nav class="chuyen-bao-cao">
+{% for k in danh_sach_loai %}
+<a class="nut nut-phu{% if k == kind %} nut-dang-chon{% endif %}" href="/reports/{{ k }}">{{ ten_trang_thai(k) }}</a>
+{% endfor %}
+</nav>
+<table class="bang">
+<thead><tr>{% if kind == 'doanh-thu' %}<th scope="col">Tháng</th><th scope="col">Số hoá đơn</th><th scope="col">Tổng</th><th scope="col">Đã thu</th><th scope="col">Còn phải thu</th>
+{% elif kind in ('dich-vu','phu-tung') %}<th scope="col">Tên</th><th scope="col">Số lượng</th><th scope="col">Doanh thu</th>{% if kind == 'phu-tung' %}<th scope="col">Tồn kho</th>{% endif %}
+{% elif kind == 'khach-hang' %}<th scope="col">Khách hàng</th><th scope="col">Số xe</th><th scope="col">Số lần sửa</th><th scope="col">Tổng đã thanh toán</th>
+{% else %}<th scope="col">Trạng thái</th><th scope="col">Số phiếu</th>{% endif %}</tr></thead>
+<tbody>
+{% for d in dong %}
+<tr>
+{% if kind == 'doanh-thu' %}<td>{{ d.thang }}</td><td>{{ d.so_hoa_don }}</td><td>{{ format_tien(d.tong) }} đ</td><td>{{ format_tien(d.da_thu) }} đ</td><td>{{ format_tien(d.tong - d.da_thu) }} đ</td>
+{% elif kind in ('dich-vu','phu-tung') %}<td>{{ d.ten }}</td><td>{{ d.so_luong }}</td><td>{{ format_tien(d.doanh_thu) }} đ</td>{% if kind == 'phu-tung' %}<td>{{ d.ton_kho }}</td>{% endif %}
+{% elif kind == 'khach-hang' %}<td>{{ d.name }}</td><td>{{ d.so_xe }}</td><td>{{ d.so_lan_sua }}</td><td>{{ format_tien(d.tong_chi) }} đ</td>
+{% else %}<td><span class="the-nhan tt-{{ d.status }}">{{ ten_trang_thai(d.status) }}</span></td><td>{{ d.so_luong }}</td>{% endif %}
+</tr>
+{% else %}<tr><td colspan="9" class="trong">Chưa có dữ liệu.</td></tr>{% endfor %}
+</tbody></table>
+{% endblock %}

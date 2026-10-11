@@ -1,0 +1,29 @@
+services:
+  app:
+    build: .
+    image: garagetools-ai:1.0.0
+    container_name: garagetools-ai
+    ports:
+      - "8000:8000"
+    environment:
+      # Bắt buộc đổi trước khi triển khai thật
+      SECRET_KEY: ${SECRET_KEY:-doi-thanh-khoa-nay-truoc-khi-trien-khai-that}
+      AI_PROVIDER: ${AI_PROVIDER:-mock}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+      AI_TIMEOUT: ${AI_TIMEOUT:-15}
+      DEBUG: ${DEBUG:-false}
+      SECURE_COOKIE: ${SECURE_COOKIE:-false}
+    volumes:
+      - du-lieu-garage:/app
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=5).status==200 else 1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+volumes:
+  du-lieu-garage:

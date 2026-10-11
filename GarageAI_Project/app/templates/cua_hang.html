@@ -1,0 +1,23 @@
+﻿{% extends "base.html" %}
+{% block tieu_de %}Cửa hàng dụng cụ{% endblock %}
+{% block noi_dung %}
+<h1>Cửa hàng dụng cụ</h1>
+<p class="canh-bao" role="note"><strong>Phần mở rộng, nằm ngoài phạm vi đề tài.</strong>
+Nghiệp vụ lõi của đề tài vẫn là quản lý garage và ba chức năng AI.</p>
+<form class="bo-loc" method="get" action="/shop">
+  <label>Tìm sản phẩm<input type="search" name="q" value="{{ q or '' }}"></label>
+  <button type="submit" class="nut">Tìm</button><a class="nut nut-phu" href="/shop">Xoá tìm kiếm</a>
+</form>
+<p class="dem-ket-qua">Tổng số bản ghi: <strong>{{ tong_so_ban_ghi }}</strong></p>
+<table class="bang"><thead><tr><th scope="col">#</th><th scope="col">Mã</th><th scope="col">Tên</th>
+<th scope="col">Danh mục</th><th scope="col">Giá</th><th scope="col">Tồn kho</th></tr></thead><tbody>
+{% for d in dong %}<tr><td>{{ d.id }}</td><td>{{ d.sku }}</td><td>{{ d.name }}</td>
+<td>{{ d.danh_muc }}</td><td>{{ format_tien(d.price) }} đ</td><td>{{ d.stock }}</td></tr>
+{% else %}<tr><td colspan="6" class="trong">Không có sản phẩm nào.</td></tr>{% endfor %}
+</tbody></table>
+{% if co_so_trang %}<nav class="phan-trang" aria-label="Phân trang">
+{% if co_trang_truoc %}<a href="{{ duong_dan_trang(duong_dan_hien_tai, trang.so_trang - 1, trang.moi_trang) }}">‹ Trước</a>{% endif %}
+<span>Trang {{ trang.so_trang }} / {{ tong_trang }}</span>
+{% if co_trang_sau %}<a href="{{ duong_dan_trang(duong_dan_hien_tai, trang.so_trang + 1, trang.moi_trang) }}">Sau ›</a>{% endif %}
+</nav>{% endif %}
+{% endblock %}

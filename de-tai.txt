@@ -1,0 +1,105 @@
+================================================================================
+ĐỒ ÁN - HỆ THỐNG QUẢN LÝ GARAGE SỬA CHỮA Ô TÔ CÓ TÍCH HỢP AI
+(Nguồn: đề tài.jpg = trang 1, đề tài (1).jpg = trang 2)
+================================================================================
+
+ĐẠI HỌC THÁI NGUYÊN
+TRƯỜNG ĐẠI HỌC CÔNG NGHỆ THÔNG TIN VÀ TRUYỀN THÔNG
+
+                                  ĐỒ ÁN
+
+  Học phần:   Ứng dụng trí tuệ nhân tạo - AIA331
+  Hình thức:  Dự án
+  Mã số:     80277
+
+
+HỆ THỐNG QUẢN LÝ GARAGE SỬA CHỮA Ô TÔ CÓ TÍCH HỢP AI
+================================================================================
+
+
+1. MÔ TẢ BÀI TOÁN
+--------------------------------------------------------------------------------
+
+Garage sửa chữa ô tô cần quản lý khách hàng, xe, lịch hẹn, phiếu tiếp nhận, dịch
+vụ sửa chữa, phụ tùng và thanh toán. Nếu ghi chép thủ công, garage khó theo dõi lịch
+sử sửa chữa của từng xe, bảo giá dễ sai và mất nhiều thời gian giải thích tình
+trạng xe cho khách. Hệ thống cần hỗ trợ quản lý quy trình sửa chữa và tích hợp AI
+để tóm tắt lịch sử sửa chữa, sinh báo giá nháp và giải thích dịch vụ bằng ngôn ngữ
+dễ hiểu.
+
+
+2. MỤC TIÊU
+--------------------------------------------------------------------------------
+
+- Xây dựng hệ thống quản lý khách hàng, xe, lịch hẹn, phiếu sửa chữa, phụ tùng và
+  hóa đơn.
+- Tích hợp AI để tóm tắt lịch sử sửa chữa, sinh nội dung tư vấn dịch vụ và báo giá
+  nháp.
+- Sử dụng AI trong SDLC để phân tích nghiệp vụ garage, thiết kế CSDL, sinh mã,
+  kiểm thử và viết tài liệu.
+
+
+3. YÊU CẦU CHỨC NĂNG
+--------------------------------------------------------------------------------
+
+3.1. Chức năng quản lý
+--------------------------------------------------------------------------------
+1. Đăng nhập và phân quyền quản lý, lễ tân, kỹ thuật viên, thu ngân.
+2. Quản lý khách hàng và thông tin tin xe.
+3. Đặt lịch sửa chữa, tiếp nhận xe và phân công kỹ thuật viên.
+4. Quản lý dịch vụ sửa chữa, phụ tùng, công sửa chữa.
+5. Lập phiếu sửa chữa, cập nhật trạng thái và ghi chú kỹ thuật.
+6. Lập báo giá, hóa đơn và theo dõi thanh toán.
+7. Tra cứu lịch sử sửa chữa theo biển số hoặc khách hàng.
+8. Thống kê doanh thu, dịch vụ phổ biến, phụ tùng sử dụng nhiều.
+
+3.2. Chức năng AI
+--------------------------------------------------------------------------------
+1. AI tóm tắt lịch sử sửa chữa của xe trước khi tiếp nhận.
+2. AI sinh giải thích dịch vụ sửa chữa cho khách hàng bằng ngôn ngữ dễ hiểu.
+3. AI sinh báo giá nháp dựa trên dịch vụ và phụ tùng được chọn.
+
+[Ghi chú: tiêu đề mục 4 bị cắt ở ranh giới giữa hai trang - phần nội dung nằm ở
+đầu trang 2, được khôi phục bên dưới theo thứ tự xuất hiện.]
+
+
+4. CÔNG NGHỆ SỬ DỤNG
+--------------------------------------------------------------------------------
+- Backend: FastAPI/Flask/Django; frontend: React/Vue/HTML template.
+- CSDL: SQLite/MySQL/PostgreSQL.
+- AI Engine: OpenAI/Gemini/Claude/Hugging Face/Ollama.
+- Có prompt template, .env, .env.example, kiểm soát API key.
+- Có test cho lịch hẹn, phiếu sửa chữa, hóa đơn và chức năng AI.
+
+
+5. DỮ LIỆU ĐẦU VÀO, ĐẦU RA VÀ DỮ LIỆU HỆ THỐNG
+--------------------------------------------------------------------------------
+- Dữ liệu chính: khách hàng, xe, lịch hẹn, dịch vụ, phụ tùng, phiếu sửa chữa,
+  hóa đơn.
+- Dữ liệu AI: lịch sử sửa chữa, danh sách dịch vụ/phụ tùng, ghi chú kỹ thuật.
+- Đầu ra AI: tóm tắt lịch sử, giải thích dịch vụ, báo giá nháp.
+
+Prompt mẫu
+--------------------------------------------------------------------------------
+System: Bạn là trợ lý garage ô tô. Chỉ giải thích dựa trên dữ liệu sửa chữa được
+cung cấp, không tự chẩn đoán lỗi xe.
+User: Dữ liệu phiếu sửa chữa: {{repair_order}}. Hãy giải thích ngắn gọn cho khách
+các hạng mục cần làm và chi phí dự kiến.
+
+
+6. HƯỚNG DẪN SỬ DỤNG AI TRONG TỪNG GIAI ĐOẠN SDLC
+--------------------------------------------------------------------------------
+- KT1: Dùng AI phân tích quy trình tiếp nhận xe, sửa chữa, báo giá; thiết kế use
+  case, ERD và vị trí tích hợp AI.
+- KT2: Dùng AI sinh model/API/giao diện cho khách hàng, xe, phiếu sửa chữa, hóa
+  đơn; debug luồng cập nhật trạng thái.
+- KT3: Dùng AI thiết kế prompt tóm tắt lịch sử và sinh báo giá nháp; tạo test case
+  cho dữ liệu thiếu, dịch vụ không tồn tại, phản hồi AI sai định dạng.
+- Cuối kỳ: Dùng AI viết README, báo cáo kỹ thuật, slide demo và review bảo mật
+  dữ liệu khách hàng.
+
+
+7. MỨC ĐỘ KHÓ
+--------------------------------------------------------------------------------
+Trung bình: Nghiệp vụ có nhiều trạng thái xử lý và dữ liệu lịch sử xe, nhưng chức
+năng AI có thể triển khai dựa trên dữ liệu đọc từ hệ thống.

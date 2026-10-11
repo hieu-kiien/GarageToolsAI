@@ -1,0 +1,32 @@
+﻿{% extends "base.html" %}
+{% block tieu_de %}Duyệt kết quả AI{% endblock %}
+{% block noi_dung %}
+<h1>Duyệt kết quả AI</h1>
+<form class="bo-loc" method="get" action="/ai/results">
+  <label>Trạng thái<select name="trang_thai"><option value="">Tất cả</option>
+  {% for gt, ten in [('PENDING','Chờ duyệt'), ('APPROVED','Đã duyệt'), ('REJECTED','Đã từ chối')] %}
+  <option value="{{ gt }}" {% if trang_thai == gt %}selected{% endif %}>{{ ten }}</option>{% endfor %}</select></label>
+  <button type="submit" class="nut">Lọc</button><a class="nut nut-phu" href="/ai/results">Xoá lọc</a>
+</form>
+{% for k in dong %}
+<article class="ket-qua">
+  <p class="dau-ket-qua"><strong>#{{ k.id }} · {{ ten_kinh_ai(k.kind) }}</strong>
+    {% if k.plate %} — xe {{ k.plate }}{% endif %}
+    <span class="the-nhan tt-{{ k.review_status }}">{{ ten_trang_thai(k.review_status) }}</span>
+    {% if k.nguoi_duyet %} — người duyệt: {{ k.nguoi_duyet }}{% endif %}</p>
+  <pre>{{ k.output_text }}</pre>
+  {% if k.review_status == 'PENDING' %}
+  <form method="post" action="/ai/results/{{ k.id }}/review" class="hanh-dong">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button class="nut nut-nho" name="quyet_dinh" value="APPROVED">Duyệt</button>
+    <button class="nut nut-nho nut-do" name="quyet_dinh" value="REJECTED">Từ chối</button>
+  </form>
+  {% endif %}
+</article>
+{% else %}<p class="trong">Không có kết quả AI nào.</p>{% endfor %}
+{% if co_so_trang %}<nav class="phan-trang" aria-label="Phân trang">
+{% if co_trang_truoc %}<a href="{{ duong_dan_trang(duong_dan_hien_tai, trang.so_trang - 1, trang.moi_trang) }}">‹ Trước</a>{% endif %}
+<span>Trang {{ trang.so_trang }} / {{ tong_trang }}</span>
+{% if co_trang_sau %}<a href="{{ duong_dan_trang(duong_dan_hien_tai, trang.so_trang + 1, trang.moi_trang) }}">Sau ›</a>{% endif %}
+</nav>{% endif %}
+{% endblock %}

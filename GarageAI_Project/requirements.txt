@@ -1,0 +1,40 @@
+# Thư viện cần cài cho GarageTools AI
+# Cài bằng: pip install -r requirements.txt
+
+# --- Ứng dụng web ---
+fastapi>=0.110
+uvicorn[standard]>=0.27
+jinja2>=3.1
+
+# Bắt buộc: FastAPI dùng python-multipart để đọc biểu mẫu POST.
+# Thiếu thư viện này mọi chức năng đăng nhập và thêm/sửa bản ghi sẽ lỗi 500.
+python-multipart>=0.0.9
+
+# Xác thực phiên đăng nhập. SessionMiddleware của Starlette chỉ cho phép ký
+# nội dung, nên cần itsdangerous để ký cookie.
+itsdangerous>=2.2
+
+# Băm mật khẩu. Argon2id là lựa chọn mặc định; nếu môi trường không cài được
+# thư viện này thì ứng dụng tự chuyển sang PBKDF2-SHA256 để không chết.
+argon2-cffi>=23.1
+
+# Đọc tệp .env. Không có thì ứng dụng vẫn chạy bằng giá trị mặc định.
+python-dotenv>=1.0
+
+# --- Kiểm thử ---
+# Bộ kiểm thử hiện tại dùng unittest chuẩn của Python nên không bắt buộc.
+# Cài pytest để chạy song song hai cách.
+pytest>=8.0
+
+# Bắt buộc cho tests/test_backend.py: TestClient của FastAPI chạy trên httpx.
+httpx>=0.27
+
+# --- Chụp ảnh màn hình (tuỳ chọn) ---
+# Chỉ cần khi chạy docs/chup_man_hinh.py. Đã cài sẵn Chrome nên không cần
+# tải trình duyệt riêng.
+# playwright>=1.40
+
+# --- Cơ sở dữ liệu ---
+# SQLite đi kèm sẵn trong Python, không cần cài thêm.
+# Khi chuyển sang PostgreSQL hoặc MySQL thì thêm thư viện tương ứng, ví dụ:
+# psycopg[binary]>=3.1

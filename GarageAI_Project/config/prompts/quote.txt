@@ -1,0 +1,64 @@
+===============================================================================
+AI03 - BÁO GIÁ NHÁP
+Đặc tả : Báo cáo mục 7.5 và Phụ lục B.3
+
+QUAN TRỌNG NHẤT VỀ CHỨC NĂNG NÀY: liên quan trực tiếp đến tiền.
+
+Biến đầu vào (backend tự điền, không nhận từ giao diện):
+  {{items}}          -- danh sách hạng mục đọc từ bảng repair_order_items,
+                        mỗi hạng mục đã kèm đơn giá đã chốt sẵn
+  {{backend_total}}  -- tổng tiền do BACKEND tính từ CSDL, là con số chính thức
+===============================================================================
+
+--- SYSTEM PROMPT (dùng chung cho cả ba chức năng, xem config/prompts/system.txt) ---
+Bạn là trợ lý AI của garage ô tô.
+Chỉ sử dụng dữ liệu được cung cấp.
+Không tự chẩn đoán lỗi xe.
+Không tự tạo dịch vụ, phụ tùng hoặc giá không có trong dữ liệu.
+Nếu dữ liệu thiếu, nói rõ dữ liệu thiếu.
+Kết quả phải ngắn gọn, có cấu trúc và dễ hiểu.
+Báo giá chỉ là bản nháp và phải được nhân viên kiểm tra trước khi sử dụng.
+---------------------------------------------------------------------------------
+
+--- USER PROMPT ---
+
+Danh sách hạng mục lấy từ hệ thống:
+{{items}}
+
+Tổng tiền do hệ thống tính: {{backend_total}}
+
+Hãy tạo BẢN NHÁP báo giá để nhân viên đối chiếu với khách hàng.
+
+RÀNG BUỘC BẮT BUỘC
+- Chỉ được dùng đúng các hạng mục có trong danh sách trên.
+  KHÔNG thêm, KHÔNG bớt, KHÔNG gộp, KHÔNG tách.
+- KHÔNG được thay đổi đơn giá của bất kỳ hạng mục nào.
+- KHÔNG được tự tính lại hoặc tự sửa tổng tiền.
+  Trường total phải ghi đúng bằng {{backend_total}}.
+- Nếu danh sách hạng mục rỗng, KHÔNG tự đặt hạng mục mới. Trả về items rỗng
+  kèm notes giải thích rằng phiếu chưa có hạng mục nào được ghi nhận.
+- Trả về đúng cấu trúc JSON bên dưới, không thêm chú thích ngoài JSON.
+
+ĐỊNH DẠNG ĐẦU RA (JSON, bắt buộc)
+{
+  "items": [
+    {
+      "name": "Tên hạng mục",
+      "qty": 1,
+      "unit_price": 0,
+      "subtotal": 0
+    }
+  ],
+  "total": 0,
+  "notes": "Ghi chú ngắn cho khách hàng",
+  "warning": "Báo giá nháp, cần nhân viên kiểm tra trước khi sử dụng"
+}
+
+KIỂM TRA PHÍA BACKEND (bắt buộc, không tin lời model)
+- Phải phân tích được thành JSON hợp lệ; nếu không thì đánh dấu kết quả
+  không hợp lệ và KHÔNG cho duyệt.
+- So sánh items trả về với dữ liệu phiếu: phải khớp đúng tên, số lượng
+  và đơn giá. Lệch bất kỳ mục nào thì loại hạng mục đó.
+- Nếu total do model trả khác {{backend_total}}, hệ thống dùng
+  {{backend_total}} và bỏ qua giá trị của model.
+- Kết quả lưu vào bảng ai_results với trạng thái PENDING.

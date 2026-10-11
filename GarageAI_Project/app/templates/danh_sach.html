@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block tieu_de %}Danh sách {{ tieu_de }}{% endblock %}
+{% block noi_dung %}
+
+<h1>{{ tieu_de }}</h1>
+{% if mo_ta %}<p class="mo-ta">{{ mo_ta }}</p>{% endif %}
+
+<form class="bo-loc" method="get" action="/{{ ten }}">
+  <label>Tìm kiếm
+    <input type="search" name="q" value="{{ q or '' }}" placeholder="Nhập từ khoá">
+  </label>
+  {% if ten == 'vehicles' %}
+  <label>Khách hàng
+    <select name="khach">
+      <option value="">Tất cả</option>
+      {% for k in bo_loc_khach or [] %}
+      <option value="{{ k.id }}" {% if khach_hien_tai|string == k.id|string %}selected{% endif %}>{{ k.name }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  {% endif %}
+  {% if ten == 'appointments' %}
+  <label>Trạng thái
+    <select name="trang_thai">
+      <option value="">Tất cả</option>
+      {% for t in trang_thai_list or [] %}
+      <option value="{{ t }}" {% if trang_thai == t %}selected{% endif %}>{{ ten_trang_thai(t) }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  {% endif %}
+  <button type="submit" class="nut">Lọc</button>
+  <a class="nut nut-phu" href="/{{ ten }}">Xoá lọc</a>
+  {% if quyen[quyen_sua] or ten == 'customers' or ten == 'vehicles' or ten == 'appointments' %}
+  <a class="nut" href="/{{ ten }}/new">Thêm mới</a>
+  {% endif %}
+</form>
+
+<p class="dem-ket-qua">Tổng số bản ghi: <strong>{{ tong_so_ban_ghi }}</strong></p>
+
+<table class="bang">
+  <caption class="chi-doc">{{ tieu_de }}</caption>
+  <thead>
+    <tr>
+      <th scope="col">#</th>
+      {% for cot, nhan in cot %}<th scope="col">{{ nhan }}</th>{% endfor %}
+      <th scope="col">Thao tác</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for dong in dong %}
+    <tr>
+      <td>{{ dong.id }}</td>
+      {% for cot, nhan in cot %}
+        <td>
+          {% if cot == 'status' %}<span class="the-nhan tt-{{ dong[cot] }}">{{ ten_trang_thai(dong[cot]) }}</span>
+          {% elif cot in ('price', 'total', 'paid') %}{{ format_tien(dong[cot]) }}
+          {% elif cot == 'is_active' %}<span class="the-nhan tt-{{ 'ON' if dong[cot] else 'OFF' }}">{{ 'Có' if dong[cot] else 'Không' }}</span>
+          {% elif cot == 'scheduled_at' %}{{ format_ngay(dong[cot]) }}
+          {% elif cot == 'created_at' %}{{ format_ngay(dong[cot]) }}
+          {% else %}{{ dong[cot] if dong[cot] is not none else '' }}{% endif %}
+        </td>
+      {% endfor %}
+      <td class="thao-tac">
+        {% if quyen[quyen_sua] %}
+        <a class="nut nut-nho" href="/{{ ten }}/{{ dong.id }}/edit">Sửa</a>
+        {# Xoá là POST kèm mã CSRF, không bao giờ là GET — trình duyệt và
+           công cụ tìm kiếm cũng không thể vô tình xoá dữ liệu. #}
+        <form method="post" action="/{{ ten }}/{{ dong.id }}/delete"
+              class="nut-nho" data-xac-nhan="Xoá bản ghi này?">
+          <input type="hidden" name="{{ CSRF_FIELD }}" value="{{ csrf_token }}">
+          <button type="submit" class="nut nut-nho nut-do">Xoá</button>
+        </form>
+        {% endif %}
+      </td>
+    </tr>
+  {% else %}
+    <tr><td colspan="99" class="trong">Không có dữ liệu phù hợp.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+{% if co_so_trang %}
+<nav class="phan-trang" aria-label="Phân trang">
+  {% if co_trang_truoc %}<a href="{{ duong_dan_trang(duong_dan_hien_tai, trang.so_trang - 1, trang.moi_trang) }}">‹ Trước</a>{% endif %}
+  <span>Trang {{ trang.so_trang }} / {{ tong_trang }}</span>
+  {% if co_trang_sau %}<a href="{{ duong_dan_trang(duong_dan_hien_tai, trang.so_trang + 1, trang.moi_trang) }}">Sau ›</a>{% endif %}
+</nav>
+{% endif %}
+{% endblock %}
