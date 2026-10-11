@@ -702,5 +702,53 @@ class TestXoaDuLieu(CoSoDichChung):
             crud.dem_ban_ghi('sqlite_master')
 
 
+# ===========================================================================
+class TestQuyenBieuMau(CoSoDichChung):
+    """7 form GET /new và /edit phải kiểm quyền như POST save tương ứng."""
+
+    FORMS = [
+        ('/customers/new', 'customer.edit'),
+        ('/vehicles/new',   'vehicle.edit'),
+        ('/appointments/new', 'appointment.edit'),
+        ('/services/new',    'catalog.edit'),
+        ('/services/1/edit', 'catalog.edit'),
+        ('/parts/new',       'catalog.edit'),
+        ('/parts/1/edit',    'catalog.edit'),
+    ]
+
+    # le_tan có customer/vehicle/appointment.edit; chỉ thiếu catalog.edit
+    FORMS_LE_TAN_THIEU = [
+        ('/services/new',    'catalog.edit'),
+        ('/services/1/edit', 'catalog.edit'),
+        ('/parts/new',       'catalog.edit'),
+        ('/parts/1/edit',    'catalog.edit'),
+    ]
+
+    def test_chua_dang_nhap_bi_gui_dang_nhap(self):
+        self.client.cookies.clear()
+        for url, _q in self.FORMS:
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 303, url)
+            self.assertIn('/accounts/login', r.headers['location'], url)
+
+    def test_le_tan_thieu_quyen_nhan_403(self):
+        self.dang_nhap('le_tan')
+        for url, q in self.FORMS_LE_TAN_THIEU:
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 403, '%s thiếu %s' % (url, q))
+
+    def test_le_tan_du_quyen_mot_so_form(self):
+        self.dang_nhap('le_tan')
+        for url in ('/customers/new', '/vehicles/new', '/appointments/new'):
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200, url)
+
+    def test_quan_ly_co_quyen_thanh_cong(self):
+        self.dang_nhap('quan_ly')
+        for url, _q in self.FORMS:
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200, url)
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)

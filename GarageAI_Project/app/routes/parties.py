@@ -56,6 +56,9 @@ def danh_sach_khach(request: Request):
 
 @router.get('/customers/new')
 def form_khach_moi(request: Request):
+    user = auth_svc.yeu_cau_quyen(request, 'customer.edit')
+    if user is None:
+        return _ve(request, '/accounts/login')
     return render(request, 'bieu_mau.html', {
         'ten': 'customers', 'tieu_de': 'Khách hàng', 'b': None, 'id': None,
         'truong': [('name', 'Họ và tên', 'text', True),
@@ -145,6 +148,9 @@ def danh_sach_xe(request: Request):
 
 @router.get('/vehicles/new')
 def form_xe_moi(request: Request):
+    user = auth_svc.yeu_cau_quyen(request, 'vehicle.edit')
+    if user is None:
+        return _ve(request, '/accounts/login')
     return render(request, 'bieu_mau.html', {
         'ten': 'vehicles', 'tieu_de': 'Phương tiện', 'b': None, 'id': None,
         'truong': [('plate', 'Biển số', 'text', True),
@@ -232,6 +238,9 @@ def danh_sach_lich(request: Request):
 
 @router.get('/appointments/new')
 def form_lich_moi(request: Request):
+    user = auth_svc.yeu_cau_quyen(request, 'appointment.edit')
+    if user is None:
+        return _ve(request, '/accounts/login')
     return render(request, 'bieu_mau.html', {
         'ten': 'appointments', 'tieu_de': 'Lịch hẹn', 'b': None, 'id': None,
         'truong': [('customer_id', 'Khách hàng', 'select', True),
@@ -317,6 +326,9 @@ def danh_sach_dich_vu(request: Request):
 
 @router.get('/services/new')
 def form_dich_vu_moi(request: Request):
+    user = auth_svc.yeu_cau_quyen(request, 'catalog.edit')
+    if user is None:
+        return _ve(request, '/accounts/login')
     return render(request, 'bieu_mau.html', {
         'ten': 'services', 'tieu_de': 'Dịch vụ', 'b': None, 'id': None,
         'truong': [('name', 'Tên dịch vụ', 'text', True),
@@ -327,6 +339,9 @@ def form_dich_vu_moi(request: Request):
 
 @router.get('/services/{sid}/edit')
 def form_dich_vu_sua(request: Request, sid: int):
+    user = auth_svc.yeu_cau_quyen(request, 'catalog.edit')
+    if user is None:
+        return _ve(request, '/accounts/login')
     return render(request, 'bieu_mau.html', {
         'ten': 'services', 'tieu_de': 'Dịch vụ', 'b': crud.lay_mot('services', sid),
         'id': sid,
@@ -389,6 +404,9 @@ def danh_sach_phu_tung(request: Request):
 
 @router.get('/parts/new')
 def form_phu_tung_moi(request: Request):
+    user = auth_svc.yeu_cau_quyen(request, 'catalog.edit')
+    if user is None:
+        return _ve(request, '/accounts/login')
     return render(request, 'bieu_mau.html', {
         'ten': 'parts', 'tieu_de': 'Phụ tùng', 'b': None, 'id': None,
         'truong': [('name', 'Tên phụ tùng', 'text', True),
@@ -401,6 +419,9 @@ def form_phu_tung_moi(request: Request):
 
 @router.get('/parts/{pid}/edit')
 def form_phu_tung_sua(request: Request, pid: int):
+    user = auth_svc.yeu_cau_quyen(request, 'catalog.edit')
+    if user is None:
+        return _ve(request, '/accounts/login')
     return render(request, 'bieu_mau.html', {
         'ten': 'parts', 'tieu_de': 'Phụ tùng', 'b': crud.lay_mot('parts', pid),
         'id': pid,

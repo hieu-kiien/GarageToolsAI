@@ -255,8 +255,8 @@ def doi_trang_thai(phieu_id: int, du_lieu: DoiTrangThaiInput, user) -> None:
     with transaction() as c:
         if moi == 'COMPLETED':
             if phieu_da_quyet_toan(phieu_id):
-                raise SaiQuyTac('Phiếu đã có hoá đơn chưa thanh toán đủ,'
-                                ' không thể đóng phiếu.')
+                raise SaiQuyTac('Phiếu đã có hoá đơn, không thể đổi trạng thái'
+                                ' sang Hoàn thành. Hãy quản lý thanh toán tại hoá đơn.')
             if tong_phieu(phieu_id) <= 0:
                 raise SaiQuyTac('Phiếu chưa có hạng mục nên chưa thể hoàn thành.')
         c.execute('UPDATE repair_orders SET status = ? WHERE id = ?', (moi, phieu_id))

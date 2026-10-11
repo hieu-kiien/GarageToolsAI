@@ -174,11 +174,11 @@ def _loi_integrity(e: sqlite3.IntegrityError) -> AppError:
     if 'username' in n:
         return XungDdot('Tên đăng nhận đã tồn tại.', truong='username')
     if 'plate' in n:
-        return XungDpot('Biển số đã tồn tại.', truong='plate')
+        return XungDdot('Biển số đã tồn tại.', truong='plate')
     if 'FOREIGN KEY' in n:
         return SaiQuyTac('Dữ liệu tham chiếu không tồn tại hoặc không còn được phép dùng.')
     return SaiQuyTac('Dữ liệu không hợp lệ: %s' % n)
 
 
-# Hằng lỗi dùng lại cho các bảng khác.
+# Tên cũ (typo) được giữ lại để không vỡ import ở nơi khác.
 XungDpot = XungDdot

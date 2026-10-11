@@ -45,8 +45,9 @@ def _goi_openai(system_prompt, user_prompt):
         raise AiError('Thiếu thư viện httpx')
 
     try:
+        base = get_settings().OPENAI_BASE_URL.rstrip('/')
         r = httpx.post(
-            'https://api.openai.com/v1/chat/completions',
+            base + '/chat/completions',
             headers={'Authorization': 'Bearer %s' % get_settings().OPENAI_API_KEY},
             json={
                 'model': get_settings().OPENAI_MODEL,
