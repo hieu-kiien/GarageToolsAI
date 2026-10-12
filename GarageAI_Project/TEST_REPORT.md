@@ -2,10 +2,10 @@
 
 | | |
 |---|---|
-| Ngày chạy | 2026-10-12 12:12 |
+| Ngày chạy | 2026-10-12 12:44 |
 | Môi trường | Python 3.13.14, SQLite 3.50.4 |
-| Tổng số ca | **134** |
-| Kết quả | **134 đạt / 0 lỗi** |
+| Tổng số ca | **146** |
+| Kết quả | **146 đạt / 0 lỗi** |
 
 ---
 
@@ -33,7 +33,7 @@ chạy chứ không kiểm tra bản sao.
 
 - Tệp: `tests/test_backend.py`
 - Phạm vi: Gọi thật các đường dẫn HTTP trên một CSDL tạm: đăng nhập, phân quyền, CSRF, kiểm tra đầu vào, tiền và tồn kho (kể cả chạy đồng thời), thông báo, phân trang, xoá dữ liệu và AI.
-- Kết quả: 91 ca, 91 đạt, 0 lỗi
+- Kết quả: 103 ca, 103 đạt, 0 lỗi
 
 ## 2. Nhóm ca kiểm thử ràng buộc cơ sở dữ liệu
 

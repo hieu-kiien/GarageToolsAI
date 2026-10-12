@@ -402,9 +402,22 @@ w('-- --------------------------------------------------------------------------
 w('-- 5. Phụ tùng: 15 (phụ tùng 9 cố ý hết hàng)')
 w('-- ---------------------------------------------------------------------------')
 for i, (name, stock, price) in enumerate(parts, 1):
-    w('INSERT INTO parts (id, name, sku, stock, price, description) VALUES')
-    w('  (%d, %s, %s, %d, %d, %s);'
-      % (i, q(name), q('PT-%03d' % i), stock, price, q(desc_of(name))))
+    w('INSERT INTO parts (id, name, sku, stock, min_stock, price, description) VALUES')
+    w('  (%d, %s, %s, %d, %d, %d, %s);'
+      % (i, q(name), q('PT-%03d' % i), stock,
+         5 if stock > 0 else 2, price, q(desc_of(name))))
+w()
+
+w('-- ---------------------------------------------------------------------------')
+w('-- 5b. Số dư mở đầu kho (stock_transactions): mỗi phụ tùng tồn > 0 có đúng')
+w('--     một dòng ADJUSTMENT bằng đúng `parts.stock`. Bất biến')
+w('--     SUM(stock_transactions.qty) == parts.stock bắt đầu từ đây.')
+w('-- ---------------------------------------------------------------------------')
+for i, (name, stock, price) in enumerate(parts, 1):
+    if stock > 0:
+        w('INSERT INTO stock_transactions (id, part_id, qty, reason, note) VALUES')
+        w('  (%d, %d, %d, \'ADJUSTMENT\', \'Số dư mở đầu khi khởi tạo hệ thống.\');'
+          % (i, i, stock))
 w()
 
 w('-- ---------------------------------------------------------------------------')

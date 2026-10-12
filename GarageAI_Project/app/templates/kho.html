@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% block noi_dung %}
+<h1>Sổ cái tồn kho</h1>
+<p class="mo-ta">Mọi thay đổi tồn kho đều được ghi nhận. Tổng {{ tong_so_ban_ghi }} giao dịch · trang {{ trang.so_trang }}/{{ tong_trang }}</p>
+
+{% if canh_bao %}
+<div class="canh-bao" role="status">
+  <strong>Cảnh báo tồn kho thấp:</strong>
+  {% for c in canh_bao %}
+    <span>{{ c.name }} (còn {{ c.stock }}, ngưỡng {{ c.min_stock }})</span>{% if not loop.last %} · {% endif %}
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if lech %}
+<div class="loi" role="alert">
+  <strong>Lệch sổ cái!</strong> Các phụ tùng sau có tồn kho không khớp tổng giao dịch:
+  {% for l in lech %}
+    <span>{{ l.name }} (stock {{ l.stock }} ≠ sổ {{ l.tong_sach }})</span>{% if not loop.last %} · {% endif %}
+  {% endfor %}
+</div>
+{% endif %}
+
+<form method="get" action="/stock" class="loc">
+  <label>Phụ tùng
+    <select name="part_id">
+      <option value="">Tất cả</option>
+      {% for t in phu_tung %}<option value="{{ t.id }}" {% if part_id == t.id|string %}selected{% endif %}>{{ t.name }}</option>{% endfor %}
+    </select>
+  </label>
+  <label>Loại giao dịch
+    <select name="reason">
+      <option value="">Tất cả</option>
+      {% for k, v in reason_list %}<option value="{{ k }}" {% if reason == k %}selected{% endif %}>{{ v }}</option>{% endfor %}
+    </select>
+  </label>
+  <button type="submit" class="nut">Lọc</button>
+</form>
+
+{% if quyen['stock.manage'] %}
+<form method="post" action="/stock/receipt" class="bieu-mau-inline">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <label>Phụ tùng
+    <select name="part_id" required>
+      {% for t in phu_tung %}<option value="{{ t.id }}">{{ t.name }} (còn {{ t.stock }})</option>{% endfor %}
+    </select>
+  </label>
+  <label>Số lượng<input type="number" name="qty" min="1" required></label>
+  <label>Ghi chú<input type="text" name="note" maxlength="500"></label>
+  <button type="submit" class="nut">Nhập kho</button>
+</form>
+{% endif %}
+
+<table>
+  <thead><tr>
+    <th scope="col">Mã</th><th scope="col">Phụ tùng</th><th scope="col">Số lượng</th>
+    <th scope="col">Loại</th><th scope="col">Phiếu</th><th scope="col">Ghi chú</th>
+    <th scope="col">Người ghi</th><th scope="col">Thời gian</th>
+  </tr></thead>
+  <tbody>
+  {% for d in dong %}
+    <tr>
+      <td>{{ d.id }}</td>
+      <td>{{ d.ten_phu_tung }}</td>
+      <td>{% if d.qty > 0 %}+{{ d.qty }}{% else %}{{ d.qty }}{% endif %}</td>
+      <td>{{ {'RECEIPT':'Nhập kho','USAGE':'Xuất dùng','RETURN':'Hoàn trả','ADJUSTMENT':'Điều chỉnh'}.get(d.reason, d.reason) }}</td>
+      <td>{% if d.repair_order_id %}<a href="/repair-orders/{{ d.repair_order_id }}">#{{ d.repair_order_id }}</a>{% endif %}</td>
+      <td>{{ d.note or '' }}</td>
+      <td>{{ d.nguoi_tao or 'Hệ thống' }}</td>
+      <td>{{ d.created_at }}</td>
+    </tr>
+  {% else %}<tr><td colspan="8" class="trong">Chưa có giao dịch nào.</td></tr>{% endfor %}
+  </tbody>
+</table>
+
+{% if co_so_trang %}<nav class="phan-trang" aria-label="Phân trang">
+  {% if co_trang_truoc %}<a href="{{ duong_dan_trang(duong_dan_hien_tai, trang.so_trang - 1, trang.moi_trang) }}">‹ Trước</a>{% endif %}
+  <span>Trang {{ trang.so_trang }} / {{ tong_trang }}</span>
+  {% if co_trang_sau %}<a href="{{ duong_dan_trang(duong_dan_hien_tai, trang.so_trang + 1, trang.moi_trang) }}">Sau ›</a>{% endif %}
+</nav>{% endif %}
+{% endblock %}

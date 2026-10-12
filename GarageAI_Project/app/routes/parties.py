@@ -403,7 +403,8 @@ def danh_sach_phu_tung(request: Request):
         'ten': 'parts', 'tieu_de': 'Danh mục phụ tùng',
         'mo_ta': 'Phụ tùng, tồn kho và đơn giá', 'q': qs.get('q', ''),
         'cot': [('name', 'Tên phụ tùng'), ('sku', 'Mã'), ('price', 'Đơn giá'),
-                ('stock', 'Tồn kho'), ('is_active', 'Đang dùng')],
+                ('stock', 'Tồn kho'), ('min_stock', 'Cảnh báo'),
+                ('is_active', 'Đang dùng')],
         'co_bang_ten': {}, 'quyen_xem': 'catalog.view', 'quyen_sua': 'catalog.edit',
     })
 
@@ -418,7 +419,8 @@ def form_phu_tung_moi(request: Request):
         'truong': [('name', 'Tên phụ tùng', 'text', True),
                    ('sku', 'Mã sản phẩm', 'text', False),
                    ('price', 'Đơn giá (đồng)', 'int', True),
-                   ('stock', 'Tồn kho', 'int', True),
+                   ('stock', 'Tồn kho đầu kỳ', 'int', True),
+                   ('min_stock', 'Ngưỡng cảnh báo', 'int', False),
                    ('description', 'Mô tả', 'text', False)],
         'lua_chon': {}, 'loi': {}})
 
@@ -435,6 +437,7 @@ def form_phu_tung_sua(request: Request, pid: int):
                    ('sku', 'Mã sản phẩm', 'text', False),
                    ('price', 'Đơn giá (đồng)', 'int', True),
                    ('stock', 'Tồn kho', 'int', True),
+                   ('min_stock', 'Ngưỡng cảnh báo', 'int', False),
                    ('description', 'Mô tả', 'text', False)],
         'lua_chon': {}, 'loi': {}})
 

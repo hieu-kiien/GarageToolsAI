@@ -106,36 +106,70 @@ INSERT INTO services (id, name, description, price) VALUES
 -- ---------------------------------------------------------------------------
 -- 5. Phụ tùng: 15 (phụ tùng 9 cố ý hết hàng)
 -- ---------------------------------------------------------------------------
-INSERT INTO parts (id, name, sku, stock, price, description) VALUES
-  (1, 'Dầu động cơ 5W-30 (1 lít)', 'PT-001', 120, 180000, NULL);
-INSERT INTO parts (id, name, sku, stock, price, description) VALUES
-  (2, 'Lọc gió động cơ', 'PT-002', 60, 85000, NULL);
-INSERT INTO parts (id, name, sku, stock, price, description) VALUES
-  (3, 'Lọc dầu động cơ', 'PT-003', 70, 120000, NULL);
-INSERT INTO parts (id, name, sku, stock, price, description) VALUES
-  (4, 'Lọc gió cabin', 'PT-004', 90, 95000, NULL);
-INSERT INTO parts (id, name, sku, stock, price, description) VALUES
-  (5, 'Máy phát 12V 60Ah', 'PT-005', 15, 3200000, NULL);
-INSERT INTO parts (id, name, sku, stock, price, description) VALUES
-  (6, 'Ắc quy 70Ah', 'PT-006', 25, 2500000, NULL);
-INSERT INTO parts (id, name, sku, stock, price, description) VALUES
-  (7, 'Bộ má phanh trước', 'PT-007', 40, 950000, NULL);
-INSERT INTO parts (id, name, sku, stock, price, description) VALUES
-  (8, 'Đĩa phanh trước', 'PT-008', 35, 780000, NULL);
-INSERT INTO parts (id, name, sku, stock, price, description) VALUES
-  (9, 'Lốp xe 205/55R16', 'PT-009', 0, 1350000, NULL);
-INSERT INTO parts (id, name, sku, stock, price, description) VALUES
-  (10, 'Lốp xe 215/55R17', 'PT-010', 30, 1650000, NULL);
-INSERT INTO parts (id, name, sku, stock, price, description) VALUES
-  (11, 'Cặp phuộc trước', 'PT-011', 24, 2800000, NULL);
-INSERT INTO parts (id, name, sku, stock, price, description) VALUES
-  (12, 'Bóng đèn pha LED H7', 'PT-012', 80, 650000, NULL);
-INSERT INTO parts (id, name, sku, stock, price, description) VALUES
-  (13, 'Gương chiếu hậu trái', 'PT-013', 18, 1450000, NULL);
-INSERT INTO parts (id, name, sku, stock, price, description) VALUES
-  (14, 'Gương chiếu hậu phải', 'PT-014', 18, 1450000, NULL);
-INSERT INTO parts (id, name, sku, stock, price, description) VALUES
-  (15, 'Ga và chìa khóa điện', 'PT-015', 12, 2100000, 'Ga và chìa khóa điện có mã, cần đăng kì cắt mới.');
+INSERT INTO parts (id, name, sku, stock, min_stock, price, description) VALUES
+  (1, 'Dầu động cơ 5W-30 (1 lít)', 'PT-001', 120, 5, 180000, NULL);
+INSERT INTO parts (id, name, sku, stock, min_stock, price, description) VALUES
+  (2, 'Lọc gió động cơ', 'PT-002', 60, 5, 85000, NULL);
+INSERT INTO parts (id, name, sku, stock, min_stock, price, description) VALUES
+  (3, 'Lọc dầu động cơ', 'PT-003', 70, 5, 120000, NULL);
+INSERT INTO parts (id, name, sku, stock, min_stock, price, description) VALUES
+  (4, 'Lọc gió cabin', 'PT-004', 90, 5, 95000, NULL);
+INSERT INTO parts (id, name, sku, stock, min_stock, price, description) VALUES
+  (5, 'Máy phát 12V 60Ah', 'PT-005', 15, 5, 3200000, NULL);
+INSERT INTO parts (id, name, sku, stock, min_stock, price, description) VALUES
+  (6, 'Ắc quy 70Ah', 'PT-006', 25, 5, 2500000, NULL);
+INSERT INTO parts (id, name, sku, stock, min_stock, price, description) VALUES
+  (7, 'Bộ má phanh trước', 'PT-007', 40, 5, 950000, NULL);
+INSERT INTO parts (id, name, sku, stock, min_stock, price, description) VALUES
+  (8, 'Đĩa phanh trước', 'PT-008', 35, 5, 780000, NULL);
+INSERT INTO parts (id, name, sku, stock, min_stock, price, description) VALUES
+  (9, 'Lốp xe 205/55R16', 'PT-009', 0, 2, 1350000, NULL);
+INSERT INTO parts (id, name, sku, stock, min_stock, price, description) VALUES
+  (10, 'Lốp xe 215/55R17', 'PT-010', 30, 5, 1650000, NULL);
+INSERT INTO parts (id, name, sku, stock, min_stock, price, description) VALUES
+  (11, 'Cặp phuộc trước', 'PT-011', 24, 5, 2800000, NULL);
+INSERT INTO parts (id, name, sku, stock, min_stock, price, description) VALUES
+  (12, 'Bóng đèn pha LED H7', 'PT-012', 80, 5, 650000, NULL);
+INSERT INTO parts (id, name, sku, stock, min_stock, price, description) VALUES
+  (13, 'Gương chiếu hậu trái', 'PT-013', 18, 5, 1450000, NULL);
+INSERT INTO parts (id, name, sku, stock, min_stock, price, description) VALUES
+  (14, 'Gương chiếu hậu phải', 'PT-014', 18, 5, 1450000, NULL);
+INSERT INTO parts (id, name, sku, stock, min_stock, price, description) VALUES
+  (15, 'Ga và chìa khóa điện', 'PT-015', 12, 5, 2100000, 'Ga và chìa khóa điện có mã, cần đăng kì cắt mới.');
+
+-- ---------------------------------------------------------------------------
+-- 5b. Số dư mở đầu kho (stock_transactions): mỗi phụ tùng tồn > 0 có đúng
+--     một dòng ADJUSTMENT bằng đúng `parts.stock`. Bất biến
+--     SUM(stock_transactions.qty) == parts.stock bắt đầu từ đây.
+-- ---------------------------------------------------------------------------
+INSERT INTO stock_transactions (id, part_id, qty, reason, note) VALUES
+  (1, 1, 120, 'ADJUSTMENT', 'Số dư mở đầu khi khởi tạo hệ thống.');
+INSERT INTO stock_transactions (id, part_id, qty, reason, note) VALUES
+  (2, 2, 60, 'ADJUSTMENT', 'Số dư mở đầu khi khởi tạo hệ thống.');
+INSERT INTO stock_transactions (id, part_id, qty, reason, note) VALUES
+  (3, 3, 70, 'ADJUSTMENT', 'Số dư mở đầu khi khởi tạo hệ thống.');
+INSERT INTO stock_transactions (id, part_id, qty, reason, note) VALUES
+  (4, 4, 90, 'ADJUSTMENT', 'Số dư mở đầu khi khởi tạo hệ thống.');
+INSERT INTO stock_transactions (id, part_id, qty, reason, note) VALUES
+  (5, 5, 15, 'ADJUSTMENT', 'Số dư mở đầu khi khởi tạo hệ thống.');
+INSERT INTO stock_transactions (id, part_id, qty, reason, note) VALUES
+  (6, 6, 25, 'ADJUSTMENT', 'Số dư mở đầu khi khởi tạo hệ thống.');
+INSERT INTO stock_transactions (id, part_id, qty, reason, note) VALUES
+  (7, 7, 40, 'ADJUSTMENT', 'Số dư mở đầu khi khởi tạo hệ thống.');
+INSERT INTO stock_transactions (id, part_id, qty, reason, note) VALUES
+  (8, 8, 35, 'ADJUSTMENT', 'Số dư mở đầu khi khởi tạo hệ thống.');
+INSERT INTO stock_transactions (id, part_id, qty, reason, note) VALUES
+  (10, 10, 30, 'ADJUSTMENT', 'Số dư mở đầu khi khởi tạo hệ thống.');
+INSERT INTO stock_transactions (id, part_id, qty, reason, note) VALUES
+  (11, 11, 24, 'ADJUSTMENT', 'Số dư mở đầu khi khởi tạo hệ thống.');
+INSERT INTO stock_transactions (id, part_id, qty, reason, note) VALUES
+  (12, 12, 80, 'ADJUSTMENT', 'Số dư mở đầu khi khởi tạo hệ thống.');
+INSERT INTO stock_transactions (id, part_id, qty, reason, note) VALUES
+  (13, 13, 18, 'ADJUSTMENT', 'Số dư mở đầu khi khởi tạo hệ thống.');
+INSERT INTO stock_transactions (id, part_id, qty, reason, note) VALUES
+  (14, 14, 18, 'ADJUSTMENT', 'Số dư mở đầu khi khởi tạo hệ thống.');
+INSERT INTO stock_transactions (id, part_id, qty, reason, note) VALUES
+  (15, 15, 12, 'ADJUSTMENT', 'Số dư mở đầu khi khởi tạo hệ thống.');
 
 -- ---------------------------------------------------------------------------
 -- 6. Lịch hẹn: 10

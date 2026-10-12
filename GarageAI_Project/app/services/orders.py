@@ -27,6 +27,7 @@ from ..models import (DoiTrangThaiInput, NghiemThuInput, NhatKyInput,
                       PhanCongInput, TaoPhieuInput, ThemHangMucInput,
                       TiepNhanInput)
 from .security_matrix import CHUYEN_TRANG_THAI, TEN_TRANG_THAI
+from .stock import ghi_giao_dich
 
 TRANG_THAI_KHOA_HANG_MUC = {'COMPLETED', 'CANCELLED'}
 
@@ -200,15 +201,13 @@ def them_hang_muc(phieu_id: int, du_lieu: ThemHangMucInput, user) -> None:
                              ' WHERE id = ?', (du_lieu.ma,)).fetchone()
             if dong is None:
                 raise SaiQuyTac('Phụ tùng không tồn tại.', truong='ma')
-            # Trừ kho có điều kiện: nguyên tử, không chạy đua được.
-            da_tru = c.execute(
-                'UPDATE parts SET stock = stock - ? WHERE id = ? AND stock >= ?',
-                (du_lieu.qty, du_lieu.ma, du_lieu.qty)).rowcount
-            if da_tru != 1:
-                con = c.execute('SELECT stock FROM parts WHERE id = ?',
-                                (du_lieu.ma,)).fetchone()
-                raise SaiQuyTac('Tồn kho không đủ. Hiện còn %d.'
-                                % (con['stock'] if con else 0), truong='qty')
+            if not dong['is_active']:
+                raise SaiQuyTac('Phụ tùng đã ngừng sử dụng.', truong='ma')
+            # Trừ kho qua sổ cái: nguyên tử, có ghi nhận lý do.
+            ghi_giao_dich(c, dong['id'], -du_lieu.qty, 'USAGE',
+                          repair_order_id=phieu_id,
+                          note='Thêm hạng mục %s' % dong['name'],
+                          created_by=user['id'])
             sid, pid, gia, ten = None, dong['id'], int(dong['price']), dong['name']
 
         c.execute('INSERT INTO repair_order_items (repair_order_id, service_id,'
@@ -230,9 +229,11 @@ def go_hang_muc(phieu_id: int, muc_id: int, user) -> None:
         if muc is None:
             raise KhongTimThay('Không tìm thấy hạng mục cần gỡ.')
         if muc['part_id'] is not None:
-            # Gỡ hạng mục phải trả lại phụ tùng về kho.
-            c.execute('UPDATE parts SET stock = stock + ? WHERE id = ?',
-                      (muc['qty'], muc['part_id']))
+            # Gỡ hạng mục phải trả lại phụ tùng về kho (qua sổ cái).
+            ghi_giao_dich(c, muc['part_id'], muc['qty'], 'RETURN',
+                          repair_order_id=phieu_id,
+                          note='Gỡ hạng mục khỏi phiếu',
+                          created_by=user['id'])
         c.execute('DELETE FROM repair_order_items WHERE id = ?', (muc_id,))
         ten = c.execute(
             'SELECT COALESCE((SELECT name FROM services WHERE id = ?),'
@@ -279,8 +280,11 @@ def _hoan_tra_ton_kho(conn, phieu_id: int) -> None:
         ' WHERE repair_order_id = ? AND part_id IS NOT NULL GROUP BY part_id',
         (phieu_id,)).fetchall()
     for h in hang:
-        conn.execute('UPDATE parts SET stock = stock + ? WHERE id = ?',
-                     (h['qty'], h['part_id']))
+        # Hoàn trả kho khi huỷ phiếu: ghi ledger với created_by NULL (hệ thống).
+        ghi_giao_dich(conn, h['part_id'], h['qty'], 'RETURN',
+                      repair_order_id=phieu_id,
+                      note='Hoàn trả tồn kho phụ tùng %d cái (huỷ phiếu).'
+                           % h['qty'])
         # technician_id cho phép NULL: đây là thay đổi do hệ thống tự thực
         # hiện chứ không phải nhân viên nào ghi tay.
         conn.execute('INSERT INTO repair_logs (repair_order_id, technician_id, note)'

@@ -138,6 +138,7 @@ class PhuTungInput(BaseModel):
     sku: str | None = Field(default=None, max_length=60)
     price: Any
     stock: Any
+    min_stock: Any = 0
     description: str | None = Field(default=None, max_length=1000)
     is_active: bool = True
 
@@ -153,6 +154,30 @@ class PhuTungInput(BaseModel):
         if n < 0:
             raise ValueError('Tồn kho không được âm')
         return n
+
+    @field_validator('min_stock')
+    @classmethod
+    def _ton_toi_thieu(cls, v) -> int:
+        n = _chuan_hoa_so(v, 'Tồn kho cảnh báo')
+        if n < 0:
+            raise ValueError('Tồn kho cảnh báo không được âm')
+        return n
+
+
+class NhapKhoInput(BaseModel):
+    """Nhập thêm phụ tùng vào kho (RECEIPT)."""
+    model_config = CoBan
+    part_id: int = Field(gt=0)
+    qty: int = Field(gt=0)
+    note: str | None = Field(default=None, max_length=500)
+
+
+class DieuChinhTonKhoInput(BaseModel):
+    """Điều chỉnh tồn kho về một giá trị cụ thể (kiểm kê)."""
+    model_config = CoBan
+    part_id: int = Field(gt=0)
+    moi: int = Field(ge=0)
+    note: str | None = Field(default=None, max_length=500)
 
 
 def _chuan_hoa_tien(v, nhan: str) -> int:

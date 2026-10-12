@@ -231,7 +231,7 @@ def _dang_ky_bat_loi(app: FastAPI) -> None:
 
 
 def _dang_ky_router(app: FastAPI) -> None:
-    from .routes import auth, orders, parties, quotations, system
+    from .routes import auth, orders, parties, quotations, stock, system
     # Thứ tự không quan trọng vì không route nào chồng lấn nhau nữa, nhưng
     # giữ nhóm theo nghiệp vụ cho dễ đọc.
     app.include_router(system.router)
@@ -239,6 +239,7 @@ def _dang_ky_router(app: FastAPI) -> None:
     app.include_router(parties.router)
     app.include_router(orders.router)
     app.include_router(quotations.router)
+    app.include_router(stock.router)
 
 
 app = create_app()

@@ -126,14 +126,39 @@ CREATE TABLE parts (
     name        TEXT    NOT NULL UNIQUE,
     sku         TEXT,
     stock       INTEGER NOT NULL DEFAULT 0 CHECK (stock >= 0),
+    min_stock   INTEGER NOT NULL DEFAULT 0 CHECK (min_stock >= 0),
     price       INTEGER NOT NULL CHECK (price >= 0),
     description TEXT,
     is_active   INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1)),
     created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
 );
-CREATE INDEX idx_parts_name   ON parts(name);
-CREATE INDEX idx_parts_active ON parts(is_active);
-CREATE INDEX idx_parts_stock  ON parts(stock);
+CREATE INDEX idx_parts_name     ON parts(name);
+CREATE INDEX idx_parts_active   ON parts(is_active);
+CREATE INDEX idx_parts_stock    ON parts(stock);
+CREATE INDEX idx_parts_min_stock ON parts(min_stock);
+
+-- =============================================================================
+-- 6b. stock_transactions - sổ cái tồn kho (ledger)
+--     Mỗi dòng là một thay đổi tồn kho: qty > 0 nhập, qty < 0 xuất.
+--     Bất biến: parts.stock == SUM(stock_transactions.qty) theo part_id.
+--     Mọi đổi `parts.stock` đều phải đi kèm đúng một dòng ledger (Xem
+--     services/stock.py — không UPDATE parts.stock ở nơi khác).
+-- =============================================================================
+CREATE TABLE stock_transactions (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    part_id         INTEGER NOT NULL REFERENCES parts(id)         ON DELETE RESTRICT,
+    qty             INTEGER NOT NULL,
+    reason          TEXT    NOT NULL CHECK (reason IN
+                        ('RECEIPT', 'USAGE', 'RETURN', 'ADJUSTMENT')),
+    repair_order_id INTEGER          REFERENCES repair_orders(id) ON DELETE RESTRICT,
+    note            TEXT,
+    created_by      INTEGER          REFERENCES users(id)         ON DELETE RESTRICT,
+    created_at      TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX idx_stock_tx_part   ON stock_transactions(part_id);
+CREATE INDEX idx_stock_tx_reason ON stock_transactions(reason);
+CREATE INDEX idx_stock_tx_order  ON stock_transactions(repair_order_id);
+CREATE INDEX idx_stock_tx_time   ON stock_transactions(created_at);
 
 -- =============================================================================
 -- 7. repair_orders - phiếu sửa chữa

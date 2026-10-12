@@ -654,10 +654,20 @@ class TestXoaDuLieu(CoSoDichChung):
         self.assertFalse(self.q1('SELECT id FROM services WHERE id = ?', (ma,)))
 
     def test_xoa_phu_tung_chua_dung(self):
+        # Tạo phụ tùng mới (stock 0, chưa có ledger) rồi xoá.
+        self.post('/parts/save', {'name': 'PT tạm để xoá', 'price': '1000',
+                                  'stock': '0', 'sku': 'TMP-DEL'})
+        pid = self.q1("SELECT id FROM parts WHERE sku = 'TMP-DEL'")['id']
         truoc = len(self.q('SELECT id FROM parts'))
-        r = self.post('/parts/10/delete')
+        r = self.post('/parts/%d/delete' % pid)
         self.assertEqual(r.status_code, 303)
         self.assertEqual(len(self.q('SELECT id FROM parts')), truoc - 1)
+
+    def test_xoa_phu_tung_co_so_kho_bi_chan(self):
+        """Phụ tùng có dòng ledger (số dư đầu kỳ) không xoá được."""
+        r = self.post('/parts/10/delete')
+        self.assertIn('giao dịch kho', self.flash(r) or '')
+        self.assertTrue(self.q1('SELECT id FROM parts WHERE id = 10'))
 
     def test_xoa_phu_tung_da_dung_bi_chan(self):
         r = self.post('/parts/1/delete')
@@ -1010,6 +1020,113 @@ class TestBaoGia(CoSoDichChung):
         truoc = len(self.q('SELECT id FROM quotations'))
         self.post('/quotations/create', {'repair_order_id': '10'})
         self.assertEqual(len(self.q('SELECT id FROM quotations')), truoc)
+
+
+# ===========================================================================
+class TestKhoLedger(CoSoDichChung):
+    """Sổ cái tồn kho: bất biến SUM(ledger) == stock, nhập, điều chỉnh."""
+
+    def test_so_kho_khop_sau_seed(self):
+        """Sau khi dựng CSDL mới, mọi phụ tùng phải khớp sổ cái."""
+        lech = self.q('''
+            SELECT * FROM (
+              SELECT p.id, p.stock, COALESCE(SUM(t.qty), 0) AS tong
+                FROM parts p LEFT JOIN stock_transactions t ON t.part_id = p.id
+               GROUP BY p.id
+            ) WHERE stock <> tong''')
+        self.assertEqual(lech, [], 'sổ cái phải khớp tồn kho sau seed')
+
+    def test_nhap_kho_tang_ton_va_ghi_so(self):
+        self.dang_nhap('quan_ly')
+        truoc = self.q1('SELECT stock FROM parts WHERE id = 1')['stock']
+        r = self.post('/stock/receipt', {'part_id': '1', 'qty': '10',
+                                         'note': 'Nhập lô mới'})
+        self.assertEqual(r.status_code, 303)
+        self.assertEqual(self.q1('SELECT stock FROM parts WHERE id = 1')['stock'],
+                         truoc + 10)
+        gd = self.q1('SELECT * FROM stock_transactions ORDER BY id DESC LIMIT 1')
+        self.assertEqual(gd['qty'], 10)
+        self.assertEqual(gd['reason'], 'RECEIPT')
+
+    def test_nhap_kho_am_bi_chan(self):
+        self.dang_nhap('quan_ly')
+        r = self.post('/stock/receipt', {'part_id': '1', 'qty': '-5'})
+        self.assertEqual(r.status_code, 303)
+        msg = (self.flash(r) or '') + r.text
+        self.assertTrue('greater than 0' in msg or 'lớn hơn 0' in msg,
+                        'phải báo số lượng nhập phải > 0, got: %r' % msg)
+
+    def test_them_hang_muc_ghi_ledger_usage(self):
+        self.dang_nhap('ky_thuat_vien')
+        truoc = self.q1('SELECT stock FROM parts WHERE id = 2')['stock']
+        self.post('/repair-orders/12/items',
+                  {'loai': 'phu_tung', 'ma': '2', 'qty': '3'})
+        self.assertEqual(self.q1('SELECT stock FROM parts WHERE id = 2')['stock'],
+                         truoc - 3)
+        gd = self.q1('SELECT * FROM stock_transactions ORDER BY id DESC LIMIT 1')
+        self.assertEqual(gd['qty'], -3)
+        self.assertEqual(gd['reason'], 'USAGE')
+        self.assertEqual(gd['repair_order_id'], 12)
+
+    def test_huy_phieu_ghi_ledger_return(self):
+        self.dang_nhap('ky_thuat_vien')
+        truoc = self.q1('SELECT stock FROM parts WHERE id = 2')['stock']
+        self.post('/repair-orders/12/items',
+                  {'loai': 'phu_tung', 'ma': '2', 'qty': '4'})
+        self.post('/repair-orders/12/status', {'status': 'CANCELLED'})
+        self.assertEqual(self.q1('SELECT stock FROM parts WHERE id = 2')['stock'],
+                         truoc)
+        gd = self.q1("SELECT * FROM stock_transactions WHERE reason='RETURN'"
+                     ' ORDER BY id DESC LIMIT 1')
+        self.assertEqual(gd['qty'], 4)
+        self.assertEqual(gd['repair_order_id'], 12)
+
+    def test_dieu_chinh_ton_kho(self):
+        self.dang_nhap('quan_ly')
+        self.post('/stock/adjust', {'part_id': '3', 'moi': '50',
+                                    'note': 'Kiểm kê'})
+        self.assertEqual(self.q1('SELECT stock FROM parts WHERE id = 3')['stock'], 50)
+        gd = self.q1("SELECT * FROM stock_transactions WHERE reason='ADJUSTMENT'"
+                     ' ORDER BY id DESC LIMIT 1')
+        # stock ban đầu của part 3 là 70 → delta = -20
+        self.assertEqual(gd['qty'], -20)
+
+    def test_dieu_chinh_khong_lech_so(self):
+        """Sau mọi thao tác, SUM(ledger) vẫn == stock."""
+        self.dang_nhap('quan_ly')
+        self.post('/stock/receipt', {'part_id': '1', 'qty': '5'})
+        self.post('/stock/adjust', {'part_id': '1', 'moi': '100'})
+        self.dang_nhap('ky_thuat_vien')
+        self.post('/repair-orders/12/items',
+                  {'loai': 'phu_tung', 'ma': '1', 'qty': '2'})
+        lech = self.q('''
+            SELECT * FROM (
+              SELECT p.id, p.stock, COALESCE(SUM(t.qty), 0) AS tong
+                FROM parts p LEFT JOIN stock_transactions t ON t.part_id = p.id
+               GROUP BY p.id
+            ) WHERE stock <> tong''')
+        self.assertEqual(lech, [], 'sổ cái phải khớp sau mọi thao tác')
+
+    def test_le_tan_nhap_kho_duoc(self):
+        self.dang_nhap('le_tan')
+        r = self.post('/stock/receipt', {'part_id': '1', 'qty': '1'})
+        self.assertEqual(r.status_code, 303)
+
+    def test_thu_ngan_nhap_kho_bi_chan(self):
+        self.dang_nhap('thu_ngan')
+        r = self.post('/stock/receipt', {'part_id': '1', 'qty': '1'})
+        self.assertEqual(r.status_code, 403)
+
+    def test_ky_thuat_vien_nhap_kho_bi_chan(self):
+        self.dang_nhap('ky_thuat_vien')
+        r = self.post('/stock/receipt', {'part_id': '1', 'qty': '1'})
+        self.assertEqual(r.status_code, 403)
+
+    def test_chua_dang_nhap_kho_303(self):
+        self.client.cookies.clear()
+        r = self.client.get('/stock')
+        self.assertEqual(r.status_code, 303)
+        self.assertIn('/accounts/login', r.headers.get('location', ''))
 
 
 if __name__ == '__main__':

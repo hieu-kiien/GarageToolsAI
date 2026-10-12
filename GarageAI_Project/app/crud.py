@@ -34,6 +34,7 @@ SAP_XEP_CHO_PHEP: dict[str, list[str]] = {
     'intake_records': ['id', 'repair_order_id', 'created_at'],
     'quotations': ['id', 'status', 'total', 'created_at'],
     'quotation_items': ['id', 'qty', 'unit_price'],
+    'stock_transactions': ['id', 'part_id', 'qty', 'reason', 'created_at'],
     'shop_products': ['id', 'name', 'price', 'stock', 'created_at'],
 }
 

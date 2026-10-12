@@ -8,6 +8,7 @@ from .. import crud
 from ..core.db import fetch_one, transaction
 from ..core.errors import AppError, LoiKhongMoDuoc, SaiQuyTac, XungDdot
 from ..models import DichVuInput, PhuTungInput, SanPhamInput
+from .stock import ghi_giao_dich
 
 
 def _loi_integrity(e: sqlite3.IntegrityError) -> AppError:
@@ -80,21 +81,44 @@ def danh_sach_phu_tung(trang, *, q: str = '', dang_dung: str = '',
         dieu_kien.append('stock %s ?' % ('=' if het_kho == '0' else '>'))
         tham_so.append(int(het_kho))
     return crud.truy_van_danh_sach(
-        'parts', cot=('id', 'name', 'sku', 'price', 'stock', 'description', 'is_active'),
+        'parts', cot=('id', 'name', 'sku', 'price', 'stock', 'min_stock',
+                      'description', 'is_active'),
         dieu_kien=' AND '.join(dieu_kien), tham_so=tham_so, trang=trang,
         sap_xep='name', huong='asc')
 
 
 def luu_phu_tung(du_lieu: PhuTungInput) -> int:
+    """Lưu phụ tùng. Thay đổi `stock` luôn đi qua sổ cái (ADJUSTMENT)."""
     du = {'name': du_lieu.name, 'sku': du_lieu.sku, 'price': du_lieu.price,
-          'stock': du_lieu.stock, 'description': du_lieu.description,
+          'min_stock': du_lieu.min_stock, 'description': du_lieu.description,
           'is_active': 1 if du_lieu.is_active else 0}
-    if du_lieu.id:
-        crud.yeu_cau_co('parts', du_lieu.id, 'phụ tùng')
-        crud.sua('parts', du_lieu.id, du)
-        return du_lieu.id
     try:
-        return crud.them('parts', du)
+        if du_lieu.id:
+            crud.yeu_cau_co('parts', du_lieu.id, 'phụ tùng')
+            cu = fetch_one('SELECT stock FROM parts WHERE id = ?', (du_lieu.id,))
+            with transaction() as c:
+                # Không đưa `stock` vào UPDATE trực tiếp — chỉ sửa các cột khác.
+                c.execute('UPDATE parts SET name=?, sku=?, price=?, min_stock=?,'
+                          ' description=?, is_active=? WHERE id=?',
+                          (du['name'], du['sku'], du['price'], du['min_stock'],
+                           du['description'], du['is_active'], du_lieu.id))
+                lech = du_lieu.stock - int(cu['stock']) if cu else 0
+                if lech != 0:
+                    ghi_giao_dich(c, du_lieu.id, lech, 'ADJUSTMENT',
+                                  note='Điều chỉnh khi sửa phụ tùng')
+            return du_lieu.id
+        with transaction() as c:
+            # Tạo mới với stock = 0, rồi ghi ledger phần chênh lệch (nếu có).
+            cur = c.execute(
+                'INSERT INTO parts (name, sku, price, min_stock, stock,'
+                ' description, is_active) VALUES (?, ?, ?, ?, 0, ?, ?)',
+                (du['name'], du['sku'], du['price'], du['min_stock'],
+                 du['description'], du['is_active']))
+            pid = int(cur.lastrowid)
+            if du_lieu.stock > 0:
+                ghi_giao_dich(c, pid, du_lieu.stock, 'ADJUSTMENT',
+                              note='Số dư đầu kỳ khi tạo phụ tùng')
+        return pid
     except sqlite3.IntegrityError as e:
         raise _loi_integrity(e)
 
@@ -103,6 +127,9 @@ def xoa_phu_tung(khoa: int) -> None:
     crud.yeu_cau_co('parts', khoa, 'phụ tùng')
     if crud.co_ban_ghi('repair_order_items', 'part_id = ?', (khoa,)):
         raise SaiQuyTac('Phụ tùng đã dùng trong hạng mục của phiếu nên không thể xoá.'
+                        ' Hãy chuyển sang trạng thái ngừng dùng.')
+    if crud.co_ban_ghi('stock_transactions', 'part_id = ?', (khoa,)):
+        raise SaiQuyTac('Phụ tùng đã phát sinh giao dịch kho nên không thể xoá.'
                         ' Hãy chuyển sang trạng thái ngừng dùng.')
     crud.xoa('parts', khoa)
 
