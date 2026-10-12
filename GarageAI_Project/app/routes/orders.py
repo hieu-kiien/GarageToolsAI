@@ -9,8 +9,9 @@ from fastapi import APIRouter, Form, Request
 from ..core import flash
 from ..core.errors import AppError
 from ..core.pagination import doc_trang
-from ..models import (DoiTrangThaiInput, NhatKyInput, PhanCongInput,
-                      TaoPhieuInput, ThemHangMucInput, ThanhToanInput)
+from ..models import (DoiTrangThaiInput, NghiemThuInput, NhatKyInput,
+                      PhanCongInput, TaoPhieuInput, ThemHangMucInput,
+                      ThanhToanInput, TiepNhanInput)
 from .. import crud
 from ..services import auth as auth_svc
 from ..services import billing, orders
@@ -87,14 +88,21 @@ def chi_tiet_phieu(request: Request, oid: int):
         from ..services.security_matrix import duoc_gan_cong
         duoc = duoc_gan_cong(user, p)
     hd = orders.hoa_don_cua_phieu(oid)
+    from ..core.db import fetch_one
+    tiep_nhan = fetch_one(
+        'SELECT i.*, u.full_name AS nguoi_tiep_nhan'
+        ' FROM intake_records i LEFT JOIN users u ON u.id = i.created_by'
+        ' WHERE i.repair_order_id = ?', (oid,))
     return render(request, 'phieu_chi_tiet.html', {
         'p': p, 'items': orders.hang_muc(oid), 'logs': orders.nhat_ky(oid),
         'hoa_don': hd, 'khoan_thu': billing.khoan_thu(hd['id']) if hd else [],
+        'tiep_nhan': tiep_nhan,
         'co_the_sua': duoc,
         'co_gan_cong': auth_svc.co_the_quyen(user, 'order.assign'),
         'co_lap_hoa_don': auth_svc.co_the_quyen(user, 'invoice.manage'),
         'co_thu_tien': auth_svc.co_the_quyen(user, 'payment.record'),
         'co_doi_trang_thai': auth_svc.co_the_quyen(user, 'order.progress'),
+        'co_nghiem_thu': auth_svc.co_the_quyen(user, 'order.accept'),
         'ktv': crud.lua_chon_ky_thuat_vien(),
         'dich_vu': crud.lua_chon_dich_vu(), 'phu_tung': crud.lua_chon_phu_tung(),
         'lua_chon_trang_thai': orders.CHUYEN_TRANG_THAI.get(p['status'], []),
@@ -176,6 +184,50 @@ async def them_nhat_ky(request: Request, oid: int, note: str = Form('')):
         tb = 'Đã ghi nhật ký.'
     except (LoiForm, AppError) as e:
         tb, loi = '', _loi(e)
+    return _ve(request, '/repair-orders/%d' % oid, loi=loi, thong_bao=tb)
+
+
+# ---------------------------------------------------------------------------
+# Tiếp nhận xe và nghiệm thu
+# ---------------------------------------------------------------------------
+@router.post('/repair-orders/{oid}/intake')
+async def ghi_tiep_nhan(request: Request, oid: int,
+                        odometer_at_intake: str = Form(''),
+                        fuel_level: str = Form('UNKNOWN'),
+                        exterior_condition: str = Form(''),
+                        accessories: str = Form(''),
+                        notes: str = Form('')):
+    user = auth_svc.yeu_cau_quyen(request, 'order.create')
+    if user is None:
+        return _ve(request, '/accounts/login')
+    try:
+        loi = ''
+        orders.ghi_tiep_nhan(oid, du_lieu_form(
+            {'odometer_at_intake': odometer_at_intake, 'fuel_level': fuel_level,
+             'exterior_condition': exterior_condition, 'accessories': accessories,
+             'notes': notes}, TiepNhanInput), user)
+        tb = 'Đã ghi biên bản tiếp nhận.'
+    except (LoiForm, AppError) as e:
+        tb, loi = '', _loi(e)
+    except sqlite3.Error as e:
+        tb, loi = '', 'Không ghi được biên bản: %s' % e
+    return _ve(request, '/repair-orders/%d' % oid, loi=loi, thong_bao=tb)
+
+
+@router.post('/repair-orders/{oid}/accept')
+async def nghiem_thu(request: Request, oid: int, acceptance_note: str = Form('')):
+    user = auth_svc.yeu_cau_quyen(request, 'order.accept')
+    if user is None:
+        return _ve(request, '/accounts/login')
+    try:
+        loi = ''
+        orders.nghiem_thu(oid, du_lieu_form(
+            {'acceptance_note': acceptance_note}, NghiemThuInput), user)
+        tb = 'Đã nghiệm thu xe.'
+    except (LoiForm, AppError) as e:
+        tb, loi = '', _loi(e)
+    except sqlite3.Error as e:
+        tb, loi = '', 'Không nghiệm thu được: %s' % e
     return _ve(request, '/repair-orders/%d' % oid, loi=loi, thong_bao=tb)
 
 

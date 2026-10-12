@@ -21,10 +21,11 @@ from .. import crud
 from ..core.db import (fetch_all, fetch_one, fetch_value, phieu_da_quyet_toan,
                         tong_phieu, transaction)
 from ..core.errors import (AppError, KhongTimThay, LoiKhongMoDuoc, SaiQuyTac,
-                           VuotGioiHan)
+                           VuotGioiHan, XungDdot)
 from ..core.money import utc_now
-from ..models import (DoiTrangThaiInput, NhatKyInput, PhanCongInput,
-                      TaoPhieuInput, ThemHangMucInput)
+from ..models import (DoiTrangThaiInput, NghiemThuInput, NhatKyInput,
+                      PhanCongInput, TaoPhieuInput, ThemHangMucInput,
+                      TiepNhanInput)
 from .security_matrix import CHUYEN_TRANG_THAI, TEN_TRANG_THAI
 
 TRANG_THAI_KHOA_HANG_MUC = {'COMPLETED', 'CANCELLED'}
@@ -312,3 +313,64 @@ def xoa_phieu(phieu_id: int, user) -> None:
                 % {'repair_order_items': 'hạng mục', 'invoices': 'hoá đơn',
                    'repair_logs': 'nhật ký'}[bang])
     crud.xoa('repair_orders', phieu_id)
+
+
+# ---------------------------------------------------------------------------
+# Tiếp nhận xe
+# ---------------------------------------------------------------------------
+def ghi_tiep_nhan(phieu_id: int, du_lieu: TiepNhanInput, user) -> None:
+    """Ghi biên bản tiếp nhận. Chỉ được ghi khi phiếu còn ở trạng thái RECEIVED."""
+    _kiem_tra_quyen_thao_tac(user, phieu_id)
+    phieu = fetch_one('SELECT * FROM repair_orders WHERE id = ?', (phieu_id,))
+    if phieu is None:
+        raise KhongTimThay('Không tìm thấy phiếu sửa chữa.')
+    if phieu['status'] not in ('RECEIVED', 'INSPECTING'):
+        raise SaiQuyTac(
+            'Chỉ ghi biên bản tiếp nhận khi phiếu còn ở trạng thái'
+            ' Đã tiếp nhận hoặc Đang kiểm tra. Hiện tại: %s.'
+            % TEN_TRANG_THAI.get(phieu['status'], phieu['status']))
+    if fetch_one('SELECT id FROM intake_records WHERE repair_order_id = ?',
+                 (phieu_id,)):
+        raise XungDdot('Phiếu này đã có biên bản tiếp nhận.')
+    du = {'repair_order_id': phieu_id,
+          'odometer_at_intake': du_lieu.odometer_at_intake,
+          'fuel_level': du_lieu.fuel_level,
+          'exterior_condition': du_lieu.exterior_condition,
+          'accessories': du_lieu.accessories,
+          'notes': du_lieu.notes,
+          'created_by': user['id']}
+    with transaction() as c:
+        c.execute(
+            'INSERT INTO intake_records'
+            ' (repair_order_id, odometer_at_intake, fuel_level, exterior_condition,'
+            '  accessories, notes, created_by)'
+            ' VALUES (:repair_order_id, :odometer_at_intake, :fuel_level,'
+            '  :exterior_condition, :accessories, :notes, :created_by)', du)
+        # Cập nhật số km của xe nếu biên bản có ghi.
+        if du_lieu.odometer_at_intake is not None:
+            c.execute('UPDATE vehicles SET odometer = ? WHERE id = ?',
+                      (du_lieu.odometer_at_intake, phieu['vehicle_id']))
+        _ghi_nhat_ky(c, phieu_id, user['id'], 'Ghi biên bản tiếp nhận xe.')
+
+
+# ---------------------------------------------------------------------------
+# Nghiệm thu
+# ---------------------------------------------------------------------------
+def nghiem_thu(phieu_id: int, du_lieu: NghiemThuInput, user) -> None:
+    """Nghiệm thu: khách ký nhận xe. Chỉ phiếu COMPLETED mới được nghiệm thu."""
+    phieu = fetch_one('SELECT * FROM repair_orders WHERE id = ?', (phieu_id,))
+    if phieu is None:
+        raise KhongTimThay('Không tìm thấy phiếu sửa chữa.')
+    if phieu['status'] != 'COMPLETED':
+        raise SaiQuyTac(
+            'Chỉ nghiệm thu khi phiếu đã Hoàn thành. Hiện tại: %s.'
+            % TEN_TRANG_THAI.get(phieu['status'], phieu['status']))
+    if phieu['acceptance_at']:
+        raise XungDdot('Phiếu này đã được nghiệm thu.')
+    with transaction() as c:
+        c.execute(
+            'UPDATE repair_orders SET acceptance_note = ?, accepted_by = ?,'
+            ' acceptance_at = datetime(\'now\') WHERE id = ?',
+            (du_lieu.acceptance_note, user['id'], phieu_id))
+        _ghi_nhat_ky(c, phieu_id, user['id'],
+                     'Nghiệm thu: khách ký nhận xe.')

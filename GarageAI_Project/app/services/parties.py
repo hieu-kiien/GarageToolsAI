@@ -84,6 +84,7 @@ def danh_sach_xe(trang, *, q: str = '', khach: int | None = None) -> tuple[list[
         tham_so.append(khach)
     return crud.truy_van_danh_sach(
         'vehicles', cot=('v.id', 'v.plate', 'v.brand', 'v.model', 'v.year',
+                         'v.vin', 'v.color', 'v.odometer',
                          'v.customer_id', 'c.name AS khach', 'v.is_active'),
         dieu_kien=' AND '.join(dieu_kien), tham_so=tham_so, trang=trang)
 
@@ -95,8 +96,14 @@ def luu_xe(du_lieu: PhuongTienInput) -> int:
                        (du_lieu.plate, du_lieu.id or 0)):
         raise XungDdot('Biển số %s đã tồn tại trong hệ thống.' % du_lieu.plate,
                        truong='plate')
+    if du_lieu.vin and crud.co_ban_ghi('vehicles', 'vin = ? AND id <> ?',
+                                       (du_lieu.vin, du_lieu.id or 0)):
+        raise XungDdot('VIN %s đã tồn tại trong hệ thống.' % du_lieu.vin,
+                       truong='vin')
     du = {'plate': du_lieu.plate, 'brand': du_lieu.brand, 'model': du_lieu.model,
-          'year': du_lieu.year, 'customer_id': du_lieu.customer_id,
+          'year': du_lieu.year, 'vin': du_lieu.vin, 'color': du_lieu.color,
+          'odometer': du_lieu.odometer,
+          'customer_id': du_lieu.customer_id,
           'is_active': 1 if du_lieu.is_active else 0}
     try:
         if du_lieu.id:

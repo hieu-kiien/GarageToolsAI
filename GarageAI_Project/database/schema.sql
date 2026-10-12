@@ -72,6 +72,9 @@ CREATE TABLE vehicles (
     brand       TEXT    NOT NULL,
     model       TEXT    NOT NULL,
     year        INTEGER CHECK (year IS NULL OR year BETWEEN 1900 AND 2100),
+    vin         TEXT    UNIQUE,               -- số khung / VIN, NULL nếu chưa biết
+    color       TEXT,
+    odometer    INTEGER CHECK (odometer IS NULL OR odometer >= 0),  -- km hiện tại
     is_active   INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1)),
     created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
 );
@@ -144,7 +147,13 @@ CREATE TABLE repair_orders (
         CHECK (status IN ('RECEIVED', 'INSPECTING', 'ESTIMATING',
                           'REPAIRING', 'COMPLETED', 'CANCELLED')),
     technical_notes  TEXT,
-    created_at       TEXT    NOT NULL DEFAULT (datetime('now'))
+    -- Nghiệm thu: ghi lại khi khách hàng ký nhận xe sau sửa chữa.
+    acceptance_note  TEXT,
+    accepted_by      INTEGER          REFERENCES users(id)    ON DELETE RESTRICT,
+    acceptance_at    TEXT,
+    created_at       TEXT    NOT NULL DEFAULT (datetime('now')),
+    -- Nếu đã nghiệm thu thì phải có cả người nghiệm thu và thời điểm.
+    CHECK (acceptance_at IS NULL OR accepted_by IS NOT NULL)
 );
 CREATE INDEX idx_repair_orders_vehicle    ON repair_orders(vehicle_id);
 CREATE INDEX idx_repair_orders_technician ON repair_orders(technician_id);
@@ -190,6 +199,26 @@ CREATE TABLE repair_logs (
     created_at       TEXT    NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX idx_repair_logs_order ON repair_logs(repair_order_id);
+
+-- =============================================================================
+-- 9b. intake_records - biên bản tiếp nhận xe
+--     Ghi lại tình trạng xe tại thời điểm khách giao xe cho garage:
+--     số km, mức nhiên liệu, ngoại thất, phụ kiện kèm theo…
+--     Mỗi phiếu sửa chữa chỉ có MỘT biên bản tiếp nhận (UNIQUE repair_order_id).
+-- =============================================================================
+CREATE TABLE intake_records (
+    id                INTEGER PRIMARY KEY AUTOINCREMENT,
+    repair_order_id   INTEGER NOT NULL UNIQUE REFERENCES repair_orders(id) ON DELETE RESTRICT,
+    odometer_at_intake INTEGER CHECK (odometer_at_intake IS NULL OR odometer_at_intake >= 0),
+    fuel_level        TEXT    NOT NULL DEFAULT 'UNKNOWN'
+        CHECK (fuel_level IN ('EMPTY', 'QUARTER', 'HALF', 'THREE_QUARTER', 'FULL', 'UNKNOWN')),
+    exterior_condition TEXT,                  -- mô tả ngoại thất: trầy xước, móp…
+    accessories       TEXT,                   -- phụ kiện kèm theo: chìa khoá, camera…
+    notes             TEXT,
+    created_by        INTEGER          REFERENCES users(id)    ON DELETE RESTRICT,
+    created_at        TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX idx_intake_order ON intake_records(repair_order_id);
 
 -- =============================================================================
 -- 10. invoices - hóa đơn của phiếu

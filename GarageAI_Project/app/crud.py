@@ -20,7 +20,8 @@ from .core.pagination import Trang, cot_sap_xep, escape_like, huong_sap_xep
 #: Thứ tự cột được phép sắp xếp cho từng bảng.
 SAP_XEP_CHO_PHEP: dict[str, list[str]] = {
     'customers': ['id', 'name', 'phone', 'created_at'],
-    'vehicles': ['id', 'plate', 'brand', 'model', 'year', 'created_at'],
+    'vehicles': ['id', 'plate', 'brand', 'model', 'year', 'vin', 'color',
+                 'odometer', 'created_at'],
     'appointments': ['id', 'scheduled_at', 'status', 'created_at'],
     'services': ['id', 'name', 'price', 'created_at'],
     'parts': ['id', 'name', 'price', 'stock', 'created_at'],
@@ -30,6 +31,7 @@ SAP_XEP_CHO_PHEP: dict[str, list[str]] = {
     'ai_results': ['id', 'kind', 'review_status', 'created_at'],
     'payments': ['id', 'amount', 'method', 'paid_at'],
     'repair_order_items': ['id', 'qty', 'unit_price'],
+    'intake_records': ['id', 'repair_order_id', 'created_at'],
     'shop_products': ['id', 'name', 'price', 'stock', 'created_at'],
 }
 
@@ -45,6 +47,8 @@ FROM_MAC_DINH: dict[str, str] = {
     'appointments': ('appointments a JOIN customers c ON c.id = a.customer_id'
                      ' JOIN vehicles v ON v.id = a.vehicle_id'),
     'repair_orders': ('repair_orders r JOIN vehicles v ON v.id = r.vehicle_id'),
+    'intake_records': ('intake_records i JOIN repair_orders r ON r.id = i.repair_order_id'
+                       ' JOIN vehicles v ON v.id = r.vehicle_id'),
     'invoices': ('invoices i JOIN repair_orders r ON r.id = i.repair_order_id'
                  ' JOIN vehicles v ON v.id = r.vehicle_id'
                  ' JOIN customers c ON c.id = v.customer_id'),

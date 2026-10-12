@@ -64,7 +64,13 @@ class TestSaoLuuKhoiPhuc(unittest.TestCase):
             "SELECT COUNT(*) FROM sqlite_master WHERE type='table'"
             " AND name NOT LIKE 'sqlite_%'").fetchone()[0]
         conn.close()
-        self.assertEqual(n, 16, 'tệp sao lưu phải chứa đủ 16 bảng')
+        # Số bảng lấy theo CSDL gốc để không phải hardcode khi thêm bảng mới.
+        goc = sqlite3.connect(self.db)
+        goc_n = goc.execute(
+            "SELECT COUNT(*) FROM sqlite_master WHERE type='table'"
+            " AND name NOT LIKE 'sqlite_%'").fetchone()[0]
+        goc.close()
+        self.assertEqual(n, goc_n, 'tệp sao lưu phải chứa đủ số bảng của CSDL gốc')
 
     def test_03_khoi_phuc_duoc_du_lieu(self):
         shutil.copy2(self.db, self.bak)

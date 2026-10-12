@@ -157,6 +157,9 @@ def form_xe_moi(request: Request):
                    ('brand', 'Hãng xe', 'text', True),
                    ('model', 'Dòng xe', 'text', True),
                    ('year', 'Năm sản xuất', 'int', False),
+                   ('vin', 'VIN (số khung, 17 ký tự)', 'text', False),
+                   ('color', 'Màu sơn', 'text', False),
+                   ('odometer', 'Số km hiện tại', 'int', False),
                    ('customer_id', 'Khách hàng', 'select', True)],
         'lua_chon': {'customer_id': crud.lua_chon_khach()}, 'loi': {}})
 
@@ -175,6 +178,9 @@ def form_xe_sua(request: Request, vid: int):
                    ('brand', 'Hãng xe', 'text', True),
                    ('model', 'Dòng xe', 'text', True),
                    ('year', 'Năm sản xuất', 'int', False),
+                   ('vin', 'VIN (số khung, 17 ký tự)', 'text', False),
+                   ('color', 'Màu sơn', 'text', False),
+                   ('odometer', 'Số km hiện tại', 'int', False),
                    ('customer_id', 'Khách hàng', 'select', True)],
         'lua_chon': {'customer_id': crud.lua_chon_khach()}, 'loi': {}})
 

@@ -2,10 +2,10 @@
 
 | | |
 |---|---|
-| Ngày chạy | 2026-10-11 19:50 |
+| Ngày chạy | 2026-10-12 12:00 |
 | Môi trường | Python 3.13.14, SQLite 3.50.4 |
-| Tổng số ca | **106** |
-| Kết quả | **106 đạt / 0 lỗi** |
+| Tổng số ca | **119** |
+| Kết quả | **119 đạt / 0 lỗi** |
 
 ---
 
@@ -33,7 +33,7 @@ chạy chứ không kiểm tra bản sao.
 
 - Tệp: `tests/test_backend.py`
 - Phạm vi: Gọi thật các đường dẫn HTTP trên một CSDL tạm: đăng nhập, phân quyền, CSRF, kiểm tra đầu vào, tiền và tồn kho (kể cả chạy đồng thời), thông báo, phân trang, xoá dữ liệu và AI.
-- Kết quả: 63 ca, 63 đạt, 0 lỗi
+- Kết quả: 76 ca, 76 đạt, 0 lỗi
 
 ## 2. Nhóm ca kiểm thử ràng buộc cơ sở dữ liệu
 
@@ -53,7 +53,7 @@ chạy chứ không kiểm tra bản sao.
 | Nhóm | Nội dung kiểm tra |
 |---|---|
 | Tạo bản sao | Sao lưu tạo được tệp khác rỗng và mở được |
-| Toàn vẹn bản sao | Bản sao chứa đủ 16 bảng |
+| Toàn vẹn bản sao | Bản sao chứa đủ số bảng của CSDL gốc |
 | Khôi phục | Dữ liệu trở về đúng trạng thái trước khi sao lưu |
 | Kiểm tra sau khôi phục | `integrity_check` đạt và dữ liệu liên kết vẫn nhất quán |
 | Ghi chưa commit | Sao lưu giữa lúc đang ghi không làm hỏng tệp, dữ liệu chưa commit không bị lọt |

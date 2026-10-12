@@ -44,6 +44,7 @@ PERMISSIONS: dict[str, set[str]] = {
     'order.progress':    KTE,
     'order.assign':      {'MANAGER', 'RECEPTIONIST'},
     'order.item':        KTE,
+    'order.accept':      LE_TAN_VA_QUAN_LY,
     'invoice.manage':    QUAN_LY,
     'payment.record':    {'MANAGER', 'CASHIER'},
     'user.edit':         QUAN_LY,

@@ -458,8 +458,9 @@ class TestQuyTacNghiepVu(CoSoDichChung):
     def test_khong_tao_phieu_trung_cho_xe_dang_co_phieu(self):
         self.dang_nhap('le_tan')
         truoc = len(self.q('SELECT id FROM repair_orders'))
+        # Xe 11 đang có phiếu 12 ở trạng thái RECEIVED.
         self.post('/repair-orders/create',
-                  {'vehicle_id': '12', 'technician_id': '', 'technical_notes': 'x'})
+                  {'vehicle_id': '11', 'technician_id': '', 'technical_notes': 'x'})
         self.assertEqual(len(self.q('SELECT id FROM repair_orders')), truoc)
 
     def test_hang_muc_phai_co_dung_mot_trong_hai(self):
@@ -748,6 +749,133 @@ class TestQuyenBieuMau(CoSoDichChung):
         for url, _q in self.FORMS:
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200, url)
+
+
+# ===========================================================================
+class TestXeMoiTruong(CoSoDichChung):
+    """VIN / màu sơn / số km — thêm mới và kiểm tra hợp lệ."""
+
+    def test_tao_xe_co_vin_mau_odo(self):
+        r = self.post('/vehicles/save', {
+            'plate': '29B-99999', 'brand': 'Toyota', 'model': 'Corolla',
+            'year': '2022', 'vin': 'JTDBR32E120012345', 'color': 'Trắng',
+            'odometer': '15000', 'customer_id': '1'})
+        self.assertEqual(r.status_code, 303)
+        xe = self.q1("SELECT * FROM vehicles WHERE plate = '29B-99999'")
+        self.assertEqual(xe['vin'], 'JTDBR32E120012345')
+        self.assertEqual(xe['color'], 'Trắng')
+        self.assertEqual(xe['odometer'], 15000)
+
+    def test_vin_trung_bi_chan(self):
+        self.post('/vehicles/save', {
+            'plate': '29B-88888', 'brand': 'Honda', 'model': 'City',
+            'year': '2021', 'vin': 'MR0FR31E120012345', 'customer_id': '1'})
+        r = self.post('/vehicles/save', {
+            'plate': '29B-77777', 'brand': 'Mazda', 'model': '3',
+            'year': '2020', 'vin': 'MR0FR31E120012345', 'customer_id': '1'})
+        self.assertIn('VIN', self.flash(r) or '')
+
+    def test_vin_sai_dinh_dang_bi_chan(self):
+        r = self.post('/vehicles/save', {
+            'plate': '29B-66666', 'brand': 'Ford', 'model': 'Ranger',
+            'year': '2023', 'vin': 'AB', 'customer_id': '1'})
+        self.assertIn('VIN', self.flash(r) or '')
+
+    def test_odo_am_bi_chan(self):
+        r = self.post('/vehicles/save', {
+            'plate': '29B-55555', 'brand': 'Kia', 'model': 'Morning',
+            'year': '2019', 'odometer': '-5', 'customer_id': '1'})
+        self.assertIn('km', self.flash(r) or '')
+
+
+# ===========================================================================
+class TestTiepNhanNghiemThu(CoSoDichChung):
+    """Biên bản tiếp nhận và nghiệm thu xe."""
+
+    def _phieu_moi(self):
+        """Tạo phiếu RECEIVED cho xe 1 (id=1 trong seed)."""
+        self.post('/repair-orders/create', {'vehicle_id': '1'})
+        return self.q1("SELECT id FROM repair_orders ORDER BY id DESC LIMIT 1")['id']
+
+    def test_tiep_nhan_thanh_cong(self):
+        oid = self._phieu_moi()
+        r = self.post('/repair-orders/%d/intake' % oid, {
+            'odometer_at_intake': '50000', 'fuel_level': 'HALF',
+            'exterior_condition': 'Trầy nhẹ cản trước',
+            'accessories': '2 chìa khoá, camera hành trình',
+            'notes': 'Khách gửi xe qua đêm'})
+        self.assertEqual(r.status_code, 303)
+        self.assertIn('biên bản tiếp nhận', self.flash(r) or '')
+        rec = self.q1('SELECT * FROM intake_records WHERE repair_order_id = ?', (oid,))
+        self.assertIsNotNone(rec)
+        self.assertEqual(rec['odometer_at_intake'], 50000)
+        self.assertEqual(rec['fuel_level'], 'HALF')
+
+    def test_tiep_nhan_cap_nhat_odo_xe(self):
+        oid = self._phieu_moi()
+        self.post('/repair-orders/%d/intake' % oid,
+                  {'odometer_at_intake': '62000', 'fuel_level': 'FULL'})
+        xe = self.q1('SELECT odometer FROM vehicles WHERE id = 1')
+        self.assertEqual(xe['odometer'], 62000)
+
+    def test_tiep_nhan_lan_hai_bi_chan(self):
+        oid = self._phieu_moi()
+        self.post('/repair-orders/%d/intake' % oid, {'odometer_at_intake': '1000'})
+        r = self.post('/repair-orders/%d/intake' % oid, {'odometer_at_intake': '2000'})
+        self.assertIn('đã có biên bản', self.flash(r) or '')
+
+    def test_tiep_nhan_khi_da_sua_xong_bi_chan(self):
+        oid = self._phieu_moi()
+        c = sqlite3.connect(self.db)
+        c.execute("UPDATE repair_orders SET status = 'COMPLETED' WHERE id = ?", (oid,))
+        c.commit(); c.close()
+        r = self.post('/repair-orders/%d/intake' % oid, {'odometer_at_intake': '1000'})
+        self.assertIn('Chỉ ghi biên bản', self.flash(r) or '')
+
+    def test_nghiem_thu_thanh_cong(self):
+        oid = self._phieu_moi()
+        c = sqlite3.connect(self.db)
+        c.execute("UPDATE repair_orders SET status = 'COMPLETED' WHERE id = ?", (oid,))
+        c.commit(); c.close()
+        r = self.post('/repair-orders/%d/accept' % oid,
+                      {'acceptance_note': 'Khách hài lòng'})
+        self.assertEqual(r.status_code, 303)
+        self.assertIn('nghiệm thu', self.flash(r) or '')
+        p = self.q1('SELECT * FROM repair_orders WHERE id = ?', (oid,))
+        self.assertIsNotNone(p['acceptance_at'])
+        self.assertEqual(p['acceptance_note'], 'Khách hài lòng')
+
+    def test_nghiem_thu_lan_hai_bi_chan(self):
+        oid = self._phieu_moi()
+        c = sqlite3.connect(self.db)
+        c.execute("UPDATE repair_orders SET status = 'COMPLETED' WHERE id = ?", (oid,))
+        c.commit(); c.close()
+        self.post('/repair-orders/%d/accept' % oid, {'acceptance_note': 'OK'})
+        r = self.post('/repair-orders/%d/accept' % oid, {'acceptance_note': 'OK nữa'})
+        self.assertIn('đã được nghiệm thu', self.flash(r) or '')
+
+    def test_nghiem_thu_khi_chua_hoan_thanh_bi_chan(self):
+        oid = self._phieu_moi()
+        r = self.post('/repair-orders/%d/accept' % oid, {'acceptance_note': 'x'})
+        self.assertIn('Chỉ nghiệm thu', self.flash(r) or '')
+
+    def test_le_tan_du_quyen_nghiem_thu(self):
+        self.dang_nhap('le_tan')
+        oid = self._phieu_moi()
+        c = sqlite3.connect(self.db)
+        c.execute("UPDATE repair_orders SET status = 'COMPLETED' WHERE id = ?", (oid,))
+        c.commit(); c.close()
+        r = self.post('/repair-orders/%d/accept' % oid, {'acceptance_note': 'OK'})
+        self.assertEqual(r.status_code, 303)
+
+    def test_thu_ngan_khong_nghiem_thu(self):
+        self.dang_nhap('thu_ngan')
+        oid = self._phieu_moi()
+        c = sqlite3.connect(self.db)
+        c.execute("UPDATE repair_orders SET status = 'COMPLETED' WHERE id = ?", (oid,))
+        c.commit(); c.close()
+        r = self.post('/repair-orders/%d/accept' % oid, {'acceptance_note': 'x'})
+        self.assertEqual(r.status_code, 403)
 
 
 if __name__ == '__main__':

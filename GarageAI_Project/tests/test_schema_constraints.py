@@ -294,10 +294,21 @@ class TestDuLieuMau(unittest.TestCase):
             "SELECT COUNT(*) FROM ai_results WHERE review_status = 'PENDING'").fetchone()[0]
         self.assertGreaterEqual(n, 3, 'cần có kết quả AI ở trạng thái chờ duyệt')
 
-    def test_khac_biet_bao_16_bang(self):
+    def test_khac_biet_bao_so_bang_theo_schema(self):
+        """Số bảng trong CSDL phải khớp số CREATE TABLE trong schema.sql.
+
+        Đặc tả ban đầu quy định 16 bảng; các phần bổ sung (biên bản tiếp
+        nhận, báo giá, kho, bảo hành…) sẽ làm tăng số này theo từng giai đoạn.
+        """
+        import re
+        with open(SCHEMA, encoding='utf-8') as fh:
+            n_schema = len(re.findall(r'CREATE TABLE ', fh.read()))
         n = self.db.execute(
             "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'").fetchone()[0]
-        self.assertEqual(n, 16, 'đặc tả mục 4.2 quy định 16 bảng')
+        self.assertEqual(n, n_schema,
+                         'CSDL có %d bảng nhưng schema.sql khai báo %d'
+                         % (n, n_schema))
+        self.assertGreaterEqual(n, 16, 'ít nhất phải có 16 bảng theo đặc tả')
 
 
 class TestChiMuc(unittest.TestCase):

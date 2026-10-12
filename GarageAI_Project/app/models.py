@@ -212,6 +212,9 @@ class PhuongTienInput(BaseModel):
     brand: str = Field(min_length=1, max_length=60)
     model: str = Field(min_length=1, max_length=60)
     year: Any = None
+    vin: str | None = Field(default=None, max_length=17)
+    color: str | None = Field(default=None, max_length=40)
+    odometer: Any = None
     customer_id: int = Field(ge=1)
     is_active: bool = True
 
@@ -239,6 +242,35 @@ class PhuongTienInput(BaseModel):
         if not 1900 <= y <= 2100:
             raise ValueError('Năm sản xuất phải nằm trong khoảng 1900 - 2100')
         return y
+
+    @field_validator('vin')
+    @classmethod
+    def _vin(cls, v):
+        if v is None:
+            return None
+        v = v.strip().upper()
+        if not v:
+            return None
+        if len(v) < 8 or len(v) > 17:
+            raise ValueError('VIN phải dài 8–17 ký tự')
+        if not re.fullmatch(r'[A-HJ-NPR-Z0-9]+', v):
+            raise ValueError('VIN chỉ gồm chữ hoa A–Z (trừ I, O, Q) và số 0–9')
+        return v
+
+    @field_validator('odometer')
+    @classmethod
+    def _odo(cls, v):
+        if v is None or str(v).strip() == '':
+            return None
+        try:
+            n = int(str(v).strip())
+        except ValueError:
+            raise ValueError('Số km phải là số nguyên')
+        if n < 0:
+            raise ValueError('Số km không được âm')
+        if n > 2_000_000:
+            raise ValueError('Số km vượt giá trị hợp lý')
+        return n
 
 
 # ---------------------------------------------------------------------------
@@ -281,6 +313,42 @@ class TaoPhieuInput(BaseModel):
     technician_id: int | None = None
     technical_notes: str | None = Field(default=None, max_length=1000)
 
+    @field_validator('technician_id', mode='before')
+    @classmethod
+    def _ktv(cls, v):
+        return None if v is None or str(v).strip() == '' else int(str(v).strip())
+
+
+class TiepNhanInput(BaseModel):
+    """Biên bản tiếp nhận xe tại thời điểm khách giao xe."""
+    model_config = CoBan
+    odometer_at_intake: Any = None
+    fuel_level: Literal['EMPTY', 'QUARTER', 'HALF', 'THREE_QUARTER', 'FULL', 'UNKNOWN'] = 'UNKNOWN'
+    exterior_condition: str | None = Field(default=None, max_length=1000)
+    accessories: str | None = Field(default=None, max_length=500)
+    notes: str | None = Field(default=None, max_length=1000)
+
+    @field_validator('odometer_at_intake')
+    @classmethod
+    def _odo(cls, v):
+        if v is None or str(v).strip() == '':
+            return None
+        try:
+            n = int(str(v).strip())
+        except ValueError:
+            raise ValueError('Số km phải là số nguyên')
+        if n < 0:
+            raise ValueError('Số km không được âm')
+        if n > 2_000_000:
+            raise ValueError('Số km vượt giá trị hợp lý')
+        return n
+
+
+class NghiemThuInput(BaseModel):
+    """Nghiệm thu: khách ký nhận xe sau khi sửa xong."""
+    model_config = CoBan
+    acceptance_note: str | None = Field(default=None, max_length=1000)
+
 
 class ThemHangMucInput(BaseModel):
     model_config = CoBan
@@ -308,7 +376,7 @@ class PhanCongInput(BaseModel):
     model_config = CoBan
     technician_id: int | None = None
 
-    @field_validator('technician_id')
+    @field_validator('technician_id', mode='before')
     @classmethod
     def _ktv(cls, v):
         return None if v is None or str(v).strip() == '' else int(str(v).strip())
