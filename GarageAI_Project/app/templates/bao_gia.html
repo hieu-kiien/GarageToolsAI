@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block tieu_de %}Báo giá{% endblock %}
+{% block noi_dung %}
+<h1>Báo giá chính thức</h1>
+<p class="mo-ta">Tổng {{ tong_so_ban_ghi }} báo giá · trang {{ trang.so_trang }}/{{ tong_trang }}</p>
+
+<form class="bo-loc" method="get" action="/quotations">
+  <label>Tìm kiếm<input type="text" name="q" value="{{ q }}" placeholder="Biển số hoặc số báo giá"></label>
+  <label>Trạng thái<select name="trang_thai">
+    <option value="">— Tất cả —</option>
+    {% for t in trang_thai_list %}<option value="{{ t }}" {% if trang_thai == t %}selected{% endif %}>{{ ten_trang_thai(t) }}</option>{% endfor %}
+  </select></label>
+  <button type="submit" class="nut nut-phu">Lọc</button>
+</form>
+
+<table class="bang">
+<thead><tr><th scope="col">#</th><th scope="col">Phiếu #</th><th scope="col">Biển số</th>
+<th scope="col">Trạng thái</th><th scope="col">Tổng</th><th scope="col">Hiệu lực đến</th>
+<th scope="col">Tạo lúc</th><th scope="col">Ghi chú</th></tr></thead>
+<tbody>
+{% for d in dong %}
+<tr><td><a href="/quotations/{{ d.id }}">#{{ d.id }}</a></td>
+<td><a href="/repair-orders/{{ d.repair_order_id }}">#{{ d.repair_order_id }}</a></td>
+<td>{{ d.plate }}</td>
+<td><span class="the-nhan tt-{{ d.status }}">{{ ten_trang_thai(d.status) }}</span></td>
+<td>{{ format_tien(d.total) }} đ</td>
+<td>{{ d.valid_until or '—' }}</td>
+<td>{{ format_ngay(d.created_at) }}</td>
+<td>{{ d.note or '—' }}</td></tr>
+{% else %}<tr><td colspan="8" class="trong">Chưa có báo giá nào.</td></tr>{% endfor %}
+</tbody>
+</table>
+
+{% if co_so_trang %}<nav class="phan-trang" aria-label="Phân trang">
+  {% if co_trang_truoc %}<a href="{{ duong_dan_trang(duong_dan_hien_tai, trang.so_trang - 1, trang.moi_trang) }}">‹ Trước</a>{% endif %}
+  <span>Trang {{ trang.so_trang }} / {{ tong_trang }}</span>
+  {% if co_trang_sau %}<a href="{{ duong_dan_trang(duong_dan_hien_tai, trang.so_trang + 1, trang.moi_trang) }}">Sau ›</a>{% endif %}
+</nav>{% endif %}
+{% endblock %}

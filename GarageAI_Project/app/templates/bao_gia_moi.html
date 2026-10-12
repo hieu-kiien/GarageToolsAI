@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block tieu_de %}Tạo báo giá mới{% endblock %}
+{% block noi_dung %}
+<h1>Tạo báo giá nháp cho phiếu #{{ order_id }}</h1>
+<form class="bieu-mau" method="post" action="/quotations/create" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <input type="hidden" name="repair_order_id" value="{{ order_id }}">
+  <label class="truong"><span>Ngày hiệu lực đến (YYYY-MM-DD, bỏ trống = không giới hạn)</span>
+    <input type="text" name="valid_until" maxlength="10" placeholder="2026-12-31"></label>
+  <label class="truong"><span>Ghi chú cho khách</span>
+    <input type="text" name="note" maxlength="1000"></label>
+  <div class="hanh-dong">
+    <button type="submit" class="nut">Tạo báo giá nháp</button>
+    <a class="nut nut-phu" href="/repair-orders/{{ order_id }}">Quay lại phiếu</a>
+  </div>
+</form>
+{% endblock %}

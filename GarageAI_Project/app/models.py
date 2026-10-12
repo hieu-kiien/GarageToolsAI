@@ -350,6 +350,51 @@ class NghiemThuInput(BaseModel):
     acceptance_note: str | None = Field(default=None, max_length=1000)
 
 
+# ---------------------------------------------------------------------------
+# Báo giá chính thức
+# ---------------------------------------------------------------------------
+class TaoBaoGiaInput(BaseModel):
+    model_config = CoBan
+    repair_order_id: int = Field(ge=1)
+    note: str | None = Field(default=None, max_length=1000)
+    valid_until: str | None = Field(default=None, max_length=10)
+
+    @field_validator('valid_until')
+    @classmethod
+    def _ngay(cls, v):
+        if v is None or str(v).strip() == '':
+            return None
+        import datetime as dt
+        s = str(v).strip()
+        try:
+            dt.datetime.strptime(s, '%Y-%m-%d')
+        except ValueError:
+            raise ValueError('Ngày hiệu lực phải có dạng YYYY-MM-DD')
+        return s
+
+
+class HangMucBaoGiaInput(BaseModel):
+    model_config = CoBan
+    loai: Literal['dich_vu', 'phu_tung']
+    ma: int = Field(ge=1)
+    qty: Any = 1
+
+    @field_validator('qty')
+    @classmethod
+    def _so(cls, v) -> int:
+        n = _chuan_hoa_so(v, 'Số lượng')
+        if n < 1:
+            raise ValueError('Số lượng phải lớn hơn 0')
+        if n > 9999:
+            raise ValueError('Số lượng quá lớn')
+        return n
+
+
+class DuyetBaoGiaInput(BaseModel):
+    model_config = CoBan
+    quyet_dinh: Literal['APPROVED', 'REJECTED']
+
+
 class ThemHangMucInput(BaseModel):
     model_config = CoBan
     loai: Literal['dich_vu', 'phu_tung']

@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block tieu_de %}Báo giá #{{ bg.id }}{% endblock %}
+{% block noi_dung %}
+<h1>Báo giá số {{ bg.id }}</h1>
+<p class="mo-ta">
+  Phiếu <a href="/repair-orders/{{ bg.repair_order_id }}">#{{ bg.repair_order_id }}</a> ·
+  Xe {{ bg.plate }} — {{ bg.brand }} {{ bg.model }} ·
+  Khách: {{ bg.khach }} ·
+  <span class="the-nhan tt-{{ bg.status }}">{{ ten_trang_thai(bg.status) }}</span> ·
+  Tạo {{ format_ngay(bg.created_at) }}{% if bg.valid_until %} · hiệu lực đến {{ bg.valid_until }}{% endif %}
+  {% if bg.note %} · {{ bg.note }}{% endif %}
+</p>
+
+<h2>Hạng mục báo giá</h2>
+<table class="bang">
+<thead><tr><th scope="col">#</th><th scope="col">Hạng mục</th><th scope="col">Loại</th>
+<th scope="col">SL</th><th scope="col">Đơn giá đã chốt</th><th scope="col">Thành tiền</th>
+{% if co_sua %}<th scope="col">Thao tác</th>{% endif %}</tr></thead>
+<tbody>
+{% for i in bg.hang_muc %}
+<tr><td>{{ i.id }}</td><td>{{ i.ten }}</td>
+<td>{{ 'Dịch vụ' if i.service_id else 'Phụ tùng' }}</td>
+<td>{{ i.qty }}</td><td>{{ format_tien(i.unit_price) }} đ</td>
+<td>{{ format_tien(i.thanh_tien) }} đ</td>
+{% if co_sua %}<td>
+<form method="post" action="/quotations/{{ bg.id }}/items/{{ i.id }}/remove" class="truc-tuyen">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<button class="nut nut-nho nut-do" type="submit">Gỡ</button></form></td>{% endif %}</tr>
+{% else %}<tr><td colspan="7" class="trong">Chưa có hạng mục.</td></tr>{% endfor %}
+</tbody>
+<tfoot><tr><th scope="row" colspan="5" class="can-phai">Tổng báo giá (backend tính)</th>
+<th>{{ format_tien(bg.tong) }} đ</th>{% if co_sua %}<th></th>{% endif %}</tr></tfoot>
+</table>
+
+{% if co_sua %}
+<form class="bo-loc" method="post" action="/quotations/{{ bg.id }}/items">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <label>Loại<select name="loai"><option value="dich_vu">Dịch vụ</option><option value="phu_tung">Phụ tùng</option></select></label>
+  <label>Danh mục<select name="ma" required>
+    <optgroup label="Dịch vụ">{% for d in dich_vu %}<option value="{{ d.id }}">{{ d.name }} — {{ format_tien(d.price) }} đ</option>{% endfor %}</optgroup>
+    <optgroup label="Phụ tùng">{% for t in phu_tung %}<option value="{{ t.id }}">{{ t.name }} — {{ format_tien(t.price) }} đ (còn {{ t.stock }})</option>{% endfor %}</optgroup>
+  </select></label>
+  <label>Số lượng<input type="number" name="qty" value="1" min="1" required></label>
+  <button type="submit" class="nut">Thêm hạng mục</button>
+</form>
+{% endif %}
+
+<div class="hanh-dong">
+{% if co_gui %}
+<form method="post" action="/quotations/{{ bg.id }}/send" class="truc-tuyen">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <button class="nut" type="submit">Gửi cho khách</button></form>
+{% endif %}
+{% if co_duyet %}
+<form method="post" action="/quotations/{{ bg.id }}/review" class="truc-tuyen">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <input type="hidden" name="quyet_dinh" value="APPROVED">
+  <button class="nut" type="submit">Khách đồng ý — Duyệt</button></form>
+<form method="post" action="/quotations/{{ bg.id }}/review" class="truc-tuyen">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <input type="hidden" name="quyet_dinh" value="REJECTED">
+  <button class="nut nut-do" type="submit">Từ chối</button></form>
+{% endif %}
+{% if co_huy %}
+<form method="post" action="/quotations/{{ bg.id }}/cancel" class="truc-tuyen">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <button class="nut nut-do" type="submit">Huỷ báo giá</button></form>
+{% endif %}
+{% if co_ap_dung %}
+<form method="post" action="/quotations/{{ bg.id }}/apply" class="truc-tuyen">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <button class="nut" type="submit">Áp dụng vào phiếu sửa chữa</button></form>
+{% endif %}
+<a class="nut nut-phu" href="/repair-orders/{{ bg.repair_order_id }}">Xem phiếu</a>
+</div>
+{% endblock %}

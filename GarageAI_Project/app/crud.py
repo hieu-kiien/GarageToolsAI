@@ -32,6 +32,8 @@ SAP_XEP_CHO_PHEP: dict[str, list[str]] = {
     'payments': ['id', 'amount', 'method', 'paid_at'],
     'repair_order_items': ['id', 'qty', 'unit_price'],
     'intake_records': ['id', 'repair_order_id', 'created_at'],
+    'quotations': ['id', 'status', 'total', 'created_at'],
+    'quotation_items': ['id', 'qty', 'unit_price'],
     'shop_products': ['id', 'name', 'price', 'stock', 'created_at'],
 }
 
@@ -49,6 +51,8 @@ FROM_MAC_DINH: dict[str, str] = {
     'repair_orders': ('repair_orders r JOIN vehicles v ON v.id = r.vehicle_id'),
     'intake_records': ('intake_records i JOIN repair_orders r ON r.id = i.repair_order_id'
                        ' JOIN vehicles v ON v.id = r.vehicle_id'),
+    'quotations': ('quotations q JOIN repair_orders r ON r.id = q.repair_order_id'
+                   ' JOIN vehicles v ON v.id = r.vehicle_id'),
     'invoices': ('invoices i JOIN repair_orders r ON r.id = i.repair_order_id'
                  ' JOIN vehicles v ON v.id = r.vehicle_id'
                  ' JOIN customers c ON c.id = v.customer_id'),

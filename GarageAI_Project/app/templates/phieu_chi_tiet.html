@@ -69,6 +69,7 @@
   <button class="nut" type="submit">Nghiệm thu</button></form>
 {% endif %}
 {% if quyen['ai.quote'] %}<a class="nut nut-phu" href="/ai">Tạo báo giá nháp bằng AI</a>{% endif %}
+{% if quyen['quote.manage'] %}<a class="nut nut-phu" href="/quotations/new?order={{ p.id }}">Lập báo giá chính thức</a>{% endif %}
 </div>
 
 <h2>Biên bản tiếp nhận xe</h2>

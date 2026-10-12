@@ -878,5 +878,139 @@ class TestTiepNhanNghiemThu(CoSoDichChung):
         self.assertEqual(r.status_code, 403)
 
 
+# ===========================================================================
+class TestBaoGia(CoSoDichChung):
+    """Báo giá chính thức: tạo, hạng mục, gửi, duyệt, áp dụng."""
+
+    def _bg_moi(self, phieu_id=10):
+        """Phiếu 10 ở REPAIRING trong seed — phù hợp báo giá."""
+        self.post('/quotations/create',
+                  {'repair_order_id': str(phieu_id), 'note': 'Báo giá test'})
+        bg = self.q1('SELECT id FROM quotations ORDER BY id DESC LIMIT 1')
+        return bg['id']
+
+    def test_tao_bao_gia_thanh_cong(self):
+        qid = self._bg_moi()
+        self.assertIsNotNone(qid)
+        bg = self.q1('SELECT * FROM quotations WHERE id = ?', (qid,))
+        self.assertEqual(bg['status'], 'DRAFT')
+        self.assertEqual(bg['total'], 0)
+
+    def test_tao_bao_gia_trung_bi_chan(self):
+        self._bg_moi()
+        truoc = len(self.q('SELECT id FROM quotations'))
+        self.post('/quotations/create', {'repair_order_id': '10'})
+        self.assertEqual(len(self.q('SELECT id FROM quotations')), truoc)
+
+    def test_them_hang_muc_dich_vu(self):
+        qid = self._bg_moi()
+        self.post('/quotations/%d/items' % qid, {'loai': 'dich_vu', 'ma': '1', 'qty': '2'})
+        item = self.q1('SELECT * FROM quotation_items WHERE quotation_id = ?', (qid,))
+        self.assertIsNotNone(item)
+        self.assertIsNotNone(item['service_id'])
+        self.assertIsNone(item['part_id'])
+        gia = self.q1('SELECT price FROM services WHERE id = 1')['price']
+        self.assertEqual(item['unit_price'], gia)
+
+    def test_tong_duoc_tinh_lai(self):
+        qid = self._bg_moi()
+        self.post('/quotations/%d/items' % qid, {'loai': 'dich_vu', 'ma': '1', 'qty': '2'})
+        self.post('/quotations/%d/items' % qid, {'loai': 'phu_tung', 'ma': '3', 'qty': '1'})
+        bg = self.q1('SELECT total FROM quotations WHERE id = ?', (qid,))
+        expected = self.q1(
+            'SELECT COALESCE(SUM(unit_price*qty),0) s FROM quotation_items'
+            ' WHERE quotation_id = ?', (qid,))['s']
+        self.assertEqual(bg['total'], expected)
+        self.assertGreater(bg['total'], 0)
+
+    def test_gui_bao_gia(self):
+        qid = self._bg_moi()
+        self.post('/quotations/%d/items' % qid, {'loai': 'dich_vu', 'ma': '1', 'qty': '1'})
+        r = self.post('/quotations/%d/send' % qid)
+        self.assertEqual(r.status_code, 303)
+        self.assertEqual(self.q1('SELECT status FROM quotations WHERE id=?', (qid,))['status'],
+                         'SENT')
+
+    def test_gui_khong_co_hang_muc_bi_chan(self):
+        qid = self._bg_moi()
+        r = self.post('/quotations/%d/send' % qid)
+        self.assertIn('chưa có hạng mục', self.flash(r) or '')
+
+    def test_duyet_bao_gia(self):
+        qid = self._bg_moi()
+        self.post('/quotations/%d/items' % qid, {'loai': 'dich_vu', 'ma': '1', 'qty': '1'})
+        self.post('/quotations/%d/send' % qid)
+        r = self.post('/quotations/%d/review' % qid, {'quyet_dinh': 'APPROVED'})
+        self.assertEqual(r.status_code, 303)
+        bg = self.q1('SELECT * FROM quotations WHERE id=?', (qid,))
+        self.assertEqual(bg['status'], 'APPROVED')
+        self.assertIsNotNone(bg['approved_by'])
+        self.assertIsNotNone(bg['approved_at'])
+
+    def test_tu_choi_bao_gia(self):
+        qid = self._bg_moi()
+        self.post('/quotations/%d/items' % qid, {'loai': 'dich_vu', 'ma': '1', 'qty': '1'})
+        self.post('/quotations/%d/send' % qid)
+        self.post('/quotations/%d/review' % qid, {'quyet_dinh': 'REJECTED'})
+        self.assertEqual(self.q1('SELECT status FROM quotations WHERE id=?', (qid,))['status'],
+                         'REJECTED')
+
+    def test_sua_sau_khi_gui_bi_chan(self):
+        qid = self._bg_moi()
+        self.post('/quotations/%d/items' % qid, {'loai': 'dich_vu', 'ma': '1', 'qty': '1'})
+        self.post('/quotations/%d/send' % qid)
+        r = self.post('/quotations/%d/items' % qid, {'loai': 'dich_vu', 'ma': '1', 'qty': '1'})
+        self.assertIn('bản nháp', self.flash(r) or '')
+
+    def test_ap_dung_vao_phieu(self):
+        # Phiếu 12 ở RECEIVED, chưa có hoá đơn.
+        qid = self._bg_moi(phieu_id=12)
+        self.post('/quotations/%d/items' % qid, {'loai': 'dich_vu', 'ma': '1', 'qty': '1'})
+        self.post('/quotations/%d/send' % qid)
+        self.post('/quotations/%d/review' % qid, {'quyet_dinh': 'APPROVED'})
+        truoc = len(self.q('SELECT id FROM repair_order_items WHERE repair_order_id=12'))
+        r = self.post('/quotations/%d/apply' % qid)
+        self.assertEqual(r.status_code, 303)
+        self.assertIn('Đã áp dụng', self.flash(r) or '')
+        self.assertEqual(
+            len(self.q('SELECT id FROM repair_order_items WHERE repair_order_id=12')),
+            truoc + 1)
+
+    def test_khong_duyet_khi_chua_gui(self):
+        qid = self._bg_moi()
+        self.post('/quotations/%d/items' % qid, {'loai': 'dich_vu', 'ma': '1', 'qty': '1'})
+        r = self.post('/quotations/%d/review' % qid, {'quyet_dinh': 'APPROVED'})
+        self.assertIn('DRAFT', self.flash(r) or '')
+
+    def test_le_tan_khong_duyet(self):
+        qid = self._bg_moi()
+        self.post('/quotations/%d/items' % qid, {'loai': 'dich_vu', 'ma': '1', 'qty': '1'})
+        self.post('/quotations/%d/send' % qid)
+        self.dang_nhap('le_tan')
+        r = self.post('/quotations/%d/review' % qid, {'quyet_dinh': 'APPROVED'})
+        self.assertEqual(r.status_code, 403)
+
+    def test_thu_ngan_khong_quan_ly_bao_gia(self):
+        self.dang_nhap('thu_ngan')
+        r = self.client.get('/quotations')
+        self.assertEqual(r.status_code, 403)
+
+    def test_ky_thuat_vien_khong_quan_ly_bao_gia(self):
+        self.dang_nhap('ky_thuat_vien')
+        r = self.client.get('/quotations')
+        self.assertEqual(r.status_code, 403)
+
+    def test_chi_mot_bao_gia_duyet_cho_moi_phieu(self):
+        # Báo giá 1 đã duyệt cho phiếu 10.
+        qid1 = self._bg_moi(phieu_id=10)
+        self.post('/quotations/%d/items' % qid1, {'loai': 'dich_vu', 'ma': '1', 'qty': '1'})
+        self.post('/quotations/%d/send' % qid1)
+        self.post('/quotations/%d/review' % qid1, {'quyet_dinh': 'APPROVED'})
+        # Không tạo được báo giá thứ hai khi còn bản APPROVED.
+        truoc = len(self.q('SELECT id FROM quotations'))
+        self.post('/quotations/create', {'repair_order_id': '10'})
+        self.assertEqual(len(self.q('SELECT id FROM quotations')), truoc)
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)
