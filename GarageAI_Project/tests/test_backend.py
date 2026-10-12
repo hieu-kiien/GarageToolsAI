@@ -1399,6 +1399,51 @@ class TestAiGateway(unittest.TestCase):
             self.assertTrue(AI_PROVIDERS[p]['free'], p)
             self.assertTrue(AI_PROVIDERS[p]['key_env'], p)
 
+    def test_preset_9router(self):
+        from app.core.config import AI_PROVIDERS, Settings
+        p = AI_PROVIDERS['9router']
+        self.assertEqual(p['base'], 'http://localhost:20128/v1')
+        self.assertTrue(p['free'])
+        # 9router local: không key vẫn giữ provider (không hạ mock).
+        s = Settings({'AI_PROVIDER': '9router', 'APP_ENV': 'development'})
+        self.assertEqual(s.AI_PROVIDER, '9router')
+        self.assertEqual(s.AI_BASE_URL, 'http://localhost:20128/v1')
+        self.assertEqual(s.AI_MODEL, 'my9model-free')
+
+    def test_9router_khong_gui_authorization_khi_thieu_key(self):
+        from app.core.config import get_settings
+        from app import ai_gateway
+        s = get_settings()
+        s.AI_PROVIDER = '9router'
+        s.AI_BASE_URL = 'http://localhost:20128/v1'
+        s.AI_MODEL = 'my9model-free'
+        s.AI_API_KEY = ''
+        s.OPENAI_API_KEY = ''
+
+        class FakeResp:
+            status_code = 200
+            def json(self):
+                return {'choices': [{'message': {'content': '9r-ok'}}]}
+
+        hdrs = {}
+        class FakeHttpx:
+            @staticmethod
+            def post(url, **kw):
+                hdrs.update(kw.get('headers') or {})
+                return FakeResp()
+            class TimeoutException(Exception):
+                pass
+
+        import sys
+        sys.modules['httpx'] = FakeHttpx
+        try:
+            out = ai_gateway.goi('sys', 'user', cho_phep_mock=False)
+        finally:
+            del sys.modules['httpx']
+            s.AI_PROVIDER = 'openai'
+        self.assertEqual(out, '9r-ok')
+        self.assertNotIn('Authorization', hdrs)
+
     def test_goi_den_dung_url_groq(self):
         """Provider groq phải gọi đúng endpoint groq."""
         from app.core.config import get_settings

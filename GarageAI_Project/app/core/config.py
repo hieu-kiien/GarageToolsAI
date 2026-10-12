@@ -58,6 +58,16 @@ AI_PROVIDERS: dict[str, dict] = {
         'free': True,
         'ghichu': 'aistudio.google.com — free tier, biến GOOGLE_API_KEY.',
     },
+    # 9Router: proxy cục bộ (npm i -g 9router) gom 60+ provider + fallback free.
+    # Endpoint OpenAI-compatible tại localhost:20128/v1. Key lấy từ dashboard.
+    '9router': {
+        'base': 'http://localhost:20128/v1',
+        'model': 'my9model-free',
+        'key_env': 'NINEROUTER_KEY',
+        'free': True,
+        'ghichu': '9router.com — cài `npm i -g 9router`, dán key dashboard '
+                  'hoặc để trống nếu requireApiKey=false.',
+    },
     'custom': {
         'base': '',
         'model': '',
@@ -81,6 +91,16 @@ class Settings:
         def raw(key: str):
             v = env.get(key)
             return None if v is None else str(v)
+
+        def truong(*keys, mac_dinh=''):
+            """Đọc biến môi trường theo thứ tự ưu tiên; key rỗng = bỏ qua."""
+            for k in keys:
+                if not k:
+                    continue
+                v = env.get(k)
+                if v is not None and str(v).strip() != '':
+                    return str(v).strip()
+            return mac_dinh
 
         # --- ứng dụng ---
         self.APP_NAME: str = val('APP_NAME', 'GarageTools AI')
@@ -139,6 +159,7 @@ class Settings:
         #   groq       — https://api.groq.com/openai/v1   (free tier)
         #   openrouter — https://openrouter.ai/api/v1     (nhiều model :free)
         #   gemini     — Google AI Studio OpenAI-compat   (free tier)
+        #   9router    — proxy cục bộ localhost:20128  (npm i -g 9router)
         #   custom     — tự đặt AI_BASE_URL + AI_API_KEY + AI_MODEL
         provider = str(val('AI_PROVIDER', 'mock')).strip().lower()
         if provider not in AI_PROVIDERS:
@@ -150,11 +171,9 @@ class Settings:
         preset = AI_PROVIDERS.get(provider, {})
         # Khoá: ưu tiên AI_API_KEY (dùng chung), sau đó biến riêng của provider,
         # cuối cùng OPENAI_API_KEY (giữ tương thích ngược).
-        self.AI_API_KEY: str = str(
-            val('AI_API_KEY', '')
-            or val(preset.get('key_env', ''), '')
-            or val('OPENAI_API_KEY', '')
-        ).strip()
+        self.AI_API_KEY: str = truong(
+            'AI_API_KEY', preset.get('key_env', ''), 'OPENAI_API_KEY',
+            'NINEROUTER_KEY', '9ROUTER_API_KEY')
         self.AI_BASE_URL: str = str(
             val('AI_BASE_URL', '') or preset.get('base', '')
         ).rstrip('/')
@@ -198,6 +217,8 @@ class Settings:
 
     def _validate_startup(self) -> None:
         """Chặn khởi động sai cấu hình thay vì chạy rồi mới lộ lỗi."""
+        # 9router local thường chạy without API key (requireApiKey=false).
+        khoaBat_buoc = self.AI_PROVIDER not in ('mock', '9router')
         if self.IS_PRODUCTION:
             problems = []
             if not self.SECRET_KEY:
@@ -210,7 +231,7 @@ class Settings:
                 problems.append('thiếu ALLOWED_HOSTS')
             if not self.SESSION_COOKIE_SECURE:
                 problems.append('phải bật SESSION_COOKIE_SECURE khi chạy thật')
-            if self.AI_PROVIDER != 'mock' and not self.AI_API_KEY:
+            if khoaBat_buoc and not self.AI_API_KEY:
                 problems.append(
                     'AI_PROVIDER=%s nhưng thiếu API key (%s)'
                     % (self.AI_PROVIDER, AI_PROVIDERS[self.AI_PROVIDER].get('key_env') or 'AI_API_KEY'))
@@ -224,8 +245,9 @@ class Settings:
         if not self.SECRET_KEY:
             # Môi trường phát triển vẫn sinh khoá tạm để chạy được ngay.
             self.SECRET_KEY = KHOA_MAC_DINH
-        # Dev/test: không có khoá thì im lặng hạ về mock thay vì crash.
-        if self.AI_PROVIDER != 'mock' and not self.AI_API_KEY:
+        # Dev/test: provider cần khoá mà không có thì hạ về mock.
+        # 9router giữ nguyên — có thể chạy local không key.
+        if khoaBat_buoc and not self.AI_API_KEY:
             self.AI_PROVIDER = 'mock'
 
     # ------------------------------------------------------------------ tiện ích

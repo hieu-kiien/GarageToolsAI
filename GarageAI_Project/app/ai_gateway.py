@@ -47,7 +47,11 @@ def _chat_url(s) -> str:
 
 
 def _headers(s) -> dict:
-    h = {'Authorization': 'Bearer %s' % (s.AI_API_KEY or s.OPENAI_API_KEY)}
+    key = (s.AI_API_KEY or s.OPENAI_API_KEY or '').strip()
+    # 9router local có thể chạy requireApiKey=false → không gửi Authorization.
+    if not key and s.AI_PROVIDER == '9router':
+        return {}
+    h = {'Authorization': 'Bearer %s' % key}
     # OpenRouter khuyến nghị gửi 2 header này để được ghi nhận traffic.
     if s.AI_PROVIDER == 'openrouter':
         h.setdefault('HTTP-Referer', 'https://localhost')
@@ -57,7 +61,7 @@ def _headers(s) -> dict:
 
 def _goi_openai(system_prompt, user_prompt):
     s = get_settings()
-    if not (s.AI_API_KEY or s.OPENAI_API_KEY):
+    if s.AI_PROVIDER != '9router' and not (s.AI_API_KEY or s.OPENAI_API_KEY):
         raise AiError('Chưa cấu hình khóa API')
     try:
         import httpx
