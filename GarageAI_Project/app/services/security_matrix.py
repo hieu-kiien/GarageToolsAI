@@ -46,6 +46,7 @@ PERMISSIONS: dict[str, set[str]] = {
     'order.item':        KTE,
     'order.accept':      LE_TAN_VA_QUAN_LY,
     'stock.manage':      LE_TAN_VA_QUAN_LY,
+    'warranty.manage':   LE_TAN_VA_QUAN_LY,
     'quote.manage':      LE_TAN_VA_QUAN_LY,
     'quote.approve':     QUAN_LY,
     'invoice.manage':    QUAN_LY,

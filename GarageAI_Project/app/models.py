@@ -510,6 +510,34 @@ class DuyetKetQuaInput(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# Bảo hành
+# ---------------------------------------------------------------------------
+class TaoBaoHanhInput(BaseModel):
+    """Tạo bảo hành cho MỘT hạng mục của phiếu COMPLETED.
+
+    XOR: đúng một trong `service_id` / `part_id` phải khác None.
+    """
+    model_config = CoBan
+    repair_order_id: int = Field(ge=1)
+    months: int = Field(ge=1, le=60)
+    service_id: int | None = None
+    part_id: int | None = None
+    note: str | None = Field(default=None, max_length=500)
+    start_date: str = Field(min_length=10, max_length=10)
+
+    @model_validator(mode='after')
+    def _xor_service_part(self):
+        if (self.service_id is None) == (self.part_id is None):
+            raise ValueError('phải chọn đúng một trong: dịch vụ hoặc phụ tùng')
+        return self
+
+
+class HuyBaoHanhInput(BaseModel):
+    model_config = CoBan
+    note: str | None = Field(default=None, max_length=500)
+
+
+# ---------------------------------------------------------------------------
 # Cửa hàng (mở rộng, ngoài phạm vi đề tài)
 # ---------------------------------------------------------------------------
 class SanPhamInput(BaseModel):

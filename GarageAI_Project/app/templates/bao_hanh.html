@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Bảo hành — {{ APP_NAME }}{% endblock %}
+{% block noi_dung %}
+<h1>Bảo hành</h1>
+<p class="mo-ta">Tổng {{ tong_so_ban_ghi }} bảo hành · trang {{ trang.so_trang }}/{{ tong_trang }}</p>
+
+<form method="get" action="/warranties" class="loc">
+  <label>Tìm<input type="text" name="q" value="{{ q }}" placeholder="Biển số, tên hạng mục…"></label>
+  <label>Trạng thái
+    <select name="trang_thai">
+      <option value="">Tất cả</option>
+      {% for k, v in trang_thai_list %}<option value="{{ k }}" {% if trang_thai == k %}selected{% endif %}>{{ v }}</option>{% endfor %}
+    </select>
+  </label>
+  <button type="submit" class="nut">Lọc</button>
+</form>
+
+<table>
+  <thead><tr>
+    <th scope="col">Mã</th><th scope="col">Phiếu</th><th scope="col">Biển số</th>
+    <th scope="col">Hạng mục</th><th scope="col">Thời hạn</th>
+    <th scope="col">Hết hạn</th><th scope="col">Trạng thái</th>
+  </tr></thead>
+  <tbody>
+  {% for d in dong %}
+    <tr>
+      <td>{{ d.id }}</td>
+      <td><a href="/repair-orders/{{ d.repair_order_id }}">#{{ d.repair_order_id }}</a></td>
+      <td>{{ d.plate }}</td>
+      <td>{{ d.ten_hang_muc }} <small>({{ 'dịch vụ' if d.scope == 'SERVICE' else 'phụ tùng' }})</small></td>
+      <td>{{ d.months }} tháng</td>
+      <td>{{ d.end_date }}</td>
+      <td>{{ ten_trang_thai(d.status) }}</td>
+    </tr>
+  {% else %}<tr><td colspan="7" class="trong">Chưa có bảo hành nào.</td></tr>{% endfor %}
+  </tbody>
+</table>
+
+{% if co_so_trang %}<nav class="phan-trang" aria-label="Phân trang">
+  {% if co_trang_truoc %}<a href="{{ duong_dan_trang(duong_dan_hien_tai, trang.so_trang - 1, trang.moi_trang) }}">‹ Trước</a>{% endif %}
+  <span>Trang {{ trang.so_trang }} / {{ tong_trang }}</span>
+  {% if co_trang_sau %}<a href="{{ duong_dan_trang(duong_dan_hien_tai, trang.so_trang + 1, trang.moi_trang) }}">Sau ›</a>{% endif %}
+</nav>{% endif %}
+{% endblock %}

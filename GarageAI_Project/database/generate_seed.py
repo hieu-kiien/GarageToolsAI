@@ -521,6 +521,36 @@ for i, (oid, pid, qty, up) in enumerate(shop_order_items, 1):
     w('  (%d, %d, %d, %d, %d);' % (i, oid, pid, qty, up))
 w()
 
+w('-- ---------------------------------------------------------------------------')
+w('-- 14. Bảo hành: 4 (SERVICE và PART đan xen, phủ đủ ACTIVE / EXPIRED)')
+w('--     Chỉ gắn với phiếu COMPLETED. scope XOR: SERVICE có service_id,')
+w('--     PART có part_id — đúng một trong hai.')
+w('-- ---------------------------------------------------------------------------')
+warranties = [
+    # (repair_order_id, scope, service_id, part_id, months, start, status, note)
+    (1, 'SERVICE', 1,   None, 6, '2026-02-14', 'EXPIRED',
+     'Bảo hành thay dầu động cơ 6 tháng.'),
+    (2, 'PART',    None, 5,   12, '2026-04-03', 'ACTIVE',
+     'Bảo hành máy phát ắc quy 12 tháng.'),
+    (5, 'SERVICE', 5,   None, 3, '2026-10-18', 'ACTIVE',
+     'Bảo hành bảo dưỡng định kỳ 3 tháng.'),
+    (8, 'PART',    None, 7,   6, '2026-07-09', 'ACTIVE',
+     'Bảo hành má phanh trước 6 tháng.'),
+]
+for i, (oid, scope, sid, pid, months, start, status, note) in enumerate(warranties, 1):
+    if status == 'EXPIRED':
+        end = {'2026-02-14': '2026-08-14'}[start]
+    else:
+        end = {'2026-04-03': '2027-04-03', '2026-10-18': '2027-01-18',
+               '2026-07-09': '2027-01-09'}[start]
+    w('INSERT INTO warranties (id, repair_order_id, scope, service_id, part_id,'
+      ' months, start_date, end_date, status, note) VALUES')
+    w('  (%d, %d, %s, %s, %s, %d, %s, %s, %s, %s);' % (
+        i, oid, q(scope),
+        str(sid) if sid else 'NULL', str(pid) if pid else 'NULL',
+        months, q(start), q(end), q(status), q(note)))
+w()
+
 w('COMMIT;')
 w()
 

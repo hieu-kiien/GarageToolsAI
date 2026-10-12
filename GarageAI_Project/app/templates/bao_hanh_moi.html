@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block tieu_de %}Lập bảo hành — {{ APP_NAME }}{% endblock %}
+{% block noi_dung %}
+<h1>Lập bảo hành cho phiếu #{{ order_id }}</h1>
+
+{% if not hang_muc %}
+<p class="mo-ta">Tất cả hạng mục của phiếu này đã có bảo hành hoặc phiếu chưa có hạng mục.</p>
+<p><a class="nut nut-phu" href="/warranties">Quay lại</a></p>
+{% else %}
+<form method="post" action="/warranties/create" class="bieu-mau">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <input type="hidden" name="repair_order_id" value="{{ order_id }}">
+
+  <label>Hạng mục
+    <select name="service_id" id="sel-dich-vu">
+      <option value="">— chọn —</option>
+      {% for h in hang_muc if h.service_id %}
+      <option value="{{ h.service_id }}">{{ h.ten_hang_muc }} (dịch vụ)</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Hoặc phụ tùng
+    <select name="part_id" id="sel-phu-tung">
+      <option value="">— chọn —</option>
+      {% for h in hang_muc if h.part_id %}
+      <option value="{{ h.part_id }}">{{ h.ten_hang_muc }} (phụ tùng)</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Thời hạn (tháng)<input type="number" name="months" min="1" max="60" value="6" required></label>
+  <label>Ngày bắt đầu<input type="date" name="start_date" required></label>
+  <label>Ghi chú<input type="text" name="note" maxlength="500"></label>
+  <button type="submit" class="nut">Lập bảo hành</button>
+</form>
+<p class="mo-ta">Chỉ chọn MỘT trong hai ô: dịch vụ hoặc phụ tùng. Ngày hết hạn do hệ thống tự tính.</p>
+{% endif %}
+{% endblock %}

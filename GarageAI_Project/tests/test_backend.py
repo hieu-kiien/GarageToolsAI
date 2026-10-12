@@ -1129,5 +1129,134 @@ class TestKhoLedger(CoSoDichChung):
         self.assertIn('/accounts/login', r.headers.get('location', ''))
 
 
+# ===========================================================================
+class TestBaoHanh(CoSoDichChung):
+    """Bảo hành: XOR SERVICE/PART, chỉ phiếu COMPLETED, chặn trùng."""
+
+    def _bh_moi(self, oid=1, service_id='1', part_id='', months='6',
+                start='2026-02-15'):
+        """Phiếu 1 (COMPLETED) có dịch vụ 1 (đã EXPIRED → tạo lại được)
+        và phụ tùng 1 (chưa có bảo hành)."""
+        self.post('/warranties/create', {
+            'repair_order_id': str(oid), 'service_id': service_id,
+            'part_id': part_id, 'months': months, 'start_date': start})
+        bh = self.q1('SELECT id FROM warranties ORDER BY id DESC LIMIT 1')
+        return bh['id'] if bh else None
+
+    def test_tao_bao_hanh_dich_vu(self):
+        wid = self._bh_moi()
+        self.assertIsNotNone(wid)
+        bh = self.q1('SELECT * FROM warranties WHERE id = ?', (wid,))
+        self.assertEqual(bh['scope'], 'SERVICE')
+        self.assertEqual(bh['status'], 'ACTIVE')
+        self.assertEqual(bh['start_date'], '2026-02-15')
+        self.assertEqual(bh['end_date'], '2026-08-15')  # +6 tháng
+
+    def test_tao_bao_hanh_phu_tung(self):
+        # Phiếu 1 có phụ tùng 1 (P1 dầu động cơ), chưa có bảo hành.
+        wid = self._bh_moi(service_id='', part_id='1', months='12',
+                           start='2026-02-15')
+        bh = self.q1('SELECT * FROM warranties WHERE id = ?', (wid,))
+        self.assertEqual(bh['scope'], 'PART')
+        self.assertEqual(bh['part_id'], 1)
+        self.assertIsNone(bh['service_id'])
+        self.assertEqual(bh['end_date'], '2027-02-15')
+
+    def test_xor_chon_ca_hai_bi_chan(self):
+        truoc = len(self.q('SELECT id FROM warranties'))
+        self.post('/warranties/create', {
+            'repair_order_id': '1', 'service_id': '1', 'part_id': '1',
+            'months': '6', 'start_date': '2026-02-15'})
+        self.assertEqual(len(self.q('SELECT id FROM warranties')), truoc)
+
+    def test_xor_chon_mot_cung_bi_chan(self):
+        truoc = len(self.q('SELECT id FROM warranties'))
+        self.post('/warranties/create', {
+            'repair_order_id': '1', 'service_id': '', 'part_id': '',
+            'months': '6', 'start_date': '2026-02-15'})
+        self.assertEqual(len(self.q('SELECT id FROM warranties')), truoc)
+
+    def test_khong_phai_hoan_thanh_bi_chan(self):
+        # Phiếu 10 ở REPAIRING.
+        truoc = len(self.q('SELECT id FROM warranties'))
+        self.post('/warranties/create', {
+            'repair_order_id': '10', 'service_id': '7',
+            'months': '6', 'start_date': '2026-11-14'})
+        self.assertEqual(len(self.q('SELECT id FROM warranties')), truoc)
+
+    def test_hang_muc_khong_thuoc_phieu_bi_chan(self):
+        # Phiếu 1 không có dịch vụ 8.
+        truoc = len(self.q('SELECT id FROM warranties'))
+        self.post('/warranties/create', {
+            'repair_order_id': '1', 'service_id': '8',
+            'months': '6', 'start_date': '2026-02-15'})
+        self.assertEqual(len(self.q('SELECT id FROM warranties')), truoc)
+
+    def test_trung_bao_hanh_active_bi_chan(self):
+        # Seed: phiếu 2 có PARTACTIVE cho phụ tùng 5. Tạo thêm phải bị chặn.
+        truoc = len(self.q('SELECT id FROM warranties'))
+        self.post('/warranties/create', {
+            'repair_order_id': '2', 'part_id': '5',
+            'months': '3', 'start_date': '2026-04-04'})
+        self.assertEqual(len(self.q('SELECT id FROM warranties')), truoc)
+
+    def test_huy_bao_hanh(self):
+        wid = self._bh_moi()
+        r = self.post('/warranties/%d/cancel' % wid, {'note': 'Khách khiếu nại'})
+        self.assertEqual(r.status_code, 303)
+        self.assertEqual(self.q1('SELECT status FROM warranties WHERE id=?',
+                                 (wid,))['status'], 'CANCELLED')
+
+    def test_huy_bao_hanh_da_huy_bi_chan(self):
+        wid = self._bh_moi()
+        self.post('/warranties/%d/cancel' % wid, {})
+        trang_thai = self.q1('SELECT status FROM warranties WHERE id=?',
+                             (wid,))['status']
+        self.assertEqual(trang_thai, 'CANCELLED')
+        # Huỷ lần hai: backend phải từ chối, không đổi trạng thái gì thêm.
+        r = self.post('/warranties/%d/cancel' % wid, {})
+        self.assertEqual(r.status_code, 303)
+        self.assertEqual(self.q1('SELECT status FROM warranties WHERE id=?',
+                                 (wid,))['status'], 'CANCELLED')
+
+    def test_sau_khi_huy_tao_lai_duoc(self):
+        # Tạo bảo hành cho dịch vụ 1 (EXPIRED từ seed → ACTIVE mới OK).
+        wid = self._bh_moi()
+        self.assertIsNotNone(wid)
+        self.post('/warranties/%d/cancel' % wid, {})
+        # Sau khi huỷ ACTIVE, tạo lại được cho cùng hạng mục.
+        wid2 = self._bh_moi()
+        self.assertIsNotNone(wid2)
+        self.assertNotEqual(wid, wid2)
+
+    def test_le_tan_duoc_lap_bao_hanh(self):
+        self.dang_nhap('le_tan')
+        wid = self._bh_moi()
+        self.assertIsNotNone(wid)
+
+    def test_thu_ngan_khong_lap_bao_hanh(self):
+        self.dang_nhap('thu_ngan')
+        r = self.client.get('/warranties')
+        self.assertEqual(r.status_code, 403)
+
+    def test_ky_thuat_vien_khong_lap_bao_hanh(self):
+        self.dang_nhap('ky_thuat_vien')
+        r = self.client.get('/warranties')
+        self.assertEqual(r.status_code, 403)
+
+    def test_chua_dang_nhap_303(self):
+        self.client.cookies.clear()
+        r = self.client.get('/warranties')
+        self.assertEqual(r.status_code, 303)
+        self.assertIn('/accounts/login', r.headers.get('location', ''))
+
+    def test_tinh_end_date_cuoi_thang(self):
+        # 31/01 + 1 tháng = 28/02 (năm 2027 không nhuận).
+        wid = self._bh_moi(oid=9, service_id='4', months='1',
+                           start='2027-01-31')
+        bh = self.q1('SELECT * FROM warranties WHERE id = ?', (wid,))
+        self.assertEqual(bh['end_date'], '2027-02-28')
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)

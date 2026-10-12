@@ -70,6 +70,7 @@
 {% endif %}
 {% if quyen['ai.quote'] %}<a class="nut nut-phu" href="/ai">Tạo báo giá nháp bằng AI</a>{% endif %}
 {% if quyen['quote.manage'] %}<a class="nut nut-phu" href="/quotations/new?order={{ p.id }}">Lập báo giá chính thức</a>{% endif %}
+{% if p.status == 'COMPLETED' and quyen['warranty.manage'] %}<a class="nut nut-phu" href="/warranties/new?order={{ p.id }}">Lập bảo hành</a>{% endif %}
 </div>
 
 <h2>Biên bản tiếp nhận xe</h2>

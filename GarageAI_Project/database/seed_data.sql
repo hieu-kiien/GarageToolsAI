@@ -460,5 +460,19 @@ INSERT INTO shop_order_items (id, order_id, product_id, qty, unit_price) VALUES
 INSERT INTO shop_order_items (id, order_id, product_id, qty, unit_price) VALUES
   (5, 2, 20, 3, 45000);
 
+-- ---------------------------------------------------------------------------
+-- 14. Bảo hành: 4 (SERVICE và PART đan xen, phủ đủ ACTIVE / EXPIRED)
+--     Chỉ gắn với phiếu COMPLETED. scope XOR: SERVICE có service_id,
+--     PART có part_id — đúng một trong hai.
+-- ---------------------------------------------------------------------------
+INSERT INTO warranties (id, repair_order_id, scope, service_id, part_id, months, start_date, end_date, status, note) VALUES
+  (1, 1, 'SERVICE', 1, NULL, 6, '2026-02-14', '2026-08-14', 'EXPIRED', 'Bảo hành thay dầu động cơ 6 tháng.');
+INSERT INTO warranties (id, repair_order_id, scope, service_id, part_id, months, start_date, end_date, status, note) VALUES
+  (2, 2, 'PART', NULL, 5, 12, '2026-04-03', '2027-04-03', 'ACTIVE', 'Bảo hành máy phát ắc quy 12 tháng.');
+INSERT INTO warranties (id, repair_order_id, scope, service_id, part_id, months, start_date, end_date, status, note) VALUES
+  (3, 5, 'SERVICE', 5, NULL, 3, '2026-10-18', '2027-01-18', 'ACTIVE', 'Bảo hành bảo dưỡng định kỳ 3 tháng.');
+INSERT INTO warranties (id, repair_order_id, scope, service_id, part_id, months, start_date, end_date, status, note) VALUES
+  (4, 8, 'PART', NULL, 7, 6, '2026-07-09', '2027-01-09', 'ACTIVE', 'Bảo hành má phanh trước 6 tháng.');
+
 COMMIT;
 

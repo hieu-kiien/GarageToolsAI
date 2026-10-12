@@ -348,6 +348,41 @@ CREATE INDEX idx_ai_results_order  ON ai_results(repair_order_id);
 CREATE INDEX idx_ai_results_status ON ai_results(review_status);
 
 -- =============================================================================
+-- 12b. warranties - bảo hành dịch vụ / phụ tùng
+--      Mỗi dòng bảo hành gắn với MỘT hạng mục của phiếu (dịch vụ HOẶC phụ
+--      tùng, đúng một trong hai — XOR). Không bảo hành "toàn phiếu".
+--      scope = 'SERVICE' thì service_id NOT NULL, part_id NULL;
+--      scope = 'PART'    thì part_id NOT NULL, service_id NULL.
+--      Chỉ tạo được cho phiếu COMPLETED. Một hạng mục chỉ có MỘT bảo hành
+--      ACTIVE/TRACKED tại một thời điểm (kiểm tra bằng backend).
+-- =============================================================================
+CREATE TABLE warranties (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    repair_order_id  INTEGER NOT NULL REFERENCES repair_orders(id) ON DELETE RESTRICT,
+    scope            TEXT    NOT NULL CHECK (scope IN ('SERVICE', 'PART')),
+    service_id       INTEGER          REFERENCES services(id) ON DELETE RESTRICT,
+    part_id          INTEGER          REFERENCES parts(id)    ON DELETE RESTRICT,
+    months           INTEGER NOT NULL CHECK (months > 0),
+    start_date       TEXT    NOT NULL,
+    end_date         TEXT    NOT NULL,
+    status           TEXT    NOT NULL DEFAULT 'ACTIVE'
+        CHECK (status IN ('ACTIVE', 'EXPIRED', 'CLAIMED', 'CANCELLED')),
+    note             TEXT,
+    created_by       INTEGER          REFERENCES users(id)   ON DELETE RESTRICT,
+    created_at       TEXT    NOT NULL DEFAULT (datetime('now')),
+    CHECK (end_date > start_date),
+    CHECK (
+        (scope = 'SERVICE' AND service_id IS NOT NULL AND part_id IS NULL) OR
+        (scope = 'PART'    AND part_id    IS NOT NULL AND service_id IS NULL)
+    )
+);
+CREATE INDEX idx_warranties_order  ON warranties(repair_order_id);
+CREATE INDEX idx_warranties_status ON warranties(status);
+CREATE INDEX idx_warranties_part   ON warranties(part_id);
+CREATE INDEX idx_warranties_service ON warranties(service_id);
+CREATE INDEX idx_warranties_end    ON warranties(end_date);
+
+-- =============================================================================
 -- 13-16. CỬA HÀNG DỤNG CỤ - phần MỞ RỘNG, nằm ngoài phạm vi đề tài
 --        Ba bảng đầu và ba bảng sau không phải nghiệp vụ lõi của đề tài.
 -- =============================================================================
