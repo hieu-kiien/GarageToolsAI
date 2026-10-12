@@ -17,7 +17,15 @@ Repo: `D:\1. LapTrinh\Nhom23_GarageToolsAI` (branch `main`)
 | 6b | Docker Compose: build + healthcheck + volume CSDL | ✅ (cổng **8010**) |
 | 7 | AI nâng cao chẩn đoán | ⛔ Loại theo KT1_KT2 |
 
-**Test hiện tại: 174/174** (`tests/run_all.py` → `TEST_REPORT.md`).
+**Test hiện tại: 176/176** (`tests/run_all.py` → `TEST_REPORT.md`).
+
+**AI thật đã smoke test (12/10/2026, Groq free `openai/gpt-oss-120b`):**
+- `goi()` thô → OK ~1.6s
+- Lịch sử xe (order 1) → valid, tổng hợp 5 lần sửa
+- Giải thích dịch vụ (order 1) → valid
+- Báo giá nháp (order 5) → valid, tổng 2.005.000 đồng
+
+Không cần 9Router local — chỉ tham khảo. Key free trong `.env` (không commit).
 
 Backup DB: `backups\garage.db.pre-phase1.20261011_194251`.
 
@@ -31,7 +39,7 @@ Mọi provider đều đi qua giao thức **OpenAI-compatible** `chat/completion
 |-------------|----------|----------------|-----------|------|
 | `mock` | — | — | — | ✅ |
 | `openai` | `https://api.openai.com/v1` | `gpt-4o-mini` | `OPENAI_API_KEY` | ❌ |
-| `groq` | `https://api.groq.com/openai/v1` | `llama-3.3-70b-versatile` | `GROQ_API_KEY` | ✅ |
+| `groq` | `https://api.groq.com/openai/v1` | `openai/gpt-oss-120b` | `GROQ_API_KEY` | ✅ |
 | `openrouter` | `https://openrouter.ai/api/v1` | `meta-llama/llama-3.3-70b-instruct:free` | `OPENROUTER_API_KEY` | ✅ |
 | `gemini` | `https://generativelanguage.googleapis.com/v1beta/openai/` | `gemini-2.0-flash` | `GOOGLE_API_KEY` | ✅ |
 | `custom` | `AI_BASE_URL` | `AI_MODEL` | `AI_API_KEY` | tuỳ |
@@ -41,11 +49,7 @@ Dev/test thiếu khoá → tự hạ về `mock` (không crash). Production thi�
 
 **Cách bật AI thật (ví dụ Groq free):**
 ```bash
-# GarageAI_Project/.env
-AI_PROVIDER=groq
-GROQ_API_KEY=gsk_...
-# hoặc dùng biến chung:
-# AI_API_KEY=gsk_...
+AI_MODEL=openai/gpt-oss-120b
 ```
 
 ---

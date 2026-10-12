@@ -38,7 +38,7 @@ AI_PROVIDERS: dict[str, dict] = {
     },
     'groq': {
         'base': 'https://api.groq.com/openai/v1',
-        'model': 'llama-3.3-70b-versatile',
+        'model': 'openai/gpt-oss-120b',
         'key_env': 'GROQ_API_KEY',
         'free': True,
         'ghichu': 'Free tier tại console.groq.com — nhanh, OpenAI-compatible.',

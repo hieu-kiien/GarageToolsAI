@@ -1388,7 +1388,7 @@ class TestAiGateway(unittest.TestCase):
         from app.core.config import AI_PROVIDERS
         self.assertEqual(AI_PROVIDERS['groq']['base'],
                          'https://api.groq.com/openai/v1')
-        self.assertIn('llama', AI_PROVIDERS['groq']['model'])
+        self.assertIn('gpt-oss', AI_PROVIDERS['groq']['model'])
         self.assertEqual(AI_PROVIDERS['openrouter']['base'],
                          'https://openrouter.ai/api/v1')
         self.assertIn(':free', AI_PROVIDERS['openrouter']['model'])

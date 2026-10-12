@@ -145,43 +145,9 @@ python -X uvicorn app.main:app --reload
 - Không commit key vào git.
 - MITM bridge / intercept subscription IDE: **đọc policy từng tool** trước khi dùng.
 
-## 6. Trạng thái tích hợp trong repo
+## 6. Kết luận: không cần 9Router chạy local
 
-| Hạng mục | Trạng thái |
-|----------|------------|
-| Preset `9router` trong config | ✅ |
-| Gateway bỏ qua key bắt buộc / không gửi Authorization khi key rỗng | ✅ |
-| Test mock (`TestAiGateway` + `test_preset_9router`) | ✅ |
-| `npm i -g 9router` | ✅ đã cài (v0.5.x) |
-| Server local `:20128` | ✅ đang chạy (`--no-browser`) |
-| `GET /v1/models` | ✅ **82 model** (không cần key) |
-| `POST /v1/chat/completions` | ⚠️ cần API key dashboard; provider upstream đang **503/410** (OAuth/token hết hạn — cần reconnect trong Dashboard) |
+**Tóm tắt:** 9Router chỉ tham khảo. GarageTools AI dùng **trực tiếp Groq** (`AI_PROVIDER=groq` + `GROQ_API_KEY` trong `.env`). Đã smoke test thật 12/10/2026: lịch sử / giải thích / báo giá đều OK (~1.6–3.1s) với model free `openai/gpt-oss-120b`.
 
-### Model đang list trên máy dev (ảnh chụp 12/10/2026)
-
-Prefix: `cx/` (Codex), `groq/`, `kr/` (Kiro), `nvidia/`, `openrouter/`…
-
-Ví dụ:
-- `groq/llama-3.3-70b-versatile`
-- `kr/claude-sonnet-4.5`, `kr/glm-5`, `kr/MiniMax-M2.5`
-- `nvidia/z-ai/glm-5.2`, `nvidia/deepseek-ai/deepseek-v4-flash`
-- `openrouter/typesafe/jev-1.13`
-- `cx/gpt-5.5`…
-
-### Smoke test gateway GarageTools → 9Router
-
-- Auth **đúng** (không còn 401 khi có key từ `apiKeys`).
-- Latency ~3–14s rồi **503/410** do provider connection trong 9Router **expired** (dữ liệu OAuth từ 07/2026).
-- **Cách fix cho bạn:** mở `http://localhost:20128/dashboard` → Providers → reconnect Kiro / Groq / OpenRouter / Codex → thử lại.
-
-### Bật AI cho GarageTools qua 9Router
-
-```bash
-# GarageAI_Project/.env
-AI_PROVIDER=9router
-NINEROUTER_KEY=sk-...   # Dashboard → API Keys
-AI_MODEL=kr/glm-5       # hoặc model còn active sau khi reconnect
-```
-
-Rồi: `python -X uvicorn app.main:app --reload` và chạy chức năng AI trên UI.
+Nếu sau này muốn 9Router làm fallback multi-provider thì preset `9router` đã có sẵn trong config — chỉ cần mở Dashboard và lấy key API.
 
