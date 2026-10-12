@@ -1,5 +1,5 @@
 DANH SÁCH VIỆC CÒN LẠI — GarageTools AI
-Cập nhật: 11/10/2026 sau khi hoàn thiện backend, đồng bộ toàn bộ tài liệu.
+Cập nhật: 12/10/2026 sau AI thật + E2E UI + UAT-34/35.
 
 ========================================================
 A. ĐÃ HOÀN THÀNH (BACKEND — sẵn sàng để thiết kế FE)
@@ -7,8 +7,8 @@ A. ĐÃ HOÀN THÀNH (BACKEND — sẵn sàng để thiết kế FE)
 [A1] Schema cơ sở dữ liệu: 16 bảng, 29 chỉ mục, khóa + ràng buộc đầy đủ
 [A2] Dữ liệu mẫu: 171 dòng (PRAGMA foreign_keys=ON khi seed)
 [A3] Bộ kiểm thử CSDL: 37 ca ràng buộc + 6 ca sao lưu/khôi phục
-[A4] Bộ kiểm thử backend end-to-end: 59 ca
-     Tổng cộng 102/102 ca đạt, sinh TEST_REPORT.md
+[A4] Bộ kiểm thử backend end-to-end: 133 ca
+     Tổng cộng 176/176 ca đạt, sinh TEST_REPORT.md
 [A5] 16 sơ đồ thiết kế trong docs/diagrams_final
 [A6] 4 tệp prompt thật trong config/prompts
 [A7] Ứng dụng FastAPI (cấu trúc app/core + app/services + app/routes + app/crud):
@@ -41,20 +41,29 @@ B. CÒN LẠI — NGOÀI PHẠM VI BACKEND
      URL cũ giữ nguyên; riêng XOÁ chuyển từ GET sang POST.
 
 [B2] Chạy thử `docker compose up --build` ít nhất một lần (D9/F2)
+     → ✅ ĐÃ XONG 12/10/2026 (container healthy, cổng 8010)
 
 [B3] Thử AI_PROVIDER=openai với khoá API thật
-     - hiện mới chạy và kiểm thử ở chế độ mock
-     - cần đo độ trễ thật, ca timeout, phản hồi rỗng/sai định dạng
+     → ✅ ĐÃ XONG: Groq free `openai/gpt-oss-120b` trong `.env`
+     → latency avg 1.2–4.0s; E2E UI qua browser: AI01/02/03 + Duyệt OK
 
 [B4] Người dùng thực tế điền và ký USER_ACCEPTANCE_TEST.md
-     - 33/35 ca có minh chứng tự động
-     - còn UAT-34 (màn hình hẹp) và UAT-35 (ký tự đặc biệt)
+     → 35/35 ca đã có kết quả; UAT-34 (mobile 390px) + UAT-35 (XSS escape)
+        đã minh chứng 12/10/2026. Còn bước ký/tên người dùng.
 
 [B5] Đo thời gian phản hồi để điền tiêu chí CK-07
+     → ✅ AI: goi thô avg 1.2s; lịch sử 2.5s; giải thích 4.0s; báo giá 3.0s
+        (Groq free, timeout 30s) — dưới ngưỡng 10s
 
 [B6] Chạy demo thật và chốt tiêu chí CK-10
+     → Cần bạn demo. Script gợi ý:
+        1. Login quan_ly → Tổng quan
+        2. Tiếp nhận phiếu → thêm hạng mục → báo giá
+        3. Trợ lý AI (AI01/02/03) → Duyệt AI
+        4. Bảo hành → Kho → Hóa đơn
 
 [B7] Lập lịch sử commit git (KT2-10) nếu giáo viên yêu cầu
+     → ✅ `git log --oneline` — Phase 0→6 + Groq AI
 
 ========================================================
 C. LƯU Ý VỀ MINH CHỨNG AI

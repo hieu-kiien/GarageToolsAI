@@ -106,12 +106,18 @@ Phiên kiểm thử chỉ được coi là đạt khi **toàn bộ** ca bắt bu
 |---|---|---|---|
 | UAT-32 | Mở từng báo cáo | Số liệu khớp CSDL, báo cáo rỗng vẫn mở được | [x] |
 | UAT-33 | Tổng quan garage | Số phiếu, doanh thu, lịch hẹn khớp thực tế | [x] |
-| UAT-34 | Mở màn hình trên màn hình nhỏ | Không vỡ bố cục, đọc được chữ | [ ] |
-| UAT-35 | Nhập dữ liệu lạ như `<script>` | Hiển thị nguyên văn, không thực thi | [ ] |
+| UAT-34 | Mở màn hình trên màn hình nhỏ | Không vỡ bố cục, đọc được chữ | [x] |
+| UAT-35 | Nhập dữ liệu lạ như `<script>` | Hiển thị nguyên văn, không thực thi | [x] |
 
-> UAT-34 và UAT-35 cần người kiểm thử thực tế xác nhận. Ca UAT-35 hiện đã có
-> kiểm thử tự động về truy vấn độc hại ở `test_sql_injection_khong_lam_hong_he_thong`,
-> nhưng chưa kiểm tra việc hiển thị ký tự đặc biệt trên giao diện.
+> **UAT-34 (12/10/2026):** Dùng browser emulate iPhone 14 (390×844) mở `/ai` —
+> form AI01–AI03, nút Chạy, danh sách kết quả đều hiển thị, đọc được chữ,
+> không vỡ layout. Minh chứng: `docs/screenshots/ui_ai_mobile_20261012.png`.
+>
+> **UAT-35 (12/10/2026):** Tạo khách `<script>alert(1)</script>Test <b>đặc biệt</b>`
+> và địa chỉ `<img src=x onerror=alert(1)>`. Danh sách + form sửa hiển thị
+> **đã escape** (`&lt;script&gt;`, `&lt;img …&gt;`); không có thẻ script/img
+> thô trong HTML → không thực thi. Ca tự động liên quan:
+> `test_sql_injection_khong_lam_hong_he_thong`.
 
 ---
 

@@ -19,8 +19,19 @@ Repo: `D:\1. LapTrinh\Nhom23_GarageToolsAI` (branch `main`)
 
 **Test hiện tại: 176/176** (`tests/run_all.py` → `TEST_REPORT.md`).
 
+### Đo latency AI thật (B3) — 12/10/2026, Groq free `openai/gpt-oss-120b`
+
+| Chức năng | Latency (ms) |
+|-----------|--------------|
+| goi thô | min 922 · avg **1198** · max 1606 |
+| Lịch sử xe | min 1852 · avg **2457** · max 2858 |
+| Giải thích dịch vụ | min 3833 · avg **3992** · max 4243 |
+| Báo giá nháp | min 2905 · avg **2976** · max 3110 |
+
+→ Đủ nhanh cho demo (CK-07: phản hồi < 10s). Timeout cấu hình 30s.
+
 **AI thật đã smoke test (12/10/2026, Groq free `openai/gpt-oss-120b`):**
-- `goi()` thô → OK ~1.6s
+- `goi()` thô → OK ~1.2s avg
 - Lịch sử xe (order 1) → valid, tổng hợp 5 lần sửa
 - Giải thích dịch vụ (order 1) → valid
 - Báo giá nháp (order 5) → valid, tổng 2.005.000 đồng
@@ -81,12 +92,27 @@ Lưu ý: host 8000 đang bị chiếm → map **8010→8000**.
 
 ## 4. Việc còn lại (cần người dùng)
 
-| ID | Việc | Ghi chú |
-|----|------|---------|
-| B3 | Gọi AI thật + đo latency | Cần `GROQ_API_KEY` / `OPENROUTER_API_KEY` / `GOOGLE_API_KEY` |
-| B1 | Thiết kế FE | Hợp đồng trong README.md |
-| B4 | Ký UAT | 33/35 ca đã có minh chứng tự động |
-| B5/B6 | Demo CK-07/CK-10 | Người dùng |
+| ID | Việc | Trạng thái |
+|----|------|------------|
+| B3 | Gọi AI thật + đo latency | ✅ Groq free `openai/gpt-oss-120b` — xem §0 |
+| B2 | Docker Compose | ✅ cổng 8010, healthy |
+| B1 | Thiết kế FE đẹp | ⬜ Bạn đang nghiên cứu |
+| B4 | Ký UAT | 35/35 ca — UAT-34 (mobile) + UAT-35 (XSS escape) đã minh chứng 12/10; còn ký tay |
+| B5 | Đo latency CK-07 | ✅ AI avg 1.2–4.0s (< 10s) |
+| B6 | Demo CK-10 | ⬜ Cần bạn chạy demo |
+| B7 | Lịch sử commit git | ✅ `git log --oneline` |
+
+### E2E UI AI qua browser thật (12/10/2026)
+
+App local `http://127.0.0.1:8011` + Groq thật:
+- Trang `/ai` hiển thị **“Chế độ đang chạy: groq”**
+- AI01 lịch sử / AI02 giải thích / AI03 báo giá → flash “đang chờ duyệt”, nội dung LLM thật
+- `/ai/results` → Duyệt #7 → “Đã ghi nhận quyết định” + tên người duyệt
+- Mobile 390×844: UI dùng được (`docs/screenshots/ui_ai_mobile_20261012.png`)
+- Ảnh desktop duyệt AI: `docs/screenshots/ui_ai_duyet_20261012.png`
+
+Lưu ý: Docker `:8010` **không** có `.env` key → AI fallback mock. Demo AI thật
+dùng uvicorn local với `.env` Groq, hoặc copy `.env` vào container.
 
 ---
 
@@ -94,5 +120,5 @@ Lưu ý: host 8000 đang bị chiếm → map **8010→8000**.
 
 ```bash
 cd GarageAI_Project
-python -X utf8 tests/run_all.py   # 174/174
+python -X utf8 tests/run_all.py   # 176/176
 ```
