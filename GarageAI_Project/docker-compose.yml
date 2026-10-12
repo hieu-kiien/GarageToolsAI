@@ -4,22 +4,28 @@ services:
     image: garagetools-ai:1.0.0
     container_name: garagetools-ai
     ports:
-      - "8000:8000"
+      - "8010:8000"
     environment:
       # Bắt buộc đổi trước khi triển khai thật
       SECRET_KEY: ${SECRET_KEY:-doi-thanh-khoa-nay-truoc-khi-trien-khai-that}
+      APP_ENV: ${APP_ENV:-development}
+      # AI: mock | openai | groq | openrouter | gemini | custom
       AI_PROVIDER: ${AI_PROVIDER:-mock}
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+      # Khoá chung cho mọi provider (hoặc GROQ_API_KEY / OPENROUTER_API_KEY / GOOGLE_API_KEY)
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_BASE_URL: ${AI_BASE_URL:-}
+      AI_MODEL: ${AI_MODEL:-}
       AI_TIMEOUT: ${AI_TIMEOUT:-15}
       DEBUG: ${DEBUG:-false}
-      SECURE_COOKIE: ${SECURE_COOKIE:-false}
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
+      # CSDL nằm ngoài image để không mất khi rebuild
+      DATABASE_PATH: /data/garage.db
     volumes:
-      - du-lieu-garage:/app
+      - du-lieu-garage:/data
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c",
-             "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=5).status==200 else 1)"]
+             "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=5).status==200 else 1)"]
       interval: 30s
       timeout: 10s
       retries: 3

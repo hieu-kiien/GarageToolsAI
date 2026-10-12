@@ -13,10 +13,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# Khởi tạo CSDL từ schema + dữ liệu mẫu
-RUN python database/init_db.py
+# Khởi tạo CSDL mẫu lúc build (entrypoint sẽ copy sang /data nếu volume trống)
+RUN python database/init_db.py \
+    && chmod +x docker-entrypoint.sh
 
 EXPOSE 8000
 
 # Chạy không chế độ tự nạp lại, phù hợp môi trường thật
-CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+ENTRYPOINT ["./docker-entrypoint.sh"]

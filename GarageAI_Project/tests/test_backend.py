@@ -1266,17 +1266,23 @@ class TestAiGateway(unittest.TestCase):
     def setUp(self):
         from app.core.config import get_settings
         s = get_settings()
-        self._cu = (s.AI_PROVIDER, s.OPENAI_API_KEY, s.OPENAI_BASE_URL,
-                    s.AI_TIMEOUT)
+        self._cu = (s.AI_PROVIDER, s.AI_API_KEY, s.AI_BASE_URL, s.AI_MODEL,
+                    s.AI_TIMEOUT, s.OPENAI_API_KEY, s.OPENAI_MODEL,
+                    s.OPENAI_BASE_URL)
         s.AI_PROVIDER = 'openai'
-        s.OPENAI_API_KEY = 'sk-test-khong-that'
-        s.OPENAI_BASE_URL = 'https://api.openai.com/v1/chat/completions'
+        s.AI_API_KEY = 'sk-test-khong-that'
+        s.AI_BASE_URL = 'https://api.openai.com/v1/chat/completions'
+        s.AI_MODEL = 'gpt-4o-mini'
+        s.OPENAI_API_KEY = s.AI_API_KEY
+        s.OPENAI_MODEL = s.AI_MODEL
+        s.OPENAI_BASE_URL = s.AI_BASE_URL
         s.AI_TIMEOUT = 5
 
     def tearDown(self):
         from app.core.config import get_settings
         s = get_settings()
-        (s.AI_PROVIDER, s.OPENAI_API_KEY, s.OPENAI_BASE_URL, s.AI_TIMEOUT) = self._cu
+        (s.AI_PROVIDER, s.AI_API_KEY, s.AI_BASE_URL, s.AI_MODEL, s.AI_TIMEOUT,
+         s.OPENAI_API_KEY, s.OPENAI_MODEL, s.OPENAI_BASE_URL) = self._cu
 
     def test_goimock_khong_goi_mang(self):
         """Chế độ mock: goi() trả None, không lỗi."""
@@ -1289,7 +1295,7 @@ class TestAiGateway(unittest.TestCase):
             get_settings().AI_PROVIDER = 'openai'
 
     def test_base_url_cu_full_path_khong_nhan_doi(self):
-        """OPENAI_BASE_URL đã chứa /chat/completions thì không nối thêm."""
+        """AI_BASE_URL đã chứa /chat/completions thì không nối thêm."""
         from app import ai_gateway
 
         class FakeResp:
@@ -1316,9 +1322,9 @@ class TestAiGateway(unittest.TestCase):
         self.assertEqual(goi_den, ['https://api.openai.com/v1/chat/completions'])
 
     def test_base_url_v1_duoc_noi_chat_completions(self):
-        """OPENAI_BASE_URL dạng /v1 thì tự nối /chat/completions."""
+        """AI_BASE_URL dạng /v1 thì tự nối /chat/completions."""
         from app.core.config import get_settings
-        get_settings().OPENAI_BASE_URL = 'https://api.openai.com/v1'
+        get_settings().AI_BASE_URL = 'https://api.openai.com/v1'
         from app import ai_gateway
 
         class FakeResp:
@@ -1373,8 +1379,104 @@ class TestAiGateway(unittest.TestCase):
         """Thiếu khóa API: _goi_openai ném AiError ngay (trước khi gọi mạng)."""
         from app.core.config import get_settings
         from app import ai_gateway
+        get_settings().AI_API_KEY = ''
         get_settings().OPENAI_API_KEY = ''
         self.assertRaises(ai_gateway.AiError, ai_gateway._goi_openai, 's', 'u')
+
+    def test_preset_groq_openrouter_gemini(self):
+        """Preset free-tier phải trỏ đúng base URL + model."""
+        from app.core.config import AI_PROVIDERS
+        self.assertEqual(AI_PROVIDERS['groq']['base'],
+                         'https://api.groq.com/openai/v1')
+        self.assertIn('llama', AI_PROVIDERS['groq']['model'])
+        self.assertEqual(AI_PROVIDERS['openrouter']['base'],
+                         'https://openrouter.ai/api/v1')
+        self.assertIn(':free', AI_PROVIDERS['openrouter']['model'])
+        self.assertEqual(AI_PROVIDERS['gemini']['base'],
+                         'https://generativelanguage.googleapis.com/v1beta/openai/')
+        self.assertIn('gemini', AI_PROVIDERS['gemini']['model'])
+        for p in ('groq', 'openrouter', 'gemini'):
+            self.assertTrue(AI_PROVIDERS[p]['free'], p)
+            self.assertTrue(AI_PROVIDERS[p]['key_env'], p)
+
+    def test_goi_den_dung_url_groq(self):
+        """Provider groq phải gọi đúng endpoint groq."""
+        from app.core.config import get_settings
+        from app import ai_gateway
+        s = get_settings()
+        s.AI_PROVIDER = 'groq'
+        s.AI_BASE_URL = 'https://api.groq.com/openai/v1'
+        s.AI_MODEL = 'llama-3.3-70b-versatile'
+
+        class FakeResp:
+            status_code = 200
+            def json(self):
+                return {'choices': [{'message': {'content': 'groq-ok'}}]}
+
+        goi_den = []
+        class FakeHttpx:
+            @staticmethod
+            def post(url, **kw):
+                goi_den.append(url)
+                return FakeResp()
+            class TimeoutException(Exception):
+                pass
+
+        import sys
+        sys.modules['httpx'] = FakeHttpx
+        try:
+            out = ai_gateway.goi('sys', 'user', cho_phep_mock=False)
+        finally:
+            del sys.modules['httpx']
+            s.AI_PROVIDER = 'openai'
+            s.AI_BASE_URL = 'https://api.openai.com/v1/chat/completions'
+        self.assertEqual(out, 'groq-ok')
+        self.assertEqual(goi_den,
+                         ['https://api.groq.com/openai/v1/chat/completions'])
+
+    def test_openrouter_gui_header_dac_biet(self):
+        """OpenRouter cần HTTP-Referer + X-Title."""
+        from app.core.config import get_settings
+        from app import ai_gateway
+        s = get_settings()
+        s.AI_PROVIDER = 'openrouter'
+        s.AI_BASE_URL = 'https://openrouter.ai/api/v1'
+        s.AI_MODEL = 'meta-llama/llama-3.3-70b-instruct:free'
+
+        class FakeResp:
+            status_code = 200
+            def json(self):
+                return {'choices': [{'message': {'content': 'or-ok'}}]}
+
+        hdrs = {}
+        class FakeHttpx:
+            @staticmethod
+            def post(url, **kw):
+                hdrs.update(kw.get('headers') or {})
+                return FakeResp()
+            class TimeoutException(Exception):
+                pass
+
+        import sys
+        sys.modules['httpx'] = FakeHttpx
+        try:
+            out = ai_gateway.goi('sys', 'user', cho_phep_mock=False)
+        finally:
+            del sys.modules['httpx']
+            s.AI_PROVIDER = 'openai'
+        self.assertEqual(out, 'or-ok')
+        self.assertIn('HTTP-Referer', hdrs)
+        self.assertIn('X-Title', hdrs)
+        self.assertTrue(hdrs['Authorization'].startswith('Bearer '))
+
+    def test_ai_provider_khong_hop_le_bi_chan(self):
+        from app.core.config import Settings
+        self.assertRaises(ValueError, Settings, {'AI_PROVIDER': 'chatgpt'})
+
+    def test_dev_thieu_khoa_tu_ha_ve_mock(self):
+        from app.core.config import Settings
+        s = Settings({'AI_PROVIDER': 'groq', 'APP_ENV': 'development'})
+        self.assertEqual(s.AI_PROVIDER, 'mock')
 
     def test_phan_tich_json_boc_khoi(self):
         from app import ai_gateway

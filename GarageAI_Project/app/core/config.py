@@ -19,6 +19,54 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 #: Khoá dùng cho môi trường phát triển. Ở production bắt buộc phải thay.
 KHOA_MAC_DINH = 'doi-thanh-khoa-nay-truoc-khi-trien-khai-that'
 
+#: Bảng preset nhà cung cấp AI (OpenAI-compatible chat/completions).
+#: free = free tier khả dụng; key_env = biến môi trường mang khoá riêng.
+AI_PROVIDERS: dict[str, dict] = {
+    'mock': {
+        'base': '',
+        'model': '',
+        'key_env': '',
+        'free': True,
+        'ghichu': 'Không gọi mạng — demo và kiểm thử.',
+    },
+    'openai': {
+        'base': 'https://api.openai.com/v1',
+        'model': 'gpt-4o-mini',
+        'key_env': 'OPENAI_API_KEY',
+        'free': False,
+        'ghichu': 'Có phí. Vẫn dùng được OPENAI_API_KEY cũ.',
+    },
+    'groq': {
+        'base': 'https://api.groq.com/openai/v1',
+        'model': 'llama-3.3-70b-versatile',
+        'key_env': 'GROQ_API_KEY',
+        'free': True,
+        'ghichu': 'Free tier tại console.groq.com — nhanh, OpenAI-compatible.',
+    },
+    'openrouter': {
+        'base': 'https://openrouter.ai/api/v1',
+        'model': 'meta-llama/llama-3.3-70b-instruct:free',
+        'key_env': 'OPENROUTER_API_KEY',
+        'free': True,
+        'ghichu': 'openrouter.ai — model có hậu tố :free, cần credit 0đ.',
+    },
+    'gemini': {
+        # Endpoint OpenAI-compatible của Google AI Studio.
+        'base': 'https://generativelanguage.googleapis.com/v1beta/openai/',
+        'model': 'gemini-2.0-flash',
+        'key_env': 'GOOGLE_API_KEY',
+        'free': True,
+        'ghichu': 'aistudio.google.com — free tier, biến GOOGLE_API_KEY.',
+    },
+    'custom': {
+        'base': '',
+        'model': '',
+        'key_env': 'AI_API_KEY',
+        'free': False,
+        'ghichu': 'Tự đặt AI_BASE_URL + AI_MODEL + AI_API_KEY.',
+    },
+}
+
 
 class Settings:
     """Cấu hình đọc một lần từ môi trường, có kiểm tra khi khởi động."""
@@ -84,14 +132,45 @@ class Settings:
         self.SEED_FILE: Path = BASE_DIR / 'database' / 'seed_data.sql'
 
         # --- AI ---
+        # Nhà cung cấp. Mọi provider đều đi qua giao thức OpenAI-compatible
+        # (chat/completions), nên chỉ khác base URL + model + khoá.
+        #   mock       — không gọi mạng, dùng demo/test
+        #   openai     — https://api.openai.com/v1
+        #   groq       — https://api.groq.com/openai/v1   (free tier)
+        #   openrouter — https://openrouter.ai/api/v1     (nhiều model :free)
+        #   gemini     — Google AI Studio OpenAI-compat   (free tier)
+        #   custom     — tự đặt AI_BASE_URL + AI_API_KEY + AI_MODEL
         provider = str(val('AI_PROVIDER', 'mock')).strip().lower()
-        if provider not in ('mock', 'openai'):
-            raise ValueError('AI_PROVIDER phải là mock hoặc openai, nhận được %r' % provider)
+        if provider not in AI_PROVIDERS:
+            raise ValueError(
+                'AI_PROVIDER phải là một trong %s, nhận được %r'
+                % (', '.join(sorted(AI_PROVIDERS)), provider))
         self.AI_PROVIDER: str = provider
-        self.OPENAI_API_KEY: str = str(val('OPENAI_API_KEY', '')).strip()
-        self.OPENAI_MODEL: str = str(val('OPENAI_MODEL', 'gpt-4o-mini'))
-        self.OPENAI_BASE_URL: str = str(
-            val('OPENAI_BASE_URL', 'https://api.openai.com/v1/chat/completions')).strip()
+
+        preset = AI_PROVIDERS.get(provider, {})
+        # Khoá: ưu tiên AI_API_KEY (dùng chung), sau đó biến riêng của provider,
+        # cuối cùng OPENAI_API_KEY (giữ tương thích ngược).
+        self.AI_API_KEY: str = str(
+            val('AI_API_KEY', '')
+            or val(preset.get('key_env', ''), '')
+            or val('OPENAI_API_KEY', '')
+        ).strip()
+        self.AI_BASE_URL: str = str(
+            val('AI_BASE_URL', '') or preset.get('base', '')
+        ).rstrip('/')
+        self.AI_MODEL: str = str(
+            val('AI_MODEL', '') or preset.get('model', '')
+        ).strip()
+        # Biến cũ vẫn đọc được (backward-compat).
+        if not self.AI_BASE_URL:
+            self.AI_BASE_URL = str(
+                val('OPENAI_BASE_URL', 'https://api.openai.com/v1')).rstrip('/')
+        if not self.AI_MODEL:
+            self.AI_MODEL = str(val('OPENAI_MODEL', 'gpt-4o-mini')).strip()
+        # Alias cũ → dùng khi cần code ngoài.
+        self.OPENAI_API_KEY = self.AI_API_KEY
+        self.OPENAI_MODEL = self.AI_MODEL
+        self.OPENAI_BASE_URL = self.AI_BASE_URL + '/chat/completions'
         self.AI_TIMEOUT: float = float(val('AI_TIMEOUT', 15))
         self.AI_MAX_CONTEXT: int = self._int(val('AI_MAX_CONTEXT'), 6000, minimum=500)
         # Chống bấm nút "Chạy" liên tục làm đốt tiền khóa API.
@@ -131,15 +210,22 @@ class Settings:
                 problems.append('thiếu ALLOWED_HOSTS')
             if not self.SESSION_COOKIE_SECURE:
                 problems.append('phải bật SESSION_COOKIE_SECURE khi chạy thật')
-            if self.AI_PROVIDER == 'openai' and not self.OPENAI_API_KEY:
-                problems.append('AI_PROVIDER=openai nhưng thiếu OPENAI_API_KEY')
+            if self.AI_PROVIDER != 'mock' and not self.AI_API_KEY:
+                problems.append(
+                    'AI_PROVIDER=%s nhưng thiếu API key (%s)'
+                    % (self.AI_PROVIDER, AI_PROVIDERS[self.AI_PROVIDER].get('key_env') or 'AI_API_KEY'))
+            if self.AI_PROVIDER != 'mock' and not self.AI_BASE_URL:
+                problems.append('AI_PROVIDER=%s nhưng thiếu AI_BASE_URL' % self.AI_PROVIDER)
+            if self.AI_PROVIDER != 'mock' and not self.AI_MODEL:
+                problems.append('AI_PROVIDER=%s nhưng thiếu AI_MODEL' % self.AI_PROVIDER)
             if problems:
                 raise RuntimeError(
                     'Cấu hình môi trường production không hợp lệ: ' + '; '.join(problems))
         if not self.SECRET_KEY:
             # Môi trường phát triển vẫn sinh khoá tạm để chạy được ngay.
             self.SECRET_KEY = KHOA_MAC_DINH
-        if self.AI_PROVIDER == 'openai' and not self.OPENAI_API_KEY:
+        # Dev/test: không có khoá thì im lặng hạ về mock thay vì crash.
+        if self.AI_PROVIDER != 'mock' and not self.AI_API_KEY:
             self.AI_PROVIDER = 'mock'
 
     # ------------------------------------------------------------------ tiện ích

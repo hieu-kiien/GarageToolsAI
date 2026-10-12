@@ -1,124 +1,94 @@
-# GarageTools AI — Tiến độ triển khai (Autopilot Phase 0→6)
+# GarageTools AI — Tiến độ triển khai (Autopilot Phase 0→6 + Free AI + Docker)
 
 Cập nhật: 12/10/2026  
 Repo: `D:\1. LapTrinh\Nhom23_GarageToolsAI` (branch `main`)
 
 ## 0. Tổng quan
 
-| Phase | Nội dung | Commit | Trạng thái |
-|-------|----------|--------|------------|
-| 0 | Git init/branch + backup `garage.db` | baseline | ✅ |
-| 1 | Sửa P2/P3 (permission forms, env, wording, typo, base URL, async) | `7be8dba` | ✅ |
-| 2 | Xe (VIN/km/màu) + tiếp nhận + nghiệm thu | `43cd74d` | ✅ |
-| 3 | Báo giá chính thức (quotations) | `0ecff7b` | ✅ |
-| 4 | Kho ledger (stock_transactions) | `5fee9bf` | ✅ |
-| 5 | Bảo hành (warranties) | `f1411e2` | ✅ |
-| 6 | AI gateway: fix base URL + mock httpx tests | `d2c2431` | ✅ |
-| 7 | AI nâng cao (xem §3 — **đã loại khỏi đặc tả**) | — | ⛔ |
+| Phase | Nội dung | Trạng thái |
+|-------|----------|------------|
+| 0 | Git init/branch + backup `garage.db` | ✅ |
+| 1 | Sửa P2/P3 (permission forms, env, wording, typo, base URL, async) | ✅ |
+| 2 | Xe (VIN/km/màu) + tiếp nhận + nghiệm thu | ✅ |
+| 3 | Báo giá chính thức (quotations) | ✅ |
+| 4 | Kho ledger (stock_transactions) | ✅ |
+| 5 | Bảo hành (warranties) | ✅ |
+| 6 | AI gateway multi-provider free (Groq/OpenRouter/Gemini) + mock tests | ✅ |
+| 6b | Docker Compose: build + healthcheck + volume CSDL | ✅ (cổng **8010**) |
+| 7 | AI nâng cao chẩn đoán | ⛔ Loại theo KT1_KT2 |
 
-**Test hiện tại: 169/169** (`tests/run_all.py` → `TEST_REPORT.md`).
+**Test hiện tại: 174/174** (`tests/run_all.py` → `TEST_REPORT.md`).
 
 Backup DB: `backups\garage.db.pre-phase1.20261011_194251`.
 
 ---
 
-## 1. Đã hoàn thành chi tiết
+## 1. AI multi-provider (free-tier)
 
-### Phase 1 — Sửa P2/P3
-- 7 form GET → POST + CSRF (`yeu_cau_quyen`)
-- `.env.example` đồng bộ `app/core/config.py`
-- Wording, typo `XungDpot`→`XungDdot`
-- `ai_gateway` base URL
-- Test: `TestQuyenBieuMau`
+Mọi provider đều đi qua giao thức **OpenAI-compatible** `chat/completions`:
 
-### Phase 2 — Xe / Tiếp nhận / Nghiệm thu
-- `vehicles` + VIN, màu sắc, số km
-- `intake_records` (tiếp nhận)
-- Nghiệm thu (COMPLETED có checklist)
-- Migration `001_*`
-- Test: `TestXeMoiTruong`, `TestTiepNhanNghiemThu`
+| AI_PROVIDER | Base URL | Model mặc định | Biến khoá | Free |
+|-------------|----------|----------------|-----------|------|
+| `mock` | — | — | — | ✅ |
+| `openai` | `https://api.openai.com/v1` | `gpt-4o-mini` | `OPENAI_API_KEY` | ❌ |
+| `groq` | `https://api.groq.com/openai/v1` | `llama-3.3-70b-versatile` | `GROQ_API_KEY` | ✅ |
+| `openrouter` | `https://openrouter.ai/api/v1` | `meta-llama/llama-3.3-70b-instruct:free` | `OPENROUTER_API_KEY` | ✅ |
+| `gemini` | `https://generativelanguage.googleapis.com/v1beta/openai/` | `gemini-2.0-flash` | `GOOGLE_API_KEY` | ✅ |
+| `custom` | `AI_BASE_URL` | `AI_MODEL` | `AI_API_KEY` | tuỳ |
 
-### Phase 3 — Báo giá chính thức
-- Bảng `quotations` + `quotation_items` (XOR CHECK)
-- Quyền `quote.manage` / `quote.approve`
-- Service + routes + templates `bao_gia*.html`
-- Migration `002_quotations.sql`
-- Test: `TestBaoGia` (15)
+Biến chung: `AI_API_KEY`, `AI_BASE_URL`, `AI_MODEL` (ưu tiên hơn preset).  
+Dev/test thiếu khoá → tự hạ về `mock` (không crash). Production thiếu khoá → fail-fast.
 
-### Phase 4 — Kho ledger
-- Bảng `stock_transactions` (RECEIPT/USAGE/RETURN/ADJUSTMENT)
-- Mọi đổi stock qua `services/stock.py.ghi_giao_dich()`
-- Invariant: `parts.stock == SUM(stock_transactions.qty)`
-- Trang `/stock`, nhập/điều chỉnh tồn, cảnh báo tồn thấp
-- Migration `003_stock_ledger.sql`
-- Test: `TestKhoLedger` (11)
-
-### Phase 5 — Bảo hành
-- Bảng `warranties` (scope SERVICE/PART XOR, end_date tính backend)
-- Chỉ phiếu COMPLETED; chặn trùng ACTIVE/CLAIMED
-- Quyền `warranty.manage`
-- Migration `004_warranties.sql`
-- Test: `TestBaoHanh` (15)
-
-### Phase 6 — AI gateway
-- **Bug fix:** `OPENAI_BASE_URL` mặc định đã chứa `/chat/completions` → không nối thêm lần 2
-- Hỗ trợ cả `https://api.openai.com/v1` và URL đầy đủ
-- Test `TestAiGateway` (8) mock `httpx` — không cần key thật
-- `.env.example` thêm `OPENAI_BASE_URL`
+**Cách bật AI thật (ví dụ Groq free):**
+```bash
+# GarageAI_Project/.env
+AI_PROVIDER=groq
+GROQ_API_KEY=gsk_...
+# hoặc dùng biến chung:
+# AI_API_KEY=gsk_...
+```
 
 ---
 
-## 2. Số liệu backend
-
-| Hạng mục | Số |
-|----------|-----|
-| Bảng CSDL | 21 (20 + warranties) |
-| Migration | 001–004 |
-| Route chính | system, auth, parties, orders, quotations, stock, warranties |
-| Test | **169** (37 schema + 6 backup + 126 backend) |
-| Demo users | `quan_ly`, `le_tan`, `ky_thuat_vien`, `thu_ngan` / `Garage@2026` |
-
----
-
-## 3. Phase 7 — ĐÃ LOẠI khỏi đặc tả (không làm)
-
-Tài liệu `KT1_KT2_AI_USAGE.md` ghi rõ:
-
-> **Loại bỏ ý tưởng “AI chẩn đoán lỗi xe”** vì nằm ngoài phạm vi và rủi ro cao;
-> giữ lại cơ chế Human Review.
-
-Prompt `system.txt` cũng cấm: *“Không tự chẩn đoán lỗi xe.”*
-
-**Không** triển khai chatbot chẩn đoán / đề suất tự động sửa chữa theo Phase 7
-trong bản kế hoạch trước — mâu thuẫn với quyết định đã chốt của nhóm.
-
----
-
-## 4. Việc còn lại (ngoài phạm vi autopilot backend)
-
-Theo `DANH SACH VIEC CON LAI.txt`:
-
-| ID | Việc | Cần gì |
-|----|------|--------|
-| B1 | Thiết kế giao diện (FE) | Người dùng |
-| B2 | `docker compose up --build` | Có thể tự chạy thử |
-| B3 | AI thật `AI_PROVIDER=openai` | **Cần OPENAI_API_KEY** |
-| B4 | Ký `USER_ACCEPTANCE_TEST.md` | Người dùng |
-| B5/B6 | Đo latency / demo CK-10 | Người dùng |
-| B7 | Lịch sử commit git | Có thể tự làm khi được yêu cầu |
-
----
-
-## 5. Cách chạy & kiểm thử
+## 2. Docker (B2 đã xong)
 
 ```bash
-# Backend
 cd GarageAI_Project
-python -X uvicorn app.main:app --reload
+docker compose up -d          # app: http://127.0.0.1:8010
+docker compose logs -f app
+docker compose down
+```
 
-# Full test (tạo DB tạm, không đụng garage.db thật)
-python -X utf8 tests/run_all.py
+- Image: `garagetools-ai:1.0.0` (Python 3.12-slim)
+- Volume `du-lieu-garage` → `/data/garage.db` (không mất dữ liệu khi rebuild)
+- Entrypoint seed CSDL lần đầu từ image
+- Healthcheck: `GET /healthz` → `{"trang_thai":"ok",...}`
+- Đã build + chạy thử: container **healthy**, healthz **200**
 
-# AI thật (cần key)
-# .env: AI_PROVIDER=openai, OPENAI_API_KEY=sk-...
+Lưu ý: host 8000 đang bị chiếm → map **8010→8000**.
+
+---
+
+## 3. Phase 7 — ĐÃ LOẠI (không làm)
+
+`KT1_KT2_AI_USAGE.md`: loại “AI chẩn đoán lỗi xe”. Prompt `system.txt` cấm chẩn đoán.
+
+---
+
+## 4. Việc còn lại (cần người dùng)
+
+| ID | Việc | Ghi chú |
+|----|------|---------|
+| B3 | Gọi AI thật + đo latency | Cần `GROQ_API_KEY` / `OPENROUTER_API_KEY` / `GOOGLE_API_KEY` |
+| B1 | Thiết kế FE | Hợp đồng trong README.md |
+| B4 | Ký UAT | 33/35 ca đã có minh chứng tự động |
+| B5/B6 | Demo CK-07/CK-10 | Người dùng |
+
+---
+
+## 5. Test
+
+```bash
+cd GarageAI_Project
+python -X utf8 tests/run_all.py   # 174/174
 ```

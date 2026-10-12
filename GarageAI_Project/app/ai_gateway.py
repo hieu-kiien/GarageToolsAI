@@ -36,8 +36,28 @@ class AiResult(dict):
 # ---------------------------------------------------------------------------
 # Provider
 # ---------------------------------------------------------------------------
+def _chat_url(s) -> str:
+    """Gộp base URL thành endpoint chat/completions (chấp nhận cả 2 dạng)."""
+    base = (s.AI_BASE_URL or s.OPENAI_BASE_URL or '').rstrip('/')
+    if not base:
+        raise AiError('Chưa cấu hình AI_BASE_URL')
+    if base.endswith('/chat/completions'):
+        return base
+    return base + '/chat/completions'
+
+
+def _headers(s) -> dict:
+    h = {'Authorization': 'Bearer %s' % (s.AI_API_KEY or s.OPENAI_API_KEY)}
+    # OpenRouter khuyến nghị gửi 2 header này để được ghi nhận traffic.
+    if s.AI_PROVIDER == 'openrouter':
+        h.setdefault('HTTP-Referer', 'https://localhost')
+        h.setdefault('X-Title', s.APP_NAME)
+    return h
+
+
 def _goi_openai(system_prompt, user_prompt):
-    if not get_settings().OPENAI_API_KEY:
+    s = get_settings()
+    if not (s.AI_API_KEY or s.OPENAI_API_KEY):
         raise AiError('Chưa cấu hình khóa API')
     try:
         import httpx
@@ -45,26 +65,22 @@ def _goi_openai(system_prompt, user_prompt):
         raise AiError('Thiếu thư viện httpx')
 
     try:
-        # OPENAI_BASE_URL có thể là https://api.openai.com/v1 hoặc
-        # https://api.openai.com/v1/chat/completions (tùy cấu hình).
-        base = get_settings().OPENAI_BASE_URL.rstrip('/')
-        url = base if base.endswith('/chat/completions') else base + '/chat/completions'
         r = httpx.post(
-            url,
-            headers={'Authorization': 'Bearer %s' % get_settings().OPENAI_API_KEY},
+            _chat_url(s),
+            headers=_headers(s),
             json={
-                'model': get_settings().OPENAI_MODEL,
+                'model': s.AI_MODEL or s.OPENAI_MODEL,
                 'temperature': 0,
                 'messages': [
                     {'role': 'system', 'content': system_prompt},
                     {'role': 'user', 'content': user_prompt},
                 ],
             },
-            timeout=get_settings().AI_TIMEOUT,
+            timeout=s.AI_TIMEOUT,
         )
     except httpx.TimeoutException:
         # Không ghi lại khóa hay nội dung nhạy cảm vào log
-        raise AiError('Nhà cung cấp AI không phản hồi trong %d giây' % get_settings().AI_TIMEOUT)
+        raise AiError('Nhà cung cấp AI không phản hồi trong %d giây' % s.AI_TIMEOUT)
     except Exception:
         log.exception('Lỗi kết nối nhà cung cấp AI')
         raise AiError('Không kết nối được nhà cung cấp AI')
@@ -112,7 +128,8 @@ def _cat_ngoi_dung(text):
 
 
 def _lay_input(text):
-    return {'provider': get_settings().AI_PROVIDER, 'model': get_settings().OPENAI_MODEL,
+    s = get_settings()
+    return {'provider': s.AI_PROVIDER, 'model': s.AI_MODEL or s.OPENAI_MODEL,
             'do_dai_input': len(text or '')}
 
 
