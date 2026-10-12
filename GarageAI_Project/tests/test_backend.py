@@ -1258,5 +1258,146 @@ class TestBaoHanh(CoSoDichChung):
         self.assertEqual(bh['end_date'], '2027-02-28')
 
 
+# ===========================================================================
+class TestAiGateway(unittest.TestCase):
+    """Kiểm thử lớp trung gian gọi AI (ai_gateway) — mock httpx, không cần
+    khóa API thật."""
+
+    def setUp(self):
+        from app.core.config import get_settings
+        s = get_settings()
+        self._cu = (s.AI_PROVIDER, s.OPENAI_API_KEY, s.OPENAI_BASE_URL,
+                    s.AI_TIMEOUT)
+        s.AI_PROVIDER = 'openai'
+        s.OPENAI_API_KEY = 'sk-test-khong-that'
+        s.OPENAI_BASE_URL = 'https://api.openai.com/v1/chat/completions'
+        s.AI_TIMEOUT = 5
+
+    def tearDown(self):
+        from app.core.config import get_settings
+        s = get_settings()
+        (s.AI_PROVIDER, s.OPENAI_API_KEY, s.OPENAI_BASE_URL, s.AI_TIMEOUT) = self._cu
+
+    def test_goimock_khong_goi_mang(self):
+        """Chế độ mock: goi() trả None, không lỗi."""
+        from app import ai_gateway
+        from app.core.config import get_settings
+        get_settings().AI_PROVIDER = 'mock'
+        try:
+            self.assertIsNone(ai_gateway.goi('sys', 'user'))
+        finally:
+            get_settings().AI_PROVIDER = 'openai'
+
+    def test_base_url_cu_full_path_khong_nhan_doi(self):
+        """OPENAI_BASE_URL đã chứa /chat/completions thì không nối thêm."""
+        from app import ai_gateway
+
+        class FakeResp:
+            status_code = 200
+            def json(self):
+                return {'choices': [{'message': {'content': 'xin chào'}}]}
+
+        goi_den = []
+        class FakeHttpx:
+            @staticmethod
+            def post(url, **kw):
+                goi_den.append(url)
+                return FakeResp()
+            class TimeoutException(Exception):
+                pass
+
+        import sys
+        sys.modules['httpx'] = FakeHttpx
+        try:
+            out = ai_gateway.goi('sys', 'user', cho_phep_mock=False)
+        finally:
+            del sys.modules['httpx']
+        self.assertEqual(out, 'xin chào')
+        self.assertEqual(goi_den, ['https://api.openai.com/v1/chat/completions'])
+
+    def test_base_url_v1_duoc_noi_chat_completions(self):
+        """OPENAI_BASE_URL dạng /v1 thì tự nối /chat/completions."""
+        from app.core.config import get_settings
+        get_settings().OPENAI_BASE_URL = 'https://api.openai.com/v1'
+        from app import ai_gateway
+
+        class FakeResp:
+            status_code = 200
+            def json(self):
+                return {'choices': [{'message': {'content': 'ok'}}]}
+
+        goi_den = []
+        class FakeHttpx:
+            @staticmethod
+            def post(url, **kw):
+                goi_den.append(url)
+                return FakeResp()
+            class TimeoutException(Exception):
+                pass
+
+        import sys
+        sys.modules['httpx'] = FakeHttpx
+        try:
+            out = ai_gateway.goi('sys', 'user', cho_phep_mock=False)
+        finally:
+            del sys.modules['httpx']
+        self.assertEqual(out, 'ok')
+        self.assertEqual(goi_den, ['https://api.openai.com/v1/chat/completions'])
+
+    def test_429_va_500_bi_chuyen_sang_mock(self):
+        """Lỗi nhà cung cấp: nếu cho_phep_mock thì trả None, không ném."""
+        from app import ai_gateway
+
+        class FakeResp:
+            status_code = 429
+            def json(self):
+                return {}
+
+        class FakeHttpx:
+            @staticmethod
+            def post(url, **kw):
+                return FakeResp()
+            class TimeoutException(Exception):
+                pass
+
+        import sys
+        sys.modules['httpx'] = FakeHttpx
+        try:
+            self.assertIsNone(ai_gateway.goi('sys', 'user', cho_phep_mock=True))
+            self.assertRaises(ai_gateway.AiError, ai_gateway.goi,
+                              'sys', 'user', cho_phep_mock=False)
+        finally:
+            del sys.modules['httpx']
+
+    def test_thieu_api_key_khong_goimock(self):
+        """Thiếu khóa API: _goi_openai ném AiError ngay (trước khi gọi mạng)."""
+        from app.core.config import get_settings
+        from app import ai_gateway
+        get_settings().OPENAI_API_KEY = ''
+        self.assertRaises(ai_gateway.AiError, ai_gateway._goi_openai, 's', 'u')
+
+    def test_phan_tich_json_boc_khoi(self):
+        from app import ai_gateway
+        self.assertEqual(ai_gateway._phan_tich_json('```json\n{"a":1}\n```'), {'a': 1})
+        self.assertEqual(ai_gateway._phan_tich_json('nói gì đó {"a": 2} hết'), {'a': 2})
+        self.assertIsNone(ai_gateway._phan_tich_json(''))
+
+    def test_so_nguyen_chiu_duoc_chuoi(self):
+        from app import ai_gateway
+        self.assertEqual(ai_gateway._so_nguyen('1.500.000'), 1500000)
+        self.assertEqual(ai_gateway._so_nguyen(42), 42)
+        self.assertIsNone(ai_gateway._so_nguyen(True))   # bool là không tin
+        self.assertIsNone(ai_gateway._so_nguyen('abc'))
+
+    def test_cat_ngu_dung_vuot_gioi_han(self):
+        from app.core.config import get_settings
+        from app import ai_gateway
+        get_settings().AI_MAX_CONTEXT = 500
+        try:
+            self.assertTrue(len(ai_gateway._cat_ngoi_dung('x' * 600)) < 600)
+        finally:
+            get_settings().AI_MAX_CONTEXT = 6000
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)
