@@ -2,17 +2,18 @@
 
 | | |
 |---|---|
-| Ngày chạy | 2026-10-12 16:55 |
+| Ngày chạy | 2026-10-13 15:09 |
 | Môi trường | Python 3.13.14, SQLite 3.50.4 |
-| Tổng số ca | **176** |
-| Kết quả | **176 đạt / 0 lỗi** |
+| Tổng số ca | **206** |
+| Kết quả | **206 đạt / 0 lỗi** |
 
 ---
 
 ## 1. Phạm vi
 
-Bộ kiểm thử gồm ba phần: ràng buộc và dữ liệu mẫu của cơ sở dữ liệu, quy
-trình sao lưu/khôi phục, và toàn bộ ứng dụng web. Phần ứng dụng được kiểm
+Bộ kiểm thử gồm bốn phần: ràng buộc và dữ liệu mẫu của cơ sở dữ liệu, quy
+trình sao lưu/khôi phục, ứng dụng web (trang Jinja2) và tầng API JSON mà
+giao diện React gọi. Phần ứng dụng được kiểm
 tra bằng cách gọi thật các đường dẫn HTTP trên một cơ sở dữ liệu tạm dựng
 từ `schema.sql` và `seed_data.sql`, nên ca kiểm thử chạm đúng mã nguồn đang
 chạy chứ không kiểm tra bản sao.
@@ -34,6 +35,12 @@ chạy chứ không kiểm tra bản sao.
 - Tệp: `tests/test_backend.py`
 - Phạm vi: Gọi thật các đường dẫn HTTP trên một CSDL tạm: đăng nhập, phân quyền, CSRF, kiểm tra đầu vào, tiền và tồn kho (kể cả chạy đồng thời), thông báo, phân trang, xoá dữ liệu và AI.
 - Kết quả: 133 ca, 133 đạt, 0 lỗi
+
+### Kiểm thử tầng API JSON /api/*
+
+- Tệp: `tests/test_api.py`
+- Phạm vi: Gọi các endpoint JSON mà giao diện React gọi: phiên và mã CSRF, lỗi theo từng trường, phong bì phân trang, luồng phiếu – báo giá – hoá đơn – thanh toán, kho, bảo hành, AI và phân quyền bốn vai trò.
+- Kết quả: 30 ca, 30 đạt, 0 lỗi
 
 ## 2. Nhóm ca kiểm thử ràng buộc cơ sở dữ liệu
 
@@ -73,15 +80,30 @@ chạy chứ không kiểm tra bản sao.
 | Human Review | Duyệt/từ chối ghi đủ người duyệt và thời điểm; không duyệt lại được kết quả đã xử lý; người thiếu quyền bị từ chối |
 | Mô-đun cửa hàng | Xem và tìm sản phẩm trong phần mở rộng ngoài phạm vi đề tài |
 
-## 5. Cách chạy lại
+## 5. Nhóm ca kiểm thử tầng API JSON
+
+| Nhóm | Nội dung kiểm tra |
+|---|---|
+| Phiên và CSRF | Cookie `garage_csrf` luôn có; thiếu header CSRF bị 403; chưa đăng nhập nhận 401 JSON |
+| Lỗi đầu vào | Thiếu trường và trường thừa trả 400 kèm tên trường; tạo tài khoản thiếu mật khẩu bị chặn |
+| Phiếu sửa chữa | Tạo – tiếp nhận – thêm hạng mục – chuyển trạng thái đủ luồng; nhảy cóc bị 409; phân công kỹ thuật viên ghi đúng |
+| Báo giá | Tạo, thêm dòng, gửi, duyệt, áp dụng; lễ tân không duyệt được (403) |
+| Tiền | Lập hoá đơn chỉ khi phiếu hoàn thành; thu vượt bị 409; thu một phần rồi thu đủ; sai trường tiền bị 400 |
+| Kho và bảo hành | Nhập kho và điều chỉnh cập nhật tồn + sổ kho; bảo hành chỉ lập cho phiếu hoàn thành, chi tiết có người lập |
+| AI | Chay/duyệt/không duyệt lại được; loại sai bị 400; thiếu quyền bị 403 |
+| Phân quyền | Thu ngân không xem người dùng/báo cáo, không tạo phiếu; kỹ thuật viên không tạo phiếu/chạy AI |
+| Báo cáo và tra cứu | Báo cáo đúng phong bì; tra cứu không lộ mật khẩu; `/api/meta` đủ từ điển hiển thị |
+
+## 6. Cách chạy lại
 
 ```bash
 python tests/test_schema_constraints.py
 python tests/test_backup_restore.py
 python tests/test_backend.py
+python tests/test_api.py
 ```
 
-## 6. Ghi chú
+## 7. Ghi chú
 
 - Các ca kiểm thử ứng dụng dùng `AI_PROVIDER=mock` nên không cần kết mối
   mạng, không cần khoá API và cho kết quả lặp lại được.

@@ -13,7 +13,6 @@ Những thứ **không** làm ở đây: SQL, quy tắc nghiệp vụ, dựng HT
 """
 from __future__ import annotations
 
-import secrets
 import sqlite3
 import time
 import uuid
@@ -26,12 +25,11 @@ from fastapi.staticfiles import StaticFiles
 from .core import flash as flash_mod
 from .core import ratelimit
 from .core.config import get_settings
-from .core.errors import (AppError, KhongCoQuyen, KhongHopLeCsrf, KhongXacThuc,
-                          KhongTimThay,
-                           LoiKhongMoDuoc)
+from .core.errors import (AppError, KhongHopLeCsrf, LoiKhongMoDuoc)
 from .core.logging import (cau_hinh, get as get_logger, log_thong_tap,
                            request_id_var, user_id_var)
-from .core.security import CSRF_FIELD, CSRF_COOKIE, kiem_tra_csrf, kiem_tra_origin
+from .core.security import (CSRF_COOKIE, kiem_tra_csrf,
+                            kiem_tra_origin, tao_csrf_token)
 
 settings = get_settings()
 cau_hinh(settings.DEBUG)
@@ -120,6 +118,14 @@ def create_app() -> FastAPI:
         response.headers.setdefault('Permissions-Policy',
                                     'geolocation=(), microphone=(), camera=()')
         response.headers.setdefault('Cache-Control', 'no-store')
+        # Giao diện React gọi `/api/*` đầu tiên (trước khi xem trang HTML nào)
+        # nên mọi phản hồi API đều phải mang mã CSRF — cookie không HttpOnly để
+        # JS đọc được và gắn vào header `X-CSRF-Token`.
+        if request.url.path.startswith('/api/') and not request.cookies.get(CSRF_COOKIE):
+            response.set_cookie(CSRF_COOKIE, tao_csrf_token(),
+                                max_age=settings.SESSION_MAX_AGE, httponly=False,
+                                secure=settings.SESSION_COOKIE_SECURE,
+                                samesite=settings.SESSION_COOKIE_SAMESITE, path='/')
         if settings.IS_PRODUCTION:
             response.headers.setdefault('Strict-Transport-Security',
                                         'max-age=31536000; includeSubDomains')
@@ -159,8 +165,14 @@ def sys_exc_info():
 
 def _tra_loi(e: AppError, request: Request):
     if _muon_json(request):
-        return JSONResponse({'loi': e.ma, 'thong_diep': e.thong_diep},
-                            status_code=e.status_code)
+        phan_hoi = {'loi': e.ma, 'thong_diep': e.thong_diep}
+        # `truong` = tên ô sai (str) hoặc bản đồ lỗi từng trường của API JSON
+        # (`api_truong`), để giao diện hiện lỗi đúng chỗ thay vì một câu chung.
+        if getattr(e, 'truong', None):
+            phan_hoi['truong'] = e.truong
+        if getattr(e, 'api_truong', None):
+            phan_hoi['truong'] = e.api_truong
+        return JSONResponse(phan_hoi, status_code=e.status_code)
     from .routes import render
     return render(request, 'loi.html',
                   {'ma': e.status_code, 'tieu_de': _tieu_de(e.status_code),
@@ -242,6 +254,10 @@ def _dang_ky_router(app: FastAPI) -> None:
     app.include_router(quotations.router)
     app.include_router(stock.router)
     app.include_router(warranties.router)
+    # Tầng JSON cho giao diện React: cùng services, cùng quy tắc quyền với
+    # các route HTML phía trên.
+    from .routes.api import api as api_router
+    app.include_router(api_router)
 
 
 app = create_app()

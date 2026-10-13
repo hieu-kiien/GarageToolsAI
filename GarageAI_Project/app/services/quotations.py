@@ -10,11 +10,10 @@ Báo giá đi theo phiếu sửa chữa. Ba nguyên tắc:
 """
 from __future__ import annotations
 
-import sqlite3
 
 from .. import crud
 from ..core.db import fetch_all, fetch_one, fetch_value, transaction
-from ..core.errors import (AppError, KhongTimThay, SaiQuyTac, XungDdot)
+from ..core.errors import (KhongTimThay, SaiQuyTac, XungDdot)
 from ..models import (DuyetBaoGiaInput, HangMucBaoGiaInput, TaoBaoGiaInput)
 
 #: Trạng thái được phép thêm/gỡ dòng.
@@ -111,7 +110,7 @@ def tao_bao_gia(du_lieu: TaoBaoGiaInput, user) -> int:
 
 
 def them_hang_muc(bao_gia_id: int, du_lieu: HangMucBaoGiaInput) -> None:
-    bg = _kiem_tra_sua_duoc(bao_gia_id)
+    _kiem_tra_sua_duoc(bao_gia_id)
     if du_lieu.loai == 'dich_vu':
         hang = crud.lay_mot('services', du_lieu.ma)
         if hang is None or not hang['is_active']:
@@ -158,7 +157,7 @@ def _kiem_tra_sua_duoc(bao_gia_id: int) -> dict:
 # Gửi / duyệt / huỷ
 # ---------------------------------------------------------------------------
 def gui_bao_gia(bao_gia_id: int) -> None:
-    bg = _kiem_tra_trang_thai(bao_gia_id, TRANG_THAI_DUOC_GUI, 'gửi')
+    _kiem_tra_trang_thai(bao_gia_id, TRANG_THAI_DUOC_GUI, 'gửi')
     if not fetch_value('SELECT COUNT(*) FROM quotation_items WHERE quotation_id = ?',
                        (bao_gia_id,), 0):
         raise SaiQuyTac('Báo giá chưa có hạng mục nên không thể gửi.')

@@ -15,13 +15,12 @@ có thể trừ kho âm.
 """
 from __future__ import annotations
 
-import sqlite3
 
 from .. import crud
-from ..core.db import (fetch_all, fetch_one, fetch_value, phieu_da_quyet_toan,
+from ..core.db import (fetch_all, fetch_one, phieu_da_quyet_toan,
                         tong_phieu, transaction)
-from ..core.errors import (AppError, KhongTimThay, LoiKhongMoDuoc, SaiQuyTac,
-                           VuotGioiHan, XungDdot)
+from ..core.errors import (KhongTimThay, SaiQuyTac,
+                           XungDdot)
 from ..core.money import utc_now
 from ..models import (DoiTrangThaiInput, NghiemThuInput, NhatKyInput,
                       PhanCongInput, TaoPhieuInput, ThemHangMucInput,
@@ -96,6 +95,14 @@ def hoa_don_cua_phieu(phieu_id: int) -> dict | None:
     return fetch_one('SELECT * FROM invoices WHERE repair_order_id = ?', (phieu_id,))
 
 
+def bien_ban_tiep_nhan(phieu_id: int) -> dict | None:
+    """Biến bản tiếp nhận xe (nếu đã ghi) kèm tên người tiếp nhận."""
+    return fetch_one(
+        'SELECT i.*, u.full_name AS nguoi_tiep_nhan'
+        ' FROM intake_records i LEFT JOIN users u ON u.id = i.created_by'
+        ' WHERE i.repair_order_id = ?', (phieu_id,))
+
+
 # ---------------------------------------------------------------------------
 # Kiểm tra quyền trên phiếu (dùng lại cho mọi thao tác)
 # ---------------------------------------------------------------------------
@@ -154,16 +161,14 @@ def gan_ky_thuat_vien(phieu_id: int, du_lieu: PhanCongInput, user) -> None:
         raise SaiQuyTac('Phiếu đã %s nên không thể phân công lại.'
                         % TEN_TRANG_THAI.get(phieu['status'], phieu['status']))
     if du_lieu.technician_id is None:
-        crud.execute('UPDATE repair_orders SET technician_id = NULL WHERE id = ?',
-                     (phieu_id,))
+        crud.sua('repair_orders', phieu_id, {'technician_id': None})
         ghi = 'Bỏ phân công kỹ thuật viên.'
     else:
         ktv = crud.nguoi_dung_theo_id(du_lieu.technician_id)
         if ktv is None or ktv['role'] != 'TECHNICIAN':
             raise SaiQuyTac('Người được chọn không phải kỹ thuật viên.',
                             truong='technician_id')
-        crud.execute('UPDATE repair_orders SET technician_id = ? WHERE id = ?',
-                     (du_lieu.technician_id, phieu_id))
+        crud.sua('repair_orders', phieu_id, {'technician_id': du_lieu.technician_id})
         ghi = 'Phân công kỹ thuật viên %s.' % ktv['full_name']
     with transaction() as c:
         _ghi_nhat_ky(c, phieu_id, user['id'], ghi)

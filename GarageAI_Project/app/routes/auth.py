@@ -5,11 +5,9 @@ from __future__ import annotations
 import sqlite3
 
 from fastapi import APIRouter, Form, Request
-from fastapi.responses import RedirectResponse
 
-from ..core import flash, ratelimit
+from ..core import flash
 from ..core.errors import AppError, KhongXacThuc
-from ..core.security import CSRF_FIELD
 from ..models import DangNhapInput, DoiMatKhauInput, TaiKhoanInput
 from ..core.pagination import doc_trang
 from .. import crud

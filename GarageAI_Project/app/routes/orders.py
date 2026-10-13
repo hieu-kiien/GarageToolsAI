@@ -15,7 +15,6 @@ from ..models import (DoiTrangThaiInput, NghiemThuInput, NhatKyInput,
 from .. import crud
 from ..services import auth as auth_svc
 from ..services import billing, orders
-from ..services.ai import TEN_KINH
 from . import LoiForm, du_lieu_form, paged, render
 
 router = APIRouter(tags=['phieu sua chua'])

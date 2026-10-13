@@ -252,7 +252,6 @@ class TestBaoMat(CoSoDichChung):
 
     def test_doi_mat_khau_vo_hieu_phien_cu(self):
         self.dang_nhap('quan_ly')
-        token_cu = self.client.cookies.get('garage_session')
         self.post('/accounts/password',
                   {'mat_khau_cu': MAT_KHAU, 'mat_khau_moi': 'Garage@2027'})
         r = self.client.get('/dashboard')
@@ -415,8 +414,6 @@ class TestKiemTraDauVao(CoSoDichChung):
         self.assertIn('Không có dữ liệu phù hợp', r.text)
 
     def test_dung_muc_tro_thi_sai_thuoc_tinh(self):
-        du_lieu = self.q1('SELECT qty, unit_price FROM repair_order_items'
-                          ' WHERE repair_order_id = 12')
         r = self.client.get('/customers', params={'sap': 'name'})
         self.assertEqual(r.status_code, 200)
 
@@ -445,7 +442,6 @@ class TestQuyTacNghiepVu(CoSoDichChung):
                   {'customer_id': '1', 'vehicle_id': '6',
                    'scheduled_at': '2027-05-05 09:00',
                    'notes': 'sai chu xe', 'status': 'SCHEDULED'})
-        moi = self.q('SELECT * FROM appointments ORDER BY id DESC LIMIT 1')
         self.assertEqual(len(self.q('SELECT id FROM appointments')), truoc,
                          'xe không thuộc khách hàng đã chọn thì không tạo được lịch')
 
@@ -485,8 +481,6 @@ class TestQuyTacNghiepVu(CoSoDichChung):
         self.assertEqual(len(self.q('SELECT id FROM customers')), truoc)
 
     def test_bao_cao_chi_tinh_hoa_don_da_thu(self):
-        tong = self.q1("SELECT COALESCE(SUM(total),0) s FROM invoices"
-                       " WHERE status='PAID'")['s']
         r = self.client.get('/reports/khach-hang')
         self.assertEqual(r.status_code, 200)
         chua_thu = self.q1("SELECT COALESCE(SUM(total),0) s FROM invoices"
@@ -506,7 +500,6 @@ class TestThongBaoVaPhanTrang(CoSoDichChung):
         self.assertIn('Đã', self.flash(r) or '')
 
     def test_loi_co_thong_bao(self):
-        truoc = len(self.q('SELECT id FROM vehicles'))
         r = self.post('/vehicles/save',
                       {'plate': '30A-1111', 'brand': 'T', 'model': 'V',
                        'customer_id': '1'})

@@ -7,7 +7,7 @@ Các hàm trả về đúng cấu trúc mà giao diện cần, không trả về
 from __future__ import annotations
 
 from .. import crud
-from ..core.db import fetch_all, fetch_one, fetch_value
+from ..core.db import fetch_all, fetch_value
 
 
 def tong_quan() -> dict:

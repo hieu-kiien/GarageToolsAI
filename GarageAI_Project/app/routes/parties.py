@@ -8,13 +8,13 @@ from __future__ import annotations
 
 import sqlite3
 
-from fastapi import APIRouter, Form, Request
+from fastapi import APIRouter, Request
 
 from ..core import flash
 from ..core.errors import AppError
 from ..core.pagination import doc_trang
 from ..models import (DichVuInput, KhachHangInput, LichHenInput, PhuTungInput,
-                      PhuongTienInput, SanPhamInput)
+                      PhuongTienInput)
 from .. import crud
 from ..services import auth as auth_svc
 from ..services import catalog, parties

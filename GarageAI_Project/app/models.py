@@ -114,6 +114,11 @@ class TaiKhoanInput(BaseModel):
         return v
 
 
+class LuuTaiKhoanInput(TaiKhoanInput):
+    """Tạo/cập nhật tài khoản từ API. `password` chỉ bắt buộc khi tạo mới."""
+    password: str | None = Field(default=None, min_length=8, max_length=128)
+
+
 # ---------------------------------------------------------------------------
 # Danh mục
 # ---------------------------------------------------------------------------
@@ -484,6 +489,12 @@ class ThanhToanInput(BaseModel):
         if n > 10_000_000_000:
             raise ValueError('Số tiền vượt giới hạn cho phép')
         return n
+
+
+class LapHoaDonInput(BaseModel):
+    """Yêu cầu lập hoá đơn từ giao diện JSON (POST /api/invoices)."""
+    model_config = CoBan
+    repair_order_id: int = Field(ge=1)
 
 
 # ---------------------------------------------------------------------------

@@ -12,7 +12,6 @@ Hai tiện ích dùng chung:
 """
 from __future__ import annotations
 
-import functools
 from typing import Type
 
 from fastapi import Request

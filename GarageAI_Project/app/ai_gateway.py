@@ -275,9 +275,8 @@ def bao_gia_nhap(order_id):
                                   items=danh_sach, backend_total=backend_total)
     raw = goi(get_settings().load_prompt('system.txt'), user)
 
-    notes = ''
     if raw is None:                       # chế độ mock
-        parsed, notes = None, ''
+        parsed = None
     else:
         parsed = _phan_tich_json(raw)
 

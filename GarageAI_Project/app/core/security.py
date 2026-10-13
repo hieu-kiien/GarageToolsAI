@@ -20,7 +20,6 @@ from dataclasses import dataclass
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 
 from .config import get_settings
-from .errors import KhongXacThuc, VuotGioiHan
 
 # ---------------------------------------------------------------------------
 # Mật khẩu

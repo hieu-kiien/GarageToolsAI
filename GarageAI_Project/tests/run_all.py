@@ -19,6 +19,10 @@ SUITES = [
      'Gọi thật các đường dẫn HTTP trên một CSDL tạm: đăng nhập, phân quyền,'
      ' CSRF, kiểm tra đầu vào, tiền và tồn kho (kể cả chạy đồng thời),'
      ' thông báo, phân trang, xoá dữ liệu và AI.'),
+    ('tests/test_api.py', 'Kiểm thử tầng API JSON /api/*',
+     'Gọi các endpoint JSON mà giao diện React gọi: phiên và mã CSRF, lỗi theo'
+     ' từng trường, phong bì phân trang, luồng phiếu – báo giá – hoá đơn –'
+     ' thanh toán, kho, bảo hành, AI và phân quyền bốn vai trò.'),
 ]
 
 rows = []
@@ -65,8 +69,9 @@ w('---')
 w('')
 w('## 1. Phạm vi')
 w('')
-w('Bộ kiểm thử gồm ba phần: ràng buộc và dữ liệu mẫu của cơ sở dữ liệu, quy')
-w('trình sao lưu/khôi phục, và toàn bộ ứng dụng web. Phần ứng dụng được kiểm')
+w('Bộ kiểm thử gồm bốn phần: ràng buộc và dữ liệu mẫu của cơ sở dữ liệu, quy')
+w('trình sao lưu/khôi phục, ứng dụng web (trang Jinja2) và tầng API JSON mà')
+w('giao diện React gọi. Phần ứng dụng được kiểm')
 w('tra bằng cách gọi thật các đường dẫn HTTP trên một cơ sở dữ liệu tạm dựng')
 w('từ `schema.sql` và `seed_data.sql`, nên ca kiểm thử chạm đúng mã nguồn đang')
 w('chạy chứ không kiểm tra bản sao.')
@@ -116,14 +121,28 @@ w('| Chức năng AI | Cả ba chức năng tạo được kết quả ở trạ
 w('| Human Review | Duyệt/từ chối ghi đủ người duyệt và thời điểm; không duyệt lại được kết quả đã xử lý; người thiếu quyền bị từ chối |')
 w('| Mô-đun cửa hàng | Xem và tìm sản phẩm trong phần mở rộng ngoài phạm vi đề tài |')
 w('')
-w('## 5. Cách chạy lại')
+w('## 5. Nhóm ca kiểm thử tầng API JSON')
+w('')
+w('| Nhóm | Nội dung kiểm tra |')
+w('|---|---|')
+w('| Phiên và CSRF | Cookie `garage_csrf` luôn có; thiếu header CSRF bị 403; chưa đăng nhập nhận 401 JSON |')
+w('| Lỗi đầu vào | Thiếu trường và trường thừa trả 400 kèm tên trường; tạo tài khoản thiếu mật khẩu bị chặn |')
+w('| Phiếu sửa chữa | Tạo – tiếp nhận – thêm hạng mục – chuyển trạng thái đủ luồng; nhảy cóc bị 409; phân công kỹ thuật viên ghi đúng |')
+w('| Báo giá | Tạo, thêm dòng, gửi, duyệt, áp dụng; lễ tân không duyệt được (403) |')
+w('| Tiền | Lập hoá đơn chỉ khi phiếu hoàn thành; thu vượt bị 409; thu một phần rồi thu đủ; sai trường tiền bị 400 |')
+w('| Kho và bảo hành | Nhập kho và điều chỉnh cập nhật tồn + sổ kho; bảo hành chỉ lập cho phiếu hoàn thành, chi tiết có người lập |')
+w('| AI | Chay/duyệt/không duyệt lại được; loại sai bị 400; thiếu quyền bị 403 |')
+w('| Phân quyền | Thu ngân không xem người dùng/báo cáo, không tạo phiếu; kỹ thuật viên không tạo phiếu/chạy AI |')
+w('| Báo cáo và tra cứu | Báo cáo đúng phong bì; tra cứu không lộ mật khẩu; `/api/meta` đủ từ điển hiển thị |')
+w('')
+w('## 6. Cách chạy lại')
 w('')
 w('```bash')
 for path, _, _, _, _ in rows:
     w('python %s' % path)
 w('```')
 w('')
-w('## 6. Ghi chú')
+w('## 7. Ghi chú')
 w('')
 w('- Các ca kiểm thử ứng dụng dùng `AI_PROVIDER=mock` nên không cần kết mối')
 w('  mạng, không cần khoá API và cho kết quả lặp lại được.')

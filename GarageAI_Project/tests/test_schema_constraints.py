@@ -7,8 +7,6 @@ Chạy được cả hai cách:
 """
 import os
 import sqlite3
-import sys
-import tempfile
 import unittest
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

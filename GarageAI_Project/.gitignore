@@ -10,6 +10,7 @@
 *.db-journal
 *.db-wal
 *.db-shm
+*.db.bak*
 
 # --- Sao lưu ---
 backups/

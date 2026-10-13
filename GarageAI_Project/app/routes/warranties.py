@@ -78,7 +78,7 @@ async def tao_bao_hanh(request: Request, repair_order_id: str = Form(''),
             'repair_order_id': repair_order_id, 'months': months,
             'service_id': service_id or None, 'part_id': part_id or None,
             'start_date': start_date, 'note': note}, TaoBaoHanhInput)
-        wid = warranties.tao_bao_hanh(du, user)
+        warranties.tao_bao_hanh(du, user)
     except (LoiForm, AppError) as e:
         return _ve(request, '/warranties/new?order=%s' % repair_order_id,
                    loi=_loi(e))

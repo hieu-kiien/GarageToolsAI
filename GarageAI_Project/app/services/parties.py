@@ -5,12 +5,10 @@ from __future__ import annotations
 import sqlite3
 
 from .. import crud
-from ..core.db import fetch_all, fetch_one, transaction
-from ..core.errors import (AppError, KhongTimThay, LoiKhongMoDuoc, SaiQuyTac,
+from ..core.db import fetch_one
+from ..core.errors import (AppError, LoiKhongMoDuoc, SaiQuyTac,
                            XungDdot)
-from ..core.money import utc_now
 from ..models import KhachHangInput, LichHenInput, PhuongTienInput
-from .security_matrix import TEN_TRANG_THAI
 
 
 def _loi_integrity(e: sqlite3.IntegrityError) -> AppError:
@@ -60,7 +58,6 @@ def luu_khach(du_lieu: KhachHangInput) -> int:
 
 def xoa_khach(khoa: int) -> None:
     crud.yeu_cau_co('customers', khoa, 'khách hàng')
-    from ..core.db import ban_ghi_da_bi_tham_chieu
     try:
         crud.xoa('customers', khoa)
     except sqlite3.IntegrityError as e:

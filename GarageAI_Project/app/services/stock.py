@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import sqlite3
 
-from ..core.db import fetch_all, fetch_one, fetch_value, transaction
+from ..core.db import fetch_all, fetch_value, transaction
 from ..core.errors import KhongTimThay, SaiQuyTac
 from ..core.pagination import Trang
 from .. import crud

@@ -6,12 +6,11 @@ import sqlite3
 
 from .. import crud
 from ..core import ratelimit
-from ..core.errors import (AppError, KhongCoQuyen, KhongXacThuc, KhongTimThay,
-                           SaiQuyTac, XungDdot)
-from ..core.security import (CSRF_COOKIE, doc_phien, tao_phien, verify_dummy,
+from ..core.errors import (AppError, KhongCoQuyen, KhongXacThuc, SaiQuyTac, XungDdot)
+from ..core.security import (doc_phien, tao_phien, verify_dummy,
                              verify_password)
 from ..models import DangNhapInput, DoiMatKhauInput, TaiKhoanInput
-from .security_matrix import PERMISSIONS, VAI_TRO, co_quyen, duoc_gan_cong
+from .security_matrix import VAI_TRO, co_quyen
 
 
 class NguoiDung(dict):

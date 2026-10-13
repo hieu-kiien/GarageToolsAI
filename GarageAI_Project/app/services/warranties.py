@@ -12,7 +12,7 @@ Quy tắc nghiệp vụ:
 """
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import date
 
 from .. import crud
 from ..core.db import fetch_all, fetch_one, transaction

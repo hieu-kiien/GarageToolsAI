@@ -11,10 +11,10 @@ Quy tắc bất di bất dịch của tầng này:
 """
 from __future__ import annotations
 
-from typing import Any, Sequence
+from typing import Sequence
 
 from .core.db import fetch_all, fetch_one, fetch_value, transaction
-from .core.errors import KhongTimThay, XungDdot
+from .core.errors import KhongTimThay
 from .core.pagination import Trang, cot_sap_xep, escape_like, huong_sap_xep
 
 #: Thứ tự cột được phép sắp xếp cho từng bảng.
@@ -58,7 +58,8 @@ FROM_MAC_DINH: dict[str, str] = {
     'warranties': ('warranties w JOIN repair_orders r ON r.id = w.repair_order_id'
                    ' JOIN vehicles v ON v.id = r.vehicle_id'
                    ' LEFT JOIN services s ON s.id = w.service_id'
-                   ' LEFT JOIN parts p ON p.id = w.part_id'),
+                   ' LEFT JOIN parts p ON p.id = w.part_id'
+                   ' LEFT JOIN users u ON u.id = w.created_by'),
     'invoices': ('invoices i JOIN repair_orders r ON r.id = i.repair_order_id'
                  ' JOIN vehicles v ON v.id = r.vehicle_id'
                  ' JOIN customers c ON c.id = v.customer_id'),

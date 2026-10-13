@@ -20,8 +20,8 @@ from ..ai_gateway import bao_gia_nhap as _bao_gia_nhap
 from ..ai_gateway import giai_thich_dich_vu as _giai_thich
 from ..ai_gateway import tom_tat_lich_su as _tom_tat
 from ..core import ratelimit
-from ..core.db import fetch_all, fetch_one, transaction
-from ..core.errors import KhongTimThay, LoiDichVu, SaiQuyTac, VuotGioiHan
+from ..core.db import fetch_all, transaction
+from ..core.errors import KhongTimThay, LoiDichVu, SaiQuyTac
 from ..core.money import utc_now
 from .security_matrix import TEN_TRANG_THAI
 
