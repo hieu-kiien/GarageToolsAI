@@ -1,98 +1,269 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useSuspenseQuery, useMutation } from "@tanstack/react-query";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { api, q } from "@/services/api";
-import { ensureLookups, useLookups } from "@/services/lookups";
-import { useRole } from "@/lib/rbac";
-import { PageHeader, Panel, Pill, NoAccess } from "@/components/app/ui-kit";
+import { api, q, ApiError } from "@/services/api";
+import { useLookups } from "@/services/lookups";
+import { useNhan, useRole } from "@/lib/rbac";
+import { PageHeader, Panel, NoAccess, DangTai, Empty, Pill } from "@/components/app/ui-kit";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
-import type { DamageType, InspectionMark } from "@/types";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export const Route = createFileRoute("/inspection")({
-  head: () => ({ meta: [
-    { title: "Kiểm tra tiếp nhận xe — GarageTools AI" },
-    { name: "description", content: "Biểu mẫu kiểm tra thân vỏ, nội thất và tình trạng xe khi tiếp nhận vào xưởng." },
-    { property: "og:title", content: "Kiểm tra tiếp nhận xe — GarageTools AI" },
-    { property: "og:description", content: "Vehicle Walkaround Inspection." },
-  ] }),
-  loader: ({ context: { queryClient: qc } }) => Promise.all([qc.ensureQueryData(q.orders()), ensureLookups(qc)]),
+  head: () => ({
+    meta: [
+      { title: "Tiếp nhận xe — GarageTools AI" },
+      { name: "description", content: "Tạo phiếu sửa chữa và ghi biên bản tiếp nhận xe tại quầy." },
+      { property: "og:title", content: "Tiếp nhận xe — GarageTools AI" },
+      { property: "og:description", content: "Màn hình tiếp nhận xe của lễ tân." },
+    ],
+  }),
   component: Inspection,
 });
 
-const ZONES = [
-  { id: "front", label: "Cản trước", x: 38, y: 2, w: 24, h: 10 },
-  { id: "hood", label: "Nắp capo", x: 32, y: 13, w: 36, h: 18 },
-  { id: "roof", label: "Nóc xe", x: 32, y: 40, w: 36, h: 22 },
-  { id: "trunk", label: "Cốp sau", x: 32, y: 72, w: 36, h: 14 },
-  { id: "rear", label: "Cản sau", x: 38, y: 88, w: 24, h: 10 },
-  { id: "fl", label: "Cửa trước trái", x: 14, y: 32, w: 16, h: 22 },
-  { id: "rl", label: "Cửa sau trái", x: 14, y: 56, w: 16, h: 22 },
-  { id: "fr", label: "Cửa trước phải", x: 70, y: 32, w: 16, h: 22 },
-  { id: "rr", label: "Cửa sau phải", x: 70, y: 56, w: 16, h: 22 },
-];
-const DMG: Record<DamageType, string> = { scratch: "Trầy xước", dent: "Móp", crack: "Nứt / vỡ", missing: "Thiếu" };
-const CHECK = ["Đèn pha / đèn hậu", "Gạt mưa", "Lốp dự phòng", "Bộ đồ nghề", "Thảm sàn", "Ghế & nội thất", "Điều hoà", "Màn hình / âm thanh"];
-
 function Inspection() {
-  const { can } = useRole();
-  const { data: orders } = useSuspenseQuery(q.orders());
+  const { area, meta } = useRole();
+  const N = useNhan();
   const L = useLookups();
-  const open = orders.filter((o) => o.status === "intake" || o.status === "diagnosis");
-  const [roId, setRoId] = useState(open[0]?.id ?? "");
-  const [type, setType] = useState<DamageType>("scratch");
-  const [marks, setMarks] = useState<InspectionMark[]>([]);
-  const [fuel, setFuel] = useState(50);
-  const [checks, setChecks] = useState<Record<string, boolean>>(Object.fromEntries(CHECK.map((c) => [c, true])));
-  const [belong, setBelong] = useState("");
-  const save = useMutation({
-    mutationFn: () => api.createInspection({ repair_order_id: roId, fuel_level: fuel, odo_km: L.vehicle(orders.find((o) => o.id === roId)!.vehicle_id)!.odo_km, marks, checklist: checks, belongings: belong }),
-    onSuccess: () => { toast.success("Đã lưu biên bản tiếp nhận"); setMarks([]); },
+  const qc = useQueryClient();
+
+  // Bước 1 — tạo phiếu mới.
+  const [xeId, setXeId] = useState("");
+  const [ktvId, setKtvId] = useState("none");
+  const [ghiChuPhieu, setGhiChuPhieu] = useState("");
+
+  // Bước 2 — biên bản tiếp nhận cho một phiếu.
+  const [phieuId, setPhieuId] = useState("");
+  const [odo, setOdo] = useState("");
+  const [nhienLieu, setNhienLieu] = useState("UNKNOWN");
+  const [ngoaiThat, setNgoaiThat] = useState("");
+  const [doDac, setDoDac] = useState("");
+  const [ghiChu, setGhiChu] = useState("");
+
+  const phieuMoi = useQuery(q.orders({ moi_trang: 10, trang_thai: "RECEIVED" }));
+  const loi = (e: unknown) => toast.error(e instanceof ApiError ? e.message : "Thao tác thất bại.");
+
+  const taoPhieu = useMutation({
+    mutationFn: () =>
+      api.taoPhieu({
+        vehicle_id: Number(xeId),
+        technician_id: ktvId === "none" ? null : Number(ktvId),
+        technical_notes: ghiChuPhieu.trim() || undefined,
+      }),
+    onSuccess: async (kq) => {
+      toast.success(`${kq.thong_bao} (mã #${kq.id})`);
+      setPhieuId(String(kq.id));
+      setGhiChuPhieu("");
+      await qc.invalidateQueries({ queryKey: ["orders"] });
+    },
+    onError: loi,
   });
-  if (!can("inspection")) return <NoAccess />;
+
+  const ghiBan = useMutation({
+    mutationFn: () =>
+      api.ghiTiepNhan(Number(phieuId), {
+        odometer_at_intake: odo.trim() ? Number(odo) : null,
+        fuel_level: nhienLieu,
+        exterior_condition: ngoaiThat.trim() || undefined,
+        accessories: doDac.trim() || undefined,
+        notes: ghiChu.trim() || undefined,
+      }),
+    onSuccess: async (kq) => {
+      toast.success(kq.thong_bao);
+      await qc.invalidateQueries({ queryKey: ["orders"] });
+    },
+    onError: loi,
+  });
+
+  if (!area("inspection")) return <NoAccess />;
+
+  const danhSachPhieu = phieuMoi.data?.dong ?? [];
 
   return (
     <>
-      <PageHeader eyebrow="Vận hành" title="Kiểm tra tiếp nhận xe" desc="Chọn loại hư hỏng rồi nhấp vào vùng tương ứng trên sơ đồ để đánh dấu."
-        actions={<Button disabled={!roId || save.isPending} onClick={() => save.mutate()}>Lưu biên bản</Button>} />
-      <div className="grid gap-6 p-6 lg:p-8 xl:grid-cols-3">
-        <Panel title="Sơ đồ thân vỏ" className="xl:col-span-2">
-          <div className="mb-4 flex flex-wrap items-center gap-3">
-            <Select value={roId} onValueChange={setRoId}>
-              <SelectTrigger className="w-72"><SelectValue placeholder="Chọn lệnh sửa chữa" /></SelectTrigger>
-              <SelectContent>{open.map((o) => <SelectItem key={o.id} value={o.id}>{L.vehicle(o.vehicle_id)?.plate} — {o.code}</SelectItem>)}</SelectContent>
-            </Select>
-            <div className="flex gap-1">{(Object.keys(DMG) as DamageType[]).map((d) => (
-              <button key={d} onClick={() => setType(d)} className={cn("rounded-md border px-2.5 py-1 text-xs", type === d ? "border-primary bg-info-soft font-medium" : "hover:bg-muted")}>{DMG[d]}</button>))}</div>
+      <PageHeader
+        eyebrow="Vận hành"
+        title="Tiếp nhận xe"
+        desc="Bước 1: tạo phiếu sửa chữa cho xe. Bước 2: ghi biên bản tiếp nhận (ODO, nhiên liệu, tình trạng, đồ đạc)."
+        actions={
+          phieuId && <Pill t="success">Phiếu #{phieuId} đã tạo — ghi biên bản ở bước 2</Pill>
+        }
+      />
+      <div className="grid gap-6 p-6 lg:p-8 xl:grid-cols-2">
+        <Panel title="Bước 1 · Tạo phiếu sửa chữa">
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Xe *</label>
+              <Select value={xeId} onValueChange={setXeId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Chọn biển số…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {L.xe.map((x) => (
+                    <SelectItem key={x.id} value={String(x.id)}>
+                      {x.plate} — {x.brand} {x.model}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">
+                Kỹ thuật viên (tuỳ chọn)
+              </label>
+              <Select value={ktvId} onValueChange={setKtvId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Chưa phân công" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Chưa phân công</SelectItem>
+                  {L.ky_thuat_vien.map((t) => (
+                    <SelectItem key={t.id} value={String(t.id)}>
+                      {t.full_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Ghi chú tiếp nhận</label>
+              <Textarea
+                value={ghiChuPhieu}
+                onChange={(e) => setGhiChuPhieu(e.target.value)}
+                placeholder="Khách báo hư hỏng gì? Yêu cầu gì?"
+                className="min-h-[70px]"
+              />
+            </div>
+            <Button
+              className="w-full"
+              disabled={!xeId || taoPhieu.isPending}
+              onClick={() => taoPhieu.mutate()}
+            >
+              Tạo phiếu sửa chữa
+            </Button>
           </div>
-          <div className="relative mx-auto aspect-[3/4] max-w-sm rounded-[40%/22%] border-2 border-foreground/20 bg-muted/40">
-            {ZONES.map((z) => { const n = marks.filter((m) => m.zone === z.id).length; return (
-              <button key={z.id} onClick={() => setMarks((m) => [...m, { id: crypto.randomUUID(), zone: z.id, type }])}
-                style={{ left: `${z.x}%`, top: `${z.y}%`, width: `${z.w}%`, height: `${z.h}%` }}
-                className={cn("absolute flex items-center justify-center rounded-md border text-[10px] transition", n ? "border-destructive bg-danger-soft text-destructive" : "border-border bg-card hover:border-primary")}>
-                {z.label}{n > 0 && <span className="ml-1 font-semibold">({n})</span>}
-              </button>); })}
-          </div>
-          <ul className="mt-4 flex flex-wrap gap-2">
-            {marks.map((m) => <li key={m.id}><button onClick={() => setMarks((x) => x.filter((y) => y.id !== m.id))}><Pill t="danger">{ZONES.find((z) => z.id === m.zone)?.label}: {DMG[m.type]} ✕</Pill></button></li>)}
-            {marks.length === 0 && <li className="text-sm text-muted-foreground">Chưa đánh dấu hư hỏng nào.</li>}
-          </ul>
         </Panel>
-        <div className="space-y-6">
-          <Panel title="Mức nhiên liệu">
-            <input type="range" min={0} max={100} step={25} value={fuel} onChange={(e) => setFuel(Number(e.target.value))} className="w-full accent-primary" />
-            <div className="flex justify-between text-[11px] text-muted-foreground"><span>E</span><span>1/4</span><span>1/2</span><span>3/4</span><span>F</span></div>
-          </Panel>
-          <Panel title="Danh mục kiểm tra">
-            <ul className="space-y-1.5">{CHECK.map((c) => (
-              <li key={c} className="flex items-center justify-between text-sm">{c}
-                <button onClick={() => setChecks((s) => ({ ...s, [c]: !s[c] }))}><Pill t={checks[c] ? "success" : "danger"}>{checks[c] ? "Đạt" : "Lỗi / thiếu"}</Pill></button></li>))}</ul>
-          </Panel>
-          <Panel title="Đồ đạc khách để lại"><Textarea value={belong} onChange={(e) => setBelong(e.target.value)} placeholder="VD: ghế trẻ em, ô, giấy tờ xe…" /></Panel>
-        </div>
+
+        <Panel title="Bước 2 · Biên bản tiếp nhận xe">
+          {phieuMoi.isPending ? (
+            <DangTai mat="Đang tải danh sách phiếu…" />
+          ) : danhSachPhieu.length === 0 && !phieuId ? (
+            <Empty title="Chưa có phiếu chờ tiếp nhận" desc="Hãy tạo phiếu ở bước 1." />
+          ) : (
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">
+                  Phiếu sửa chữa *
+                </label>
+                <Select value={phieuId} onValueChange={setPhieuId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Chọn phiếu…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {phieuId && !danhSachPhieu.some((p) => String(p.id) === phieuId) && (
+                      <SelectItem value={phieuId}>Phiếu #{phieuId} (vừa tạo)</SelectItem>
+                    )}
+                    {danhSachPhieu.map((p) => (
+                      <SelectItem key={p.id} value={String(p.id)}>
+                        #{p.id} — {p.plate}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">ODO (km)</label>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={2000000}
+                    value={odo}
+                    onChange={(e) => setOdo(e.target.value)}
+                    placeholder="VD: 52300"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">
+                    Mức nhiên liệu
+                  </label>
+                  <Select value={nhienLieu} onValueChange={setNhienLieu}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(meta?.muc_nhien_lieu ?? {}).map(([k, v]) => (
+                        <SelectItem key={k} value={k}>
+                          {v}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">
+                  Tình trạng ngoại thất
+                </label>
+                <Textarea
+                  value={ngoaiThat}
+                  onChange={(e) => setNgoaiThat(e.target.value)}
+                  placeholder="VD: trầy cản trước, móp gương phải…"
+                  className="min-h-[60px]"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">
+                  Đồ đạc khách để lại
+                </label>
+                <Input
+                  value={doDac}
+                  onChange={(e) => setDoDac(e.target.value)}
+                  placeholder="VD: ô, giấy tờ xe, ghế trẻ em…"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">Ghi chú khác</label>
+                <Textarea
+                  value={ghiChu}
+                  onChange={(e) => setGhiChu(e.target.value)}
+                  className="min-h-[50px]"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  className="flex-1"
+                  disabled={!phieuId || ghiBan.isPending}
+                  onClick={() => ghiBan.mutate()}
+                >
+                  Ghi biên bản tiếp nhận
+                </Button>
+                {phieuId && (
+                  <Button variant="outline" asChild>
+                    <Link to="/repair-orders/$id" params={{ id: String(phieuId) }}>
+                      Xem phiếu
+                    </Link>
+                  </Button>
+                )}
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Biến bản ghi một lần cho mỗi phiếu — backend chặn ghi trùng.
+              </p>
+            </div>
+          )}
+        </Panel>
+      </div>
+      <div className="px-6 pb-2 text-[11px] text-muted-foreground lg:px-8">
+        Nhãn mức nhiên liệu lấy từ <code className="font-mono">GET /api/meta</code> — cùng nguồn với
+        mọi màn hình.
       </div>
     </>
   );

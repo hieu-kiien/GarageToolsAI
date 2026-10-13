@@ -1,206 +1,284 @@
-// TypeScript models mirroring FastAPI Pydantic schemas (see README_AI_HANDOFF.md).
-// Money values are integers in VND. Dates are ISO 8601 strings.
+// Kiểu dữ liệu khớp chính xác JSON mà backend FastAPI trả về (app/routes/api/*).
+// Tiền là số nguyên VND; ngày giờ là chuỗi ISO 8601 / SQLite UTC.
 
-export type Role = "manager" | "receptionist" | "technician" | "cashier";
+export type Role = "MANAGER" | "RECEPTIONIST" | "TECHNICIAN" | "CASHIER";
 
+/** Trạng thái phiếu sửa chữa — enum thật của backend (`security_matrix`). */
 export type RepairStatus =
-  | "intake" // Tiếp nhận
-  | "diagnosis" // Kiểm tra chẩn đoán
-  | "awaiting_approval" // Chờ duyệt báo giá
-  | "in_repair" // Đang sửa chữa
-  | "qc" // Nghiệm thu / KCS
-  | "delivered"; // Đã giao xe
+  "RECEIVED" | "INSPECTING" | "ESTIMATING" | "REPAIRING" | "COMPLETED" | "CANCELLED";
 
-export type Priority = "normal" | "high" | "urgent";
+export type InvoiceStatus = "UNPAID" | "PARTIAL" | "PAID";
+export type ReviewStatus = "PENDING" | "APPROVED" | "REJECTED";
+export type PayMethod = "CASH" | "CARD" | "TRANSFER" | "ZALO";
+export type FuelLevel = "EMPTY" | "QUARTER" | "HALF" | "THREE_QUARTER" | "FULL" | "UNKNOWN";
+export type AiKind = "history" | "explain" | "quote";
+export type StockReason = "RECEIPT" | "USAGE" | "RETURN" | "ADJUSTMENT";
 
-export interface Customer {
-  id: string;
+/** Người dùng đã đăng nhập — `GET /api/auth/session`. */
+export interface ThanhVien {
+  id: number;
+  username: string;
   full_name: string;
-  phone: string;
-  email?: string;
-  address?: string;
+  email: string | null;
+  role: Role;
+  ten_vai_tro: string;
+  is_active: boolean;
 }
 
-export interface Vehicle {
-  id: string;
-  customer_id: string;
+/** `GET /api/auth/session` — user=null khi chưa đăng nhập. */
+export interface Phien {
+  user: ThanhVien | null;
+  quyen: Record<string, boolean>;
+}
+
+/** Bao phân trang thống nhất của mọi danh sách backend. */
+export interface PhanTrang<T> {
+  dong: T[];
+  tong: number;
+  trang: number;
+  moi_trang: number;
+  tong_trang: number;
+}
+
+// --- Tổng quan ------------------------------------------------------------
+export interface Kpi {
+  tong_phieu: number;
+  dang_xu_ly: number;
+  lich_hen: number;
+  da_thu: number;
+  chua_thu: number;
+  khach_hang: number;
+  xe: number;
+  cho_duyet_ai: number;
+}
+
+export interface PhieuGanNhat {
+  id: number;
+  status: RepairStatus;
+  created_at: string;
+  technical_notes: string | null;
   plate: string;
-  vin: string;
-  make: string;
+}
+
+export interface DoanhThuTheoThang {
+  thang: string;
+  so_hoa_don: number;
+  tong: number;
+  da_thu: number;
+}
+
+export interface Dashboard {
+  kpi: Kpi;
+  trang_thai: { status: RepairStatus; n: number }[];
+  gan_nhat: PhieuGanNhat[];
+  doanh_thu: DoanhThuTheoThang[];
+}
+
+// --- Phiếu sửa chữa --------------------------------------------------------
+/** Dòng danh sách `GET /api/orders`. */
+export interface PhieuDong {
+  id: number;
+  plate: string;
+  brand: string;
   model: string;
-  year: number;
-  odo_km: number;
-  color: string;
+  status: RepairStatus;
+  created_at: string;
+  technical_notes: string | null;
+  ky_thuat_vien: string | null;
 }
 
-export interface Technician {
-  id: string;
-  full_name: string;
-  skill: string;
-  active_orders: number;
+/** `phieu` trong `GET /api/orders/{id}` — `r.*` cộng các cột JOIN. */
+export interface Phieu {
+  id: number;
+  vehicle_id: number;
+  technician_id: number | null;
+  status: RepairStatus;
+  technical_notes: string | null;
+  created_at: string;
+  plate: string;
+  brand: string;
+  model: string;
+  year: number | null;
+  customer_id: number;
+  khach: string;
+  khach_phone: string | null;
+  ky_thuat_vien: string | null;
+  tong: number;
+  ten_trang_thai: string;
 }
 
-export interface Bay {
-  id: string;
-  name: string;
-  type: "lift" | "alignment" | "paint" | "quick";
-  repair_order_id: string | null;
-}
-
-export interface PartLine {
-  id: string;
-  part_id: string;
-  sku: string;
-  name: string;
+export interface HangMuc {
+  id: number;
+  service_id: number | null;
+  part_id: number | null;
   qty: number;
   unit_price: number;
+  ten: string;
+  thanh_tien: number;
 }
 
-export interface LaborLine {
-  id: string;
-  description: string;
-  hours: number;
-  rate: number;
-  technician_id?: string;
-}
-
-export interface RepairTask {
-  id: string;
-  title: string;
-  done: boolean;
-}
-
-export interface TechNote {
-  id: string;
-  author: string;
-  body: string;
+export interface NhatKy {
+  id: number;
+  note: string;
   created_at: string;
+  full_name: string | null;
 }
 
-export interface RepairOrder {
-  id: string;
-  code: string;
-  customer_id: string;
-  vehicle_id: string;
-  status: RepairStatus;
-  priority: Priority;
-  complaint: string;
-  technician_id: string | null;
-  bay_id: string | null;
-  created_at: string;
-  promised_at: string;
-  parts: PartLine[];
-  labor: LaborLine[];
-  tasks: RepairTask[];
-  notes: TechNote[];
-  quotation_id: string | null;
-}
-
-/** Totals are always computed by the backend — never by AI or the client. */
-export interface OrderTotals {
-  parts_subtotal: number;
-  labor_subtotal: number;
-  vat: number;
-  grand_total: number;
-}
-
-export interface InventoryItem {
-  id: string;
-  sku: string;
-  name: string;
-  category: string;
-  on_hand: number;
-  min_level: number;
-  unit_cost: number;
-  unit_price: number;
-  location: string;
-}
-
-export type InvoiceStatus = "unpaid" | "partial" | "paid" | "void";
-
-export interface Invoice {
-  id: string;
-  code: string;
-  repair_order_id: string;
-  customer_name: string;
-  plate: string;
-  issued_at: string;
+export interface HoaDon {
+  id: number;
+  repair_order_id: number;
   total: number;
   paid: number;
   status: InvoiceStatus;
+  created_at: string;
 }
 
-export interface PaymentCreate {
-  invoice_id: string;
+export interface TienIchTiepNhan {
+  id: number;
+  repair_order_id: number;
+  odometer_at_intake: number | null;
+  fuel_level: FuelLevel;
+  exterior_condition: string | null;
+  accessories: string | null;
+  notes: string | null;
+  created_at: string;
+  nguoi_tiep_nhan: string | null;
+}
+
+/** Trả về đủ năm khoá trong `orders.chi_tiet`. */
+export interface ChiTietPhieu {
+  phieu: Phieu;
+  hang_muc: HangMuc[];
+  nhat_ky: NhatKy[];
+  hoa_don: HoaDon | null;
+  tiep_nhan: TienIchTiepNhan | null;
+}
+
+// --- Hoá đơn ---------------------------------------------------------------
+/** Dòng danh sách `GET /api/invoices`. */
+export interface HoaDonDong {
+  id: number;
+  repair_order_id: number;
+  plate: string;
+  khach: string;
+  total: number;
+  paid: number;
+  status: InvoiceStatus;
+  created_at: string;
+}
+
+/** `hoa_don` trong `GET /api/invoices/{id}` — `i.*` cộng các cột JOIN. */
+export interface HoaDonChiTiet extends HoaDon {
+  vehicle_id: number;
+  plate: string;
+  khach: string;
+  ten_trang_thai: string;
+  da_thu: number;
+  con_phai_thu: number;
+}
+
+export interface KhoanThu {
+  id: number;
   amount: number;
-  method: "cash" | "card" | "transfer";
+  method: PayMethod;
+  paid_at: string;
 }
 
-export type AiDraftStatus = "pending_review" | "approved" | "rejected";
-
-export interface ObdFinding {
-  code: string;
-  description: string;
-  severity: "low" | "medium" | "high";
+export interface HoaDonChiTietPhan {
+  hoa_don: HoaDonChiTiet;
+  khoan_thu: KhoanThu[];
 }
 
-export interface AiDraftLine {
-  id: string;
-  kind: "part" | "labor";
-  name: string;
+// --- Kho -------------------------------------------------------------------
+export interface GiaoDichKho {
+  id: number;
+  part_id: number;
+  ten_phu_tung: string;
   qty: number;
-  unit_price: number;
-  ai_reason: string;
+  reason: StockReason;
+  repair_order_id: number | null;
+  note: string | null;
+  nguoi_tao: string | null;
+  created_at: string;
 }
 
-export interface AiDraft {
-  id: string;
-  repair_order_id: string;
-  model: string;
-  generated_at: string;
-  status: AiDraftStatus;
-  obd_findings: ObdFinding[];
-  history_summary: string;
-  service_explanation: string;
-  lines: AiDraftLine[];
-  confidence: number;
+export interface CanhBaoKho {
+  id: number;
+  name: string;
+  sku: string;
+  stock: number;
+  min_stock: number;
 }
 
-export interface AuditEntry {
-  id: string;
-  draft_id: string;
-  actor: string;
-  role: Role;
-  action: "edit_line" | "add_line" | "remove_line" | "approve" | "reject" | "generate";
-  detail: string;
-  at: string;
+export interface LechSoKho {
+  part_id: number;
+  name: string;
+  stock: number;
+  tong_sach: number;
+  lech: number;
 }
 
-export type DamageType = "scratch" | "dent" | "crack" | "missing";
-
-export interface InspectionMark {
-  id: string;
-  zone: string;
-  type: DamageType;
-  note?: string;
+export interface KhoPhanTrang extends PhanTrang<GiaoDichKho> {
+  lech: LechSoKho[];
+  canh_bao: CanhBaoKho[];
+  ly_do: Record<string, string>;
 }
 
-export interface InspectionCreate {
-  repair_order_id: string;
-  fuel_level: number;
-  odo_km: number;
-  marks: InspectionMark[];
-  checklist: Record<string, boolean>;
-  belongings: string;
+// --- AI --------------------------------------------------------------------
+/** Dòng `GET /api/ai/results` (hàng chờ duyệt). */
+export interface KetQuaAI {
+  id: number;
+  kind: AiKind;
+  repair_order_id: number | null;
+  output_text: string;
+  is_valid: number;
+  review_status: ReviewStatus;
+  reviewed_by: number | null;
+  reviewed_at: string | null;
+  created_at: string;
+  plate: string | null;
+  nguoi_duyet: string | null;
 }
 
-export interface DashboardStats {
-  in_shop: number;
-  bays_used: number;
-  bays_total: number;
-  revenue_today: number;
-  revenue_month: number;
-  overdue: number;
-  awaiting_approval: number;
-  revenue_series: { day: string; value: number }[];
+/** Dòng `GET /api/ai/recent`. */
+export interface KetQuaGanNhat {
+  id: number;
+  kind: AiKind;
+  output_text: string;
+  review_status: ReviewStatus;
+  is_valid: number;
+  created_at: string;
+  plate: string | null;
+}
+
+// --- Tra cứu & từ điển ------------------------------------------------------
+export interface Lookups {
+  khach_hang: { id: number; name: string }[];
+  xe: { id: number; plate: string; brand: string; model: string }[];
+  dich_vu: { id: number; name: string; price: number }[];
+  phu_tung: { id: number; name: string; price: number; stock: number }[];
+  ky_thuat_vien: { id: number; full_name: string }[];
+  phieu: { id: number; plate: string }[];
+  vai_tro: Record<Role, string>;
+  trang_thai: Record<string, string>;
+  chuyen_trang_thai: Record<RepairStatus, RepairStatus[]>;
+  hinh_thuc: Record<PayMethod, string>;
+  ly_do_kho: Record<string, string>;
+}
+
+/** `GET /api/meta` — nhãn + luật chuyển trạng thái, không hard-code bản sao. */
+export interface Meta {
+  user: { id: number; role: Role };
+  vai_tro: Record<Role, string>;
+  quyen: Record<string, Role[]>;
+  trang_thai: Record<string, string>;
+  trang_thai_phieu: RepairStatus[];
+  chuyen_trang_thai: Record<RepairStatus, RepairStatus[]>;
+  hinh_thuc_thanh_toan: Record<PayMethod, string>;
+  trang_thai_bao_gia: string[];
+  trang_thai_bao_hanh: Record<string, string>;
+  muc_nhien_lieu: Record<FuelLevel, string>;
+  ly_do_kho: Record<string, string>;
+  kinh_ai: Record<AiKind, string>;
+  ai_provider: string;
 }

@@ -1,135 +1,225 @@
 /**
- * Mock REST client. Every function maps 1:1 to a FastAPI endpoint documented in
- * README_AI_HANDOFF.md. Replace the body of `request` with `fetch(BASE_URL + path)`
- * to connect the real backend; signatures stay the same.
+ * Khách API duy nhất — gọi thẳng FastAPI backend cùng gốc `/api/...`.
+ *
+ * - Lỗi luôn về dạng `{ loi, thong_diep, truong? }` → gói thành {@link ApiError}.
+ * - CSRF: đọc cookie không-HttpOnly `garage_csrf` (backend gắn sẵn cho mọi
+ *   phản hồi `/api/*`) rồi gửi kèm header `X-CSRF-Token` cho mọi POST/PUT/DELETE.
+ * - Danh sách luôn có bao `{ dong, tong, trang, moi_trang, tong_trang }`.
+ * - Không tính tổng tiền nào ở đây — tổng do backend tính.
  */
 import { queryOptions } from "@tanstack/react-query";
-import * as db from "./mock-db";
 import type {
-  AiDraft, AiDraftLine, AuditEntry, DashboardStats, InspectionCreate, OrderTotals,
-  PaymentCreate, RepairOrder, RepairStatus, Role,
+  ChiTietPhieu,
+  Dashboard,
+  HoaDonChiTietPhan,
+  HoaDonDong,
+  KhoPhanTrang,
+  KetQuaAI,
+  KetQuaGanNhat,
+  Lookups,
+  Meta,
+  PhanTrang,
+  Phien,
+  PhieuDong,
 } from "@/types";
 
-const VAT_RATE = 0.1;
-const wait = <T,>(v: T, ms = 180) => new Promise<T>((r) => setTimeout(() => r(structuredClone(v)), ms));
-const nowIso = () => new Date().toISOString();
-const uid = () => Math.random().toString(36).slice(2, 10);
+/** Mã sự kiện báo "phiên hết hạn" để `RoleProvider` tải lại session. */
+export const SU_KIEN_HET_PHIEN = "gt:het-phien";
 
-/** Server-side authoritative totals (backend business rule, mirrored here for the mock). */
-export function computeTotals(parts: { qty: number; unit_price: number }[], labor: { hours?: number; qty?: number; rate?: number; unit_price?: number }[]): OrderTotals {
-  const parts_subtotal = parts.reduce((s, p) => s + p.qty * p.unit_price, 0);
-  const labor_subtotal = labor.reduce((s, l) => s + (l.hours ?? l.qty ?? 0) * (l.rate ?? l.unit_price ?? 0), 0);
-  const vat = Math.round((parts_subtotal + labor_subtotal) * VAT_RATE);
-  return { parts_subtotal, labor_subtotal, vat, grand_total: parts_subtotal + labor_subtotal + vat };
+export class ApiError extends Error {
+  readonly status: number;
+  readonly ma: string;
+  readonly truong: Record<string, string[]> | string | undefined;
+  constructor(
+    status: number,
+    ma: string,
+    message: string,
+    truong?: Record<string, string[]> | string,
+  ) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.ma = ma;
+    this.truong = truong;
+  }
 }
 
-export const api = {
-  // GET /api/dashboard/stats
-  getDashboard: (): Promise<DashboardStats> => {
-    const active = db.repairOrders.filter((r) => r.status !== "delivered");
-    const now = Date.UTC(2026, 9, 12, 11);
-    return wait({
-      in_shop: active.length,
-      bays_used: db.bays.filter((b) => b.repair_order_id).length,
-      bays_total: db.bays.length,
-      revenue_today: 12_460_000,
-      revenue_month: 318_750_000,
-      overdue: active.filter((r) => new Date(r.promised_at).getTime() < now).length,
-      awaiting_approval: db.aiDrafts.filter((a) => a.status === "pending_review").length,
-      revenue_series: ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"].map((day, i) => ({
-        day, value: [21, 26, 18, 31, 29, 12, 24, 33, 27, 30, 35, 12.46][i]! * 1_000_000,
-      })),
-    });
-  },
-  // GET /api/repair-orders
-  listRepairOrders: () => wait(db.repairOrders),
-  // GET /api/repair-orders/{id}
-  getRepairOrder: (id: string) => {
-    const ro = db.repairOrders.find((r) => r.id === id);
-    if (!ro) return Promise.reject(new Error("Không tìm thấy lệnh sửa chữa"));
-    return wait({ ...ro, totals: computeTotals(ro.parts, ro.labor) });
-  },
-  // PATCH /api/repair-orders/{id}/status
-  updateStatus: (id: string, status: RepairStatus) => {
-    const ro = db.repairOrders.find((r) => r.id === id)!;
-    ro.status = status;
-    return wait(ro);
-  },
-  // PATCH /api/repair-orders/{id}/assignment
-  assign: (id: string, body: { technician_id: string | null; bay_id: string | null }) => {
-    const ro = db.repairOrders.find((r) => r.id === id)!;
-    db.bays.forEach((b) => { if (b.repair_order_id === id) b.repair_order_id = null; });
-    ro.technician_id = body.technician_id;
-    ro.bay_id = body.bay_id;
-    const bay = db.bays.find((b) => b.id === body.bay_id);
-    if (bay) bay.repair_order_id = id;
-    return wait(ro);
-  },
-  // PATCH /api/repair-orders/{id}/tasks/{task_id}
-  toggleTask: (id: string, taskId: string) => {
-    const t = db.repairOrders.find((r) => r.id === id)!.tasks.find((x) => x.id === taskId)!;
-    t.done = !t.done;
-    return wait(t);
-  },
-  // POST /api/repair-orders/{id}/notes
-  addNote: (id: string, body: { author: string; body: string }) => {
-    const n = { id: uid(), ...body, created_at: nowIso() };
-    db.repairOrders.find((r) => r.id === id)!.notes.unshift(n);
-    return wait(n);
-  },
-  // POST /api/repair-orders/{id}/inspection
-  createInspection: (body: InspectionCreate) => wait({ id: uid(), ...body, created_at: nowIso() }, 400),
+function layCsrf(): string {
+  if (typeof document === "undefined") return "";
+  const m = document.cookie.match(/(?:^|;\s*)garage_csrf=([^;]*)/);
+  return m ? decodeURIComponent(m[1] ?? "") : "";
+}
 
-  listCustomers: () => wait(db.customers), // GET /api/customers
-  listVehicles: () => wait(db.vehicles), // GET /api/vehicles
-  listTechnicians: () => wait(db.technicians), // GET /api/technicians
-  listBays: () => wait(db.bays), // GET /api/bays
-  listInventory: () => wait(db.inventory), // GET /api/inventory
-  listInvoices: () => wait(db.invoices), // GET /api/invoices
+function dayDu(path: string): string {
+  return path.startsWith("/api") ? path : `/api${path}`;
+}
 
-  // POST /api/payments
-  createPayment: (body: PaymentCreate) => {
-    const inv = db.invoices.find((i) => i.id === body.invoice_id)!;
-    inv.paid = Math.min(inv.total, inv.paid + body.amount);
-    inv.status = inv.paid >= inv.total ? "paid" : inv.paid > 0 ? "partial" : "unpaid";
-    return wait(inv);
-  },
+function hangSo(params: Record<string, unknown> | undefined): string {
+  if (!params) return "";
+  const sp = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => {
+    if (v !== undefined && v !== null && v !== "") sp.set(k, String(v));
+  });
+  const s = sp.toString();
+  return s ? `?${s}` : "";
+}
 
-  // GET /api/ai/drafts
-  listDrafts: () => wait(db.aiDrafts),
-  // GET /api/ai/drafts/{id}/audit
-  listAudit: (draftId: string) => wait(db.auditLog.filter((a) => a.draft_id === draftId).sort((a, b) => b.at.localeCompare(a.at))),
-  /**
-   * POST /api/ai/drafts/{id}/review — the ONLY way a draft becomes an official quotation.
-   * Requires role=manager. Totals are recomputed server-side from reviewed lines.
-   */
-  reviewDraft: (draftId: string, body: { decision: "approve" | "reject"; lines: AiDraftLine[]; actor: string; role: Role; changes: string[]; reason?: string }) => {
-    if (body.role !== "manager") return Promise.reject(new Error("403: Chỉ Quản lý được duyệt báo giá"));
-    const draft = db.aiDrafts.find((a) => a.id === draftId)!;
-    const push = (action: AuditEntry["action"], detail: string) =>
-      db.auditLog.push({ id: uid(), draft_id: draftId, actor: body.actor, role: body.role, action, detail, at: nowIso() });
-    body.changes.forEach((c) => push("edit_line", c));
-    draft.lines = body.lines;
-    draft.status = body.decision === "approve" ? "approved" : "rejected";
-    push(body.decision, body.decision === "approve" ? "Duyệt & xuất báo giá chính thức" : `Từ chối: ${body.reason ?? "—"}`);
-    const parts = body.lines.filter((l) => l.kind === "part");
-    const labor = body.lines.filter((l) => l.kind === "labor");
-    return wait({ draft, totals: computeTotals(parts, labor) }, 350);
-  },
+/** Gọi một endpoint JSON backend. Ném {@link ApiError} cho mọi phản hồi lỗi. */
+export async function goi<T>(method: string, path: string, body?: unknown): Promise<T> {
+  const doCung = method.toUpperCase();
+  let res: Response;
+  try {
+    res = await fetch(
+      dayDu(path) + hangSo(method === "GET" ? (body as Record<string, unknown>) : undefined),
+      {
+        method: doCung,
+        credentials: "same-origin",
+        headers: {
+          Accept: "application/json",
+          ...(body !== undefined && doCung !== "GET" ? { "Content-Type": "application/json" } : {}),
+          ...(doCung === "GET" || doCung === "HEAD" ? {} : { "X-CSRF-Token": layCsrf() }),
+        },
+        body: body !== undefined && doCung !== "GET" ? JSON.stringify(body) : null,
+      },
+    );
+  } catch {
+    throw new ApiError(
+      0,
+      "khong_ket_noi",
+      "Không kết nối được máy chủ. Kiểm tra backend đã chạy chưa.",
+    );
+  }
+
+  let data: unknown = null;
+  const text = await res.text();
+  if (text) {
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = null;
+    }
+  }
+
+  if (!res.ok) {
+    const e = data as {
+      loi?: string;
+      thong_diep?: string;
+      truong?: Record<string, string[]> | string;
+    } | null;
+    if (res.status === 401) window.dispatchEvent(new CustomEvent(SU_KIEN_HET_PHIEN));
+    throw new ApiError(
+      res.status,
+      e?.loi ?? `loi_${res.status}`,
+      e?.thong_diep ?? `Máy chủ trả về lỗi ${res.status}.`,
+      e?.truong,
+    );
+  }
+  return data as T;
+}
+
+type ThamSoDanhSach = {
+  trang?: number | undefined;
+  moi_trang?: number | undefined;
+  q?: string | undefined;
 };
 
-export type RepairOrderDetail = Awaited<ReturnType<typeof api.getRepairOrder>>;
+export const api = {
+  // --- phiên & từ điển ---
+  session: () => goi<Phien>("GET", "/auth/session"),
+  dangNhap: (body: { username: string; password: string }) =>
+    goi<Phien & { thong_bao: string }>("POST", "/auth/login", body),
+  dangXuat: () => goi<{ thong_bao: string }>("POST", "/auth/logout"),
+  meta: () => goi<Meta>("GET", "/meta"),
+  lookups: () => goi<Lookups>("GET", "/lookups"),
+
+  // --- tổng quan ---
+  dashboard: () => goi<Dashboard>("GET", "/dashboard"),
+
+  // --- phiếu sửa chữa ---
+  orders: (p: ThamSoDanhSach & { trang_thai?: string | undefined } = {}) =>
+    goi<PhanTrang<PhieuDong>>("GET", "/orders", p),
+  order: (id: number) => goi<ChiTietPhieu>("GET", `/orders/${id}`),
+  taoPhieu: (body: {
+    vehicle_id: number;
+    technician_id?: number | null | undefined;
+    technical_notes?: string | undefined;
+  }) => goi<{ thong_bao: string; id: number }>("POST", "/orders", body),
+  doiTrangThai: (id: number, status: string) =>
+    goi<{ thong_bao: string; phieu: unknown }>("POST", `/orders/${id}/status`, { status }),
+  phanCong: (id: number, technician_id: number | null) =>
+    goi<{ thong_bao: string }>("POST", `/orders/${id}/assign`, { technician_id }),
+  themHangMuc: (id: number, body: { loai: "dich_vu" | "phu_tung"; ma: number; qty: number }) =>
+    goi<{ thong_bao: string }>("POST", `/orders/${id}/items`, body),
+  goHangMuc: (id: number, iid: number) =>
+    goi<{ thong_bao: string }>("POST", `/orders/${id}/items/${iid}/remove`),
+  themNhatKy: (id: number, note: string) =>
+    goi<{ thong_bao: string }>("POST", `/orders/${id}/logs`, { note }),
+  ghiTiepNhan: (
+    id: number,
+    body: {
+      odometer_at_intake?: number | null | undefined;
+      fuel_level?: string | undefined;
+      exterior_condition?: string | undefined;
+      accessories?: string | undefined;
+      notes?: string | undefined;
+    },
+  ) => goi<{ thong_bao: string }>("POST", `/orders/${id}/intake`, body),
+  lapHoaDon: (id: number) =>
+    goi<{ thong_bao: string; id: number }>("POST", `/orders/${id}/invoice`),
+
+  // --- hoá đơn & thu tiền ---
+  invoices: (p: ThamSoDanhSach & { trang_thai?: string | undefined } = {}) =>
+    goi<PhanTrang<HoaDonDong>>("GET", "/invoices", p),
+  invoice: (id: number) => goi<HoaDonChiTietPhan>("GET", `/invoices/${id}`),
+  thuTien: (id: number, body: { amount: number; method: string }) =>
+    goi<{ thong_bao: string }>("POST", `/invoices/${id}/payments`, body),
+
+  // --- kho ---
+  stock: (p: ThamSoDanhSach & { part_id?: number | undefined; reason?: string | undefined } = {}) =>
+    goi<KhoPhanTrang>("GET", "/stock", p),
+  stockWarnings: () => goi<{ canh_bao: KhoPhanTrang["canh_bao"] }>("GET", "/stock/warnings"),
+  nhapKho: (body: { part_id: number; qty: number; note?: string | undefined }) =>
+    goi<{ thong_bao: string; ton_kho: number }>("POST", "/stock/receipt", body),
+  dieuChinhKho: (body: { part_id: number; moi: number; note?: string | undefined }) =>
+    goi<{ thong_bao: string; ton_kho: number }>("POST", "/stock/adjust", body),
+
+  // --- AI ---
+  aiRun: (body: {
+    kind: "history" | "explain" | "quote";
+    vehicle_id?: number | undefined;
+    service_id?: number | undefined;
+    repair_order_id?: number | undefined;
+  }) => goi<{ thong_bao: string; id: number }>("POST", "/ai/run", body),
+  aiResults: (p: ThamSoDanhSach & { trang_thai?: string | undefined } = {}) =>
+    goi<PhanTrang<KetQuaAI> & { ten_kinh: Record<string, string> }>("GET", "/ai/results", p),
+  aiRecent: () =>
+    goi<{ dong: KetQuaGanNhat[]; ten_kinh: Record<string, string>; provider: string }>(
+      "GET",
+      "/ai/recent",
+    ),
+  aiReview: (id: number, quyet_dinh: "APPROVED" | "REJECTED") =>
+    goi<{ thong_bao: string }>("POST", `/ai/results/${id}/review`, { quyet_dinh }),
+};
 
 export const q = {
-  dashboard: () => queryOptions({ queryKey: ["dashboard"], queryFn: api.getDashboard }),
-  orders: () => queryOptions({ queryKey: ["orders"], queryFn: api.listRepairOrders }),
-  order: (id: string) => queryOptions({ queryKey: ["orders", id], queryFn: () => api.getRepairOrder(id) }),
-  customers: () => queryOptions({ queryKey: ["customers"], queryFn: api.listCustomers }),
-  vehicles: () => queryOptions({ queryKey: ["vehicles"], queryFn: api.listVehicles }),
-  technicians: () => queryOptions({ queryKey: ["technicians"], queryFn: api.listTechnicians }),
-  bays: () => queryOptions({ queryKey: ["bays"], queryFn: api.listBays }),
-  inventory: () => queryOptions({ queryKey: ["inventory"], queryFn: api.listInventory }),
-  invoices: () => queryOptions({ queryKey: ["invoices"], queryFn: api.listInvoices }),
-  drafts: () => queryOptions({ queryKey: ["drafts"], queryFn: api.listDrafts }),
-  audit: (id: string) => queryOptions({ queryKey: ["audit", id], queryFn: () => api.listAudit(id) }),
+  session: () => queryOptions({ queryKey: ["session"], queryFn: api.session, retry: false }),
+  meta: () =>
+    queryOptions({ queryKey: ["meta"], queryFn: api.meta, staleTime: 5 * 60_000, retry: false }),
+  lookups: () =>
+    queryOptions({ queryKey: ["lookups"], queryFn: api.lookups, staleTime: 5 * 60_000 }),
+  dashboard: () => queryOptions({ queryKey: ["dashboard"], queryFn: api.dashboard }),
+  orders: (p: Parameters<typeof api.orders>[0] = {}) =>
+    queryOptions({ queryKey: ["orders", p], queryFn: () => api.orders(p) }),
+  order: (id: number) => queryOptions({ queryKey: ["orders", id], queryFn: () => api.order(id) }),
+  invoices: (p: Parameters<typeof api.invoices>[0] = {}) =>
+    queryOptions({ queryKey: ["invoices", p], queryFn: () => api.invoices(p) }),
+  invoice: (id: number) =>
+    queryOptions({ queryKey: ["invoices", id], queryFn: () => api.invoice(id) }),
+  stock: (p: Parameters<typeof api.stock>[0] = {}) =>
+    queryOptions({ queryKey: ["stock", p], queryFn: () => api.stock(p) }),
+  stockWarnings: () =>
+    queryOptions({ queryKey: ["stock", "warnings"], queryFn: api.stockWarnings }),
+  aiResults: (p: Parameters<typeof api.aiResults>[0] = {}) =>
+    queryOptions({ queryKey: ["ai-results", p], queryFn: () => api.aiResults(p) }),
+  aiRecent: () => queryOptions({ queryKey: ["ai-recent"], queryFn: api.aiRecent }),
 };

@@ -12,4 +12,16 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  vite: {
+    server: {
+      // Giao diện gọi cùng gốc `/api/...`; Vite chuyển tiếp về FastAPI backend
+      // (cùng nguồn nên cookie phiên + CSRF hoạt động, không cần CORS).
+      proxy: {
+        "/api": {
+          target: "http://127.0.0.1:8000",
+          changeOrigin: false,
+        },
+      },
+    },
+  },
 });
