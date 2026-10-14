@@ -129,10 +129,12 @@ def tao_phieu(du_lieu: TaoPhieuInput, user) -> int:
     xe = crud.phuong_tien_theo_id(du_lieu.vehicle_id)
     if xe is None:
         raise SaiQuyTac('Phương tiện không tồn tại.', truong='vehicle_id')
+    if not xe.get('is_active', 1):
+        raise SaiQuyTac('Phương tiện đã ngừng hoạt động.', truong='vehicle_id')
     if du_lieu.technician_id:
         ktv = crud.nguoi_dung_theo_id(du_lieu.technician_id)
-        if ktv is None or ktv['role'] != 'TECHNICIAN':
-            raise SaiQuyTac('Người được chọn không phải kỹ thuật viên.',
+        if ktv is None or ktv['role'] != 'TECHNICIAN' or not ktv.get('is_active', 1):
+            raise SaiQuyTac('Người được chọn không phải kỹ thuật viên đang hoạt động.',
                             truong='technician_id')
 
     with transaction() as c:
@@ -167,8 +169,8 @@ def gan_ky_thuat_vien(phieu_id: int, du_lieu: PhanCongInput, user) -> None:
         ghi = 'Bỏ phân công kỹ thuật viên.'
     else:
         ktv = crud.nguoi_dung_theo_id(du_lieu.technician_id)
-        if ktv is None or ktv['role'] != 'TECHNICIAN':
-            raise SaiQuyTac('Người được chọn không phải kỹ thuật viên.',
+        if ktv is None or ktv['role'] != 'TECHNICIAN' or not ktv.get('is_active', 1):
+            raise SaiQuyTac('Người được chọn không phải kỹ thuật viên đang hoạt động.',
                             truong='technician_id')
         crud.sua('repair_orders', phieu_id, {'technician_id': du_lieu.technician_id})
         ghi = 'Phân công kỹ thuật viên %s.' % ktv['full_name']
@@ -179,13 +181,16 @@ def gan_ky_thuat_vien(phieu_id: int, du_lieu: PhanCongInput, user) -> None:
 # ---------------------------------------------------------------------------
 # Hạng mục — nơi cần transaction cẩn thận
 # ---------------------------------------------------------------------------
-def _khoa_hang_muc(phieu: dict) -> None:
+def _khoa_hang_muc(phieu: dict, conn=None) -> None:
     if phieu['status'] in TRANG_THAI_KHOA_HANG_MUC:
         raise SaiQuyTac(
             'Phiếu đã %s nên không thể thay đổi hạng mục. Muốn phát sinh thêm'
             ' hãy mở một phiếu sửa chữa mới.'
             % TEN_TRANG_THAI.get(phieu['status'], phieu['status']))
-    if phieu_da_quyet_toan(phieu['id']):
+    da_co_hd = (conn.execute('SELECT 1 FROM invoices WHERE repair_order_id = ?',
+                             (phieu['id'],)).fetchone() is not None
+                if conn is not None else phieu_da_quyet_toan(phieu['id']))
+    if da_co_hd:
         raise SaiQuyTac(
             'Phiếu đã có hoá đơn. Hạng mục đã được chốt tiền nên không thể thêm'
             ' hoặc gỡ, tránh lệch giữa tổng hàng mục và tổng hoá đơn.')
@@ -193,10 +198,13 @@ def _khoa_hang_muc(phieu: dict) -> None:
 
 def them_hang_muc(phieu_id: int, du_lieu: ThemHangMucInput, user) -> None:
     _kiem_tra_quyen_thao_tac(user, phieu_id)
-    phieu = fetch_one('SELECT * FROM repair_orders WHERE id = ?', (phieu_id,))
-    _khoa_hang_muc(phieu)
 
     with transaction() as c:
+        phieu = c.execute('SELECT * FROM repair_orders WHERE id = ?',
+                          (phieu_id,)).fetchone()
+        if phieu is None:
+            raise KhongTimThay('Không tìm thấy phiếu sửa chữa số %d.' % phieu_id)
+        _khoa_hang_muc(dict(phieu), c)
         if du_lieu.loai == 'dich_vu':
             dong = c.execute('SELECT id, name, price, is_active FROM services'
                              ' WHERE id = ?', (du_lieu.ma,)).fetchone()
@@ -228,10 +236,13 @@ def them_hang_muc(phieu_id: int, du_lieu: ThemHangMucInput, user) -> None:
 
 def go_hang_muc(phieu_id: int, muc_id: int, user) -> None:
     _kiem_tra_quyen_thao_tac(user, phieu_id)
-    phieu = fetch_one('SELECT * FROM repair_orders WHERE id = ?', (phieu_id,))
-    _khoa_hang_muc(phieu)
 
     with transaction() as c:
+        phieu = c.execute('SELECT * FROM repair_orders WHERE id = ?',
+                          (phieu_id,)).fetchone()
+        if phieu is None:
+            raise KhongTimThay('Không tìm thấy phiếu sửa chữa số %d.' % phieu_id)
+        _khoa_hang_muc(dict(phieu), c)
         muc = c.execute('SELECT * FROM repair_order_items'
                         ' WHERE id = ? AND repair_order_id = ?',
                         (muc_id, phieu_id)).fetchone()
@@ -255,27 +266,39 @@ def go_hang_muc(phieu_id: int, muc_id: int, user) -> None:
 # Trạng thái
 # ---------------------------------------------------------------------------
 def doi_trang_thai(phieu_id: int, du_lieu: DoiTrangThaiInput, user) -> None:
-    phieu = _kiem_tra_quyen_thao_tac(user, phieu_id)
+    _kiem_tra_quyen_thao_tac(user, phieu_id)
     moi = du_lieu.status.strip().upper()
-    if moi not in CHUYEN_TRANG_THAI.get(phieu['status'], []):
-        raise SaiQuyTac(
-            'Không thể chuyển từ %s sang %s.'
-            % (TEN_TRANG_THAI.get(phieu['status'], phieu['status']),
-               TEN_TRANG_THAI.get(moi, moi)))
 
     with transaction() as c:
+        phieu = c.execute('SELECT * FROM repair_orders WHERE id = ?',
+                          (phieu_id,)).fetchone()
+        if phieu is None:
+            raise KhongTimThay('Không tìm thấy phiếu sửa chữa số %d.' % phieu_id)
+        cu_status = phieu['status']
+        if moi not in CHUYEN_TRANG_THAI.get(cu_status, []):
+            raise SaiQuyTac(
+                'Không thể chuyển từ %s sang %s.'
+                % (TEN_TRANG_THAI.get(cu_status, cu_status),
+                   TEN_TRANG_THAI.get(moi, moi)))
         if moi == 'COMPLETED':
-            if phieu_da_quyet_toan(phieu_id):
+            if c.execute('SELECT 1 FROM invoices WHERE repair_order_id = ?',
+                         (phieu_id,)).fetchone():
                 raise SaiQuyTac('Phiếu đã có hoá đơn, không thể đổi trạng thái'
                                 ' sang Hoàn thành. Hãy quản lý thanh toán tại hoá đơn.')
-            if tong_phieu(phieu_id) <= 0:
+            tong = c.execute(
+                'SELECT COALESCE(SUM(unit_price * qty), 0) FROM repair_order_items'
+                ' WHERE repair_order_id = ?', (phieu_id,)).fetchone()[0]
+            if int(tong or 0) <= 0:
                 raise SaiQuyTac('Phiếu chưa có hạng mục nên chưa thể hoàn thành.')
-        c.execute('UPDATE repair_orders SET status = ? WHERE id = ?', (moi, phieu_id))
+        n = c.execute('UPDATE repair_orders SET status = ? WHERE id = ? AND status = ?',
+                      (moi, phieu_id, cu_status)).rowcount
+        if n != 1:
+            raise SaiQuyTac('Trạng thái phiếu vừa thay đổi, vui lòng tải lại và thử lại.')
         if moi == 'CANCELLED':
             _hoan_tra_ton_kho(c, phieu_id)
         _ghi_nhat_ky(c, phieu_id, user['id'],
                      'Đổi trạng thái %s → %s'
-                     % (TEN_TRANG_THAI.get(phieu['status'], phieu['status']),
+                     % (TEN_TRANG_THAI.get(cu_status, cu_status),
                         TEN_TRANG_THAI.get(moi, moi)))
 
 
@@ -327,18 +350,21 @@ def xoa_phieu(phieu_id: int, user) -> None:
                           (phieu_id,)).fetchone()
         if phieu is None:
             raise KhongTimThay('Không tìm thấy phiếu cần xoá.')
-        for bang, cot in (('repair_order_items', 'repair_order_id'),
-                          ('invoices', 'repair_order_id'),
-                          ('intake_records', 'repair_order_id'),
-                          ('quotations', 'repair_order_id')):
-            if c.execute('SELECT 1 FROM %s WHERE %s = ? LIMIT 1' % (bang, cot),
+        ten_bang = {
+            'repair_order_items': 'hạng mục',
+            'invoices': 'hoá đơn',
+            'intake_records': 'biên bản tiếp nhận',
+            'quotations': 'báo giá',
+            'warranties': 'bảo hành',
+            'stock_transactions': 'giao dịch kho',
+            'ai_results': 'kết quả AI',
+        }
+        for bang, nhan in ten_bang.items():
+            if c.execute('SELECT 1 FROM %s WHERE repair_order_id = ? LIMIT 1' % bang,
                          (phieu_id,)).fetchone():
                 raise SaiQuyTac(
                     'Phiếu đã phát sinh %s nên không thể xoá.'
-                    ' Hãy huỷ phiếu thay vì xoá.'
-                    % {'repair_order_items': 'hạng mục', 'invoices': 'hoá đơn',
-                       'intake_records': 'biên bản tiếp nhận',
-                       'quotations': 'báo giá'}[bang])
+                    ' Hãy huỷ phiếu thay vì xoá.' % nhan)
         logs = c.execute('SELECT note FROM repair_logs WHERE repair_order_id = ?',
                          (phieu_id,)).fetchall()
         if any(not r['note'].startswith('Tiếp nhận xe') for r in logs):

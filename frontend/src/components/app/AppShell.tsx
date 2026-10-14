@@ -59,7 +59,7 @@ const NAV: {
   {
     group: "Kho & Tài chính",
     items: [
-      { to: "/inventory", label: "Kho phụ tung", icon: Boxes, area: "inventory" },
+      { to: "/inventory", label: "Kho phụ tùng", icon: Boxes, area: "inventory" },
       { to: "/catalog", label: "Danh mục DV/PT", icon: Tags, area: "catalog" },
       { to: "/warranties", label: "Bảo hành", icon: ShieldCheck, area: "warranty" },
       { to: "/finance", label: "Hoá đơn & Thanh toán", icon: Receipt, area: "finance" },

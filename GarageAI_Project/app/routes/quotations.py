@@ -87,6 +87,7 @@ def chi_tiet_bao_gia(request: Request, qid: int):
                     and auth_svc.co_the_quyen(user, 'quote.approve'),
         'co_huy': bg['status'] in ('DRAFT', 'SENT'),
         'co_ap_dung': bg['status'] == 'APPROVED'
+                      and not bg.get('applied_at')
                       and bg['phieu_status'] not in ('COMPLETED', 'CANCELLED'),
         'dich_vu': crud.lua_chon_dich_vu(),
         'phu_tung': crud.lua_chon_phu_tung(),
@@ -182,6 +183,9 @@ async def ap_dung(request: Request, qid: int):
         tb, loi = '', _loi(e)
     except sqlite3.Error as e:
         tb, loi = '', 'Không áp dụng được: %s' % e
-    bg = quotations.chi_tiet(qid)
-    return _ve(request, '/repair-orders/%d' % bg['repair_order_id'],
-               loi=loi, thong_bao=tb)
+    try:
+        bg = quotations.chi_tiet(qid)
+        return _ve(request, '/repair-orders/%d' % bg['repair_order_id'],
+                   loi=loi, thong_bao=tb)
+    except AppError:
+        return _ve(request, '/quotations', loi=loi, thong_bao=tb)

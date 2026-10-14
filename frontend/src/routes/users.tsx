@@ -1,4 +1,4 @@
-﻿import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, type ReactNode } from "react";
 import { toast } from "sonner";
@@ -69,14 +69,14 @@ function Truong({ label, children }: { label: string; children: ReactNode }) {
 }
 
 function Users() {
-  const { area, can } = useRole();
+  const { area, can, user } = useRole();
   const N = useNhan();
   const qc = useQueryClient();
 
   const [tim, setTim] = useState("");
   const [timDe, setTimDe] = useState("");
-  const [vaiTroLoc, setVaiTroLoc] = useState("");
-  const [hoatDongLoc, setHoatDongLoc] = useState("");
+  const [vaiTroLoc, setVaiTroLoc] = useState("all");
+  const [hoatDongLoc, setHoatDongLoc] = useState("all");
   const [trang, setTrang] = useState(1);
   const [form, setForm] = useState<Form | null>(null);
 
@@ -93,8 +93,8 @@ function Users() {
       trang,
       moi_trang: 20,
       q: timDe || undefined,
-      vai_tro: vaiTroLoc || undefined,
-      dang_hoat_dong: hoatDongLoc || undefined,
+      vai_tro: vaiTroLoc === "all" ? undefined : vaiTroLoc,
+      dang_hoat_dong: hoatDongLoc === "all" ? undefined : hoatDongLoc,
     }),
     enabled: area("users"),
   });
@@ -108,14 +108,19 @@ function Users() {
         role: f.role,
         is_active: f.is_active,
       };
-      if (f.id !== null) body.id = f.id;
-      else body.password = f.password;
+      if (f.id !== null) {
+        body.id = f.id;
+        if (f.password.trim()) body.password = f.password;
+      } else {
+        body.password = f.password;
+      }
       return api.luuNguoiDung(body);
     },
     onSuccess: async (kq) => {
       toast.success(kq.thong_bao);
       setForm(null);
       await qc.invalidateQueries({ queryKey: ["users"] });
+      await qc.invalidateQueries({ queryKey: ["lookups"] });
     },
     onError: (e) => toast.error(e instanceof ApiError ? e.message : "Lưu tài khoản thất bại."),
   });
@@ -125,6 +130,7 @@ function Users() {
     onSuccess: async (kq) => {
       toast.success(kq.thong_bao);
       await qc.invalidateQueries({ queryKey: ["users"] });
+      await qc.invalidateQueries({ queryKey: ["lookups"] });
     },
     onError: (e) => toast.error(e instanceof ApiError ? e.message : "Cập nhật tài khoản thất bại."),
   });
@@ -139,7 +145,7 @@ function Users() {
     );
 
   const { dong, tong, trang: trangHienTai, tong_trang, vai_tro } = ds.data;
-  const quanLy = can("user.manage");
+  const coSua = can("user.edit");
 
   const moFormSua = (u: NguoiDungDong) =>
     setForm({
@@ -164,7 +170,9 @@ function Users() {
     form.username.trim().length >= 3 &&
     form.full_name.trim().length >= 2 &&
     form.role !== "" &&
-    (form.id !== null || form.password.length >= 8);
+    (form.id === null
+      ? form.password.length >= 8
+      : form.password.length === 0 || form.password.length >= 8);
 
   return (
     <>
@@ -173,7 +181,7 @@ function Users() {
         title="Người dùng"
         desc="Tài khoản nhân viên và vai trò do backend quản lý — mọi thao tác tạo, sửa, khoá đều ghi vào nhật ký hệ thống."
         actions={
-          quanLy && (
+          coSua && (
             <Button onClick={() => setForm(formMoi())}>
               <UserPlus className="size-4" />
               Thêm tài khoản
@@ -207,7 +215,7 @@ function Users() {
                   <SelectValue placeholder="Tất cả vai trò" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Tất cả vai trò</SelectItem>
+                  <SelectItem value="all">Tất cả vai trò</SelectItem>
                   {Object.entries(vai_tro).map(([k, v]) => (
                     <SelectItem key={k} value={k}>
                       {v}
@@ -226,7 +234,7 @@ function Users() {
                   <SelectValue placeholder="Mọi trạng thái" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Mọi trạng thái</SelectItem>
+                  <SelectItem value="all">Mọi trạng thái</SelectItem>
                   <SelectItem value="1">Đang hoạt động</SelectItem>
                   <SelectItem value="0">Ngừng hoạt động</SelectItem>
                 </SelectContent>
@@ -252,43 +260,50 @@ function Users() {
                     <th className="px-4 py-2 font-medium">Email</th>
                     <th className="px-4 py-2 font-medium">Vai trò</th>
                     <th className="px-4 py-2 font-medium">Trạng thái</th>
-                    {quanLy && <th className="px-4 py-2 text-right font-medium">Thao tác</th>}
+                    {coSua && <th className="px-4 py-2 text-right font-medium">Thao tác</th>}
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {dong.map((u) => (
-                    <tr key={u.id} className="hover:bg-muted/40">
-                      <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground">
-                        {u.id}
-                      </td>
-                      <td className="px-4 py-2.5 font-medium">{u.username}</td>
-                      <td className="px-4 py-2.5">{u.full_name}</td>
-                      <td className="px-4 py-2.5 text-muted-foreground">{u.email ?? "—"}</td>
-                      <td className="px-4 py-2.5">{N.vaiTro(u.role)}</td>
-                      <td className="px-4 py-2.5">
-                        <Pill t={u.is_active ? "success" : "danger"} dot>
-                          {u.is_active ? "Đang hoạt động" : "Ngừng hoạt động"}
-                        </Pill>
-                      </td>
-                      {quanLy && (
-                        <td className="px-4 py-2.5 text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button size="sm" variant="outline" onClick={() => moFormSua(u)}>
-                              Sửa
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              disabled={batTat.isPending}
-                              onClick={() => hoiBatTat(u)}
-                            >
-                              {u.is_active ? "Khoá" : "Mở"}
-                            </Button>
-                          </div>
+                  {dong.map((u) => {
+                    const laMinh = user?.id === u.id;
+                    return (
+                      <tr key={u.id} className="hover:bg-muted/40">
+                        <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground">
+                          {u.id}
                         </td>
-                      )}
-                    </tr>
-                  ))}
+                        <td className="px-4 py-2.5 font-medium">{u.username}</td>
+                        <td className="px-4 py-2.5">{u.full_name}</td>
+                        <td className="px-4 py-2.5 text-muted-foreground">{u.email ?? "—"}</td>
+                        <td className="px-4 py-2.5">{N.vaiTro(u.role)}</td>
+                        <td className="px-4 py-2.5">
+                          <Pill t={u.is_active ? "success" : "danger"} dot>
+                            {u.is_active ? "Đang hoạt động" : "Ngừng hoạt động"}
+                          </Pill>
+                        </td>
+                        {coSua && (
+                          <td className="px-4 py-2.5 text-right">
+                            {laMinh ? (
+                              <span className="text-xs text-muted-foreground">Đang đăng nhập</span>
+                            ) : (
+                              <div className="flex justify-end gap-2">
+                                <Button size="sm" variant="outline" onClick={() => moFormSua(u)}>
+                                  Sửa
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  disabled={batTat.isPending}
+                                  onClick={() => hoiBatTat(u)}
+                                >
+                                  {u.is_active ? "Khoá" : "Mở"}
+                                </Button>
+                              </div>
+                            )}
+                          </td>
+                        )}
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -370,16 +385,24 @@ function Users() {
                   </SelectContent>
                 </Select>
               </Truong>
-              {form.id === null && (
-                <Truong label="Mật khẩu (tối thiểu 8 ký tự)">
-                  <Input
-                    type="password"
-                    value={form.password}
-                    onChange={(e) => setForm({ ...form, password: e.target.value })}
-                    placeholder="Bắt buộc khi tạo mới"
-                  />
-                </Truong>
-              )}
+              <Truong
+                label={
+                  form.id === null
+                    ? "Mật khẩu (tối thiểu 8 ký tự)"
+                    : "Đặt lại mật khẩu mới (tuỳ chọn, tối thiểu 8 ký tự)"
+                }
+              >
+                <Input
+                  type="password"
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  placeholder={
+                    form.id === null
+                      ? "Bắt buộc khi tạo mới"
+                      : "Để trống nếu giữ nguyên mật khẩu cũ"
+                  }
+                />
+              </Truong>
               <Truong label="Trạng thái">
                 <Select
                   value={form.is_active ? "1" : "0"}

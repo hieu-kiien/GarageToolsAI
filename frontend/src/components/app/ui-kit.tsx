@@ -193,7 +193,7 @@ export function Empty({ title, desc }: { title: string; desc?: string }) {
 }
 
 /** Trạng thái tải chung cho các màn hình useQuery. */
-export function DangTai({ mat = "đang tải dữ liệu…" }: { mat?: string }) {
+export function DangTai({ mat = "Đang tải dữ liệu…" }: { mat?: string }) {
   return (
     <div className="flex min-h-[40vh] items-center justify-center p-8 text-sm text-muted-foreground">
       <span className="mr-2 size-4 animate-spin rounded-full border-2 border-muted border-t-primary" />

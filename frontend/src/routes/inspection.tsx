@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
+import { Plus, UserPlus, Car } from "lucide-react";
 import { api, q, ApiError } from "@/services/api";
 import { useLookups } from "@/services/lookups";
 import { useNhan, useRole } from "@/lib/rbac";
@@ -16,6 +17,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/inspection")({
   head: () => ({
@@ -30,7 +39,7 @@ export const Route = createFileRoute("/inspection")({
 });
 
 function Inspection() {
-  const { area, meta } = useRole();
+  const { area, can, meta } = useRole();
   const N = useNhan();
   const L = useLookups();
   const qc = useQueryClient();
@@ -48,7 +57,21 @@ function Inspection() {
   const [doDac, setDoDac] = useState("");
   const [ghiChu, setGhiChu] = useState("");
 
+  // Thêm nhanh khách hàng & xe tại quầy (ADR-9).
+  const [moThemKhach, setMoThemKhach] = useState(false);
+  const [tenKhach, setTenKhach] = useState("");
+  const [sdtKhach, setSdtKhach] = useState("");
+  const [diaChiKhach, setDiaChiKhach] = useState("");
+
+  const [moThemXe, setMoThemXe] = useState(false);
+  const [khachXeId, setKhachXeId] = useState("");
+  const [bienXe, setBienXe] = useState("");
+  const [hangXe, setHangXe] = useState("");
+  const [dongXe, setDongXe] = useState("");
+  const [namXe, setNamXe] = useState("");
+
   const phieuMoi = useQuery(q.orders({ moi_trang: 10, trang_thai: "RECEIVED" }));
+  const dsKhach = useQuery({ ...q.customers({ moi_trang: 500 }), enabled: moThemXe });
   const loi = (e: unknown) => toast.error(e instanceof ApiError ? e.message : "Thao tác thất bại.");
 
   const taoPhieu = useMutation({
@@ -63,6 +86,8 @@ function Inspection() {
       setPhieuId(String(kq.id));
       setGhiChuPhieu("");
       await qc.invalidateQueries({ queryKey: ["orders"] });
+      await qc.invalidateQueries({ queryKey: ["dashboard"] });
+      await qc.invalidateQueries({ queryKey: ["lookups"] });
     },
     onError: loi,
   });
@@ -79,6 +104,55 @@ function Inspection() {
     onSuccess: async (kq) => {
       toast.success(kq.thong_bao);
       await qc.invalidateQueries({ queryKey: ["orders"] });
+      await qc.invalidateQueries({ queryKey: ["vehicles"] });
+      await qc.invalidateQueries({ queryKey: ["lookups"] });
+    },
+    onError: loi,
+  });
+
+  const taoKhachNhanh = useMutation({
+    mutationFn: () =>
+      api.taoKhach({
+        name: tenKhach.trim(),
+        phone: sdtKhach.trim(),
+        address: diaChiKhach.trim() || null,
+      }),
+    onSuccess: async (kq) => {
+      toast.success(kq.thong_bao);
+      setMoThemKhach(false);
+      setTenKhach("");
+      setSdtKhach("");
+      setDiaChiKhach("");
+      await qc.invalidateQueries({ queryKey: ["customers"] });
+      await qc.invalidateQueries({ queryKey: ["lookups"] });
+      if (can("vehicle.edit")) {
+        setKhachXeId(String(kq.id));
+        setMoThemXe(true);
+      }
+    },
+    onError: loi,
+  });
+
+  const taoXeNhanh = useMutation({
+    mutationFn: () =>
+      api.taoXe({
+        plate: bienXe.trim(),
+        brand: hangXe.trim(),
+        model: dongXe.trim(),
+        customer_id: Number(khachXeId),
+        year: namXe.trim() ? Number(namXe.trim()) : null,
+        is_active: true,
+      }),
+    onSuccess: async (kq) => {
+      toast.success(kq.thong_bao);
+      setMoThemXe(false);
+      setBienXe("");
+      setHangXe("");
+      setDongXe("");
+      setNamXe("");
+      await qc.invalidateQueries({ queryKey: ["vehicles"] });
+      await qc.invalidateQueries({ queryKey: ["lookups"] });
+      setXeId(String(kq.id));
     },
     onError: loi,
   });
@@ -86,6 +160,7 @@ function Inspection() {
   if (!area("inspection")) return <NoAccess />;
 
   const danhSachPhieu = phieuMoi.data?.dong ?? [];
+  const coTaoPhieu = can("order.create");
 
   return (
     <>
@@ -94,15 +169,40 @@ function Inspection() {
         title="Tiếp nhận xe"
         desc="Bước 1: tạo phiếu sửa chữa cho xe. Bước 2: ghi biên bản tiếp nhận (ODO, nhiên liệu, tình trạng, đồ đạc)."
         actions={
-          phieuId && <Pill t="success">Phiếu #{phieuId} đã tạo — ghi biên bản ở bước 2</Pill>
+          <>
+            {can("customer.edit") && (
+              <Button variant="outline" size="sm" onClick={() => setMoThemKhach(true)}>
+                <UserPlus className="size-4" />
+                Thêm khách mới
+              </Button>
+            )}
+            {can("vehicle.edit") && (
+              <Button variant="outline" size="sm" onClick={() => setMoThemXe(true)}>
+                <Plus className="size-4" />
+                Thêm xe mới
+              </Button>
+            )}
+            {phieuId && <Pill t="success">Phiếu #{phieuId} đã tạo — ghi biên bản ở bước 2</Pill>}
+          </>
         }
       />
       <div className="grid gap-6 p-6 lg:p-8 xl:grid-cols-2">
         <Panel title="Bước 1 · Tạo phiếu sửa chữa">
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Xe *</label>
-              <Select value={xeId} onValueChange={setXeId}>
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-medium text-muted-foreground">Xe *</label>
+                {can("vehicle.edit") && (
+                  <button
+                    type="button"
+                    onClick={() => setMoThemXe(true)}
+                    className="text-xs font-medium text-primary hover:underline"
+                  >
+                    + Thêm xe mới
+                  </button>
+                )}
+              </div>
+              <Select value={xeId} onValueChange={setXeId} disabled={!coTaoPhieu}>
                 <SelectTrigger>
                   <SelectValue placeholder="Chọn biển số…" />
                 </SelectTrigger>
@@ -119,7 +219,7 @@ function Inspection() {
               <label className="text-xs font-medium text-muted-foreground">
                 Kỹ thuật viên (tuỳ chọn)
               </label>
-              <Select value={ktvId} onValueChange={setKtvId}>
+              <Select value={ktvId} onValueChange={setKtvId} disabled={!coTaoPhieu}>
                 <SelectTrigger>
                   <SelectValue placeholder="Chưa phân công" />
                 </SelectTrigger>
@@ -140,11 +240,12 @@ function Inspection() {
                 onChange={(e) => setGhiChuPhieu(e.target.value)}
                 placeholder="Khách báo hư hỏng gì? Yêu cầu gì?"
                 className="min-h-[70px]"
+                disabled={!coTaoPhieu}
               />
             </div>
             <Button
               className="w-full"
-              disabled={!xeId || taoPhieu.isPending}
+              disabled={!coTaoPhieu || !xeId || taoPhieu.isPending}
               onClick={() => taoPhieu.mutate()}
             >
               Tạo phiếu sửa chữa
@@ -255,7 +356,7 @@ function Inspection() {
                 )}
               </div>
               <p className="text-[11px] text-muted-foreground">
-                Biến bản ghi một lần cho mỗi phiếu — backend chặn ghi trùng.
+                Biên bản ghi một lần cho mỗi phiếu — backend chặn ghi trùng.
               </p>
             </div>
           )}
@@ -265,6 +366,160 @@ function Inspection() {
         Nhãn mức nhiên liệu lấy từ <code className="font-mono">GET /api/meta</code> — cùng nguồn với
         mọi màn hình.
       </div>
+
+      <Dialog open={moThemKhach} onOpenChange={(o) => !o && setMoThemKhach(false)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="size-4" />
+              Thêm nhanh khách hàng
+            </DialogTitle>
+            <DialogDescription>
+              Tạo khách hàng mới ngay tại quầy tiếp nhận — lưu xong sẽ chuyển sang thêm xe cho khách
+              này.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 text-sm">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Họ và tên *</label>
+              <Input
+                value={tenKhach}
+                onChange={(e) => setTenKhach(e.target.value)}
+                placeholder="Nguyễn Văn A"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Số điện thoại *</label>
+              <Input
+                value={sdtKhach}
+                onChange={(e) => setSdtKhach(e.target.value)}
+                placeholder="0909123456"
+                inputMode="tel"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Địa chỉ</label>
+              <Input
+                value={diaChiKhach}
+                onChange={(e) => setDiaChiKhach(e.target.value)}
+                placeholder="Quận 7, TP. Hồ Chí Minh"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMoThemKhach(false)}>
+              Huỷ
+            </Button>
+            <Button
+              disabled={!tenKhach.trim() || !sdtKhach.trim() || taoKhachNhanh.isPending}
+              onClick={() => taoKhachNhanh.mutate()}
+            >
+              Lưu khách hàng
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={moThemXe} onOpenChange={(o) => !o && setMoThemXe(false)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Car className="size-4" />
+              Thêm nhanh phương tiện
+            </DialogTitle>
+            <DialogDescription>
+              Lưu xong xe mới sẽ được tự động chọn ở Bước 1 để lập phiếu ngay.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 text-sm">
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-medium text-muted-foreground">Chủ xe *</label>
+                {can("customer.edit") && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMoThemXe(false);
+                      setMoThemKhach(true);
+                    }}
+                    className="text-xs font-medium text-primary hover:underline"
+                  >
+                    + Tạo khách mới
+                  </button>
+                )}
+              </div>
+              <Select value={khachXeId} onValueChange={setKhachXeId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Chọn khách hàng…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(dsKhach.data?.dong ?? []).map((k) => (
+                    <SelectItem key={k.id} value={String(k.id)}>
+                      {k.name} · {k.phone}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">Biển số *</label>
+                <Input
+                  value={bienXe}
+                  onChange={(e) => setBienXe(e.target.value)}
+                  placeholder="30A-12345"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">Năm sản xuất</label>
+                <Input
+                  type="number"
+                  min={1900}
+                  max={2100}
+                  value={namXe}
+                  onChange={(e) => setNamXe(e.target.value)}
+                  placeholder="2022"
+                />
+              </div>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">Hãng *</label>
+                <Input
+                  value={hangXe}
+                  onChange={(e) => setHangXe(e.target.value)}
+                  placeholder="Toyota"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">Dòng xe *</label>
+                <Input
+                  value={dongXe}
+                  onChange={(e) => setDongXe(e.target.value)}
+                  placeholder="Vios"
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMoThemXe(false)}>
+              Huỷ
+            </Button>
+            <Button
+              disabled={
+                !bienXe.trim() ||
+                !hangXe.trim() ||
+                !dongXe.trim() ||
+                !khachXeId ||
+                taoXeNhanh.isPending
+              }
+              onClick={() => taoXeNhanh.mutate()}
+            >
+              Lưu & chọn xe
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

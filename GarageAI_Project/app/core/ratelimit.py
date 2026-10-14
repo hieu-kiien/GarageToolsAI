@@ -68,10 +68,12 @@ class GioiHanTanSuat:
 # chung (NAT, Wi-Fi công ty), nên giới hạn theo IP không được chặn oang những
 # nhân viên hợp lệ. Ngưỡng thắt chặt đặt theo *tài khoản bị thử sai*, vì đó mới
 # là thứ cần chặn (dò mật khẩu).
+from .config import get_settings as _get_settings
+_s = _get_settings()
 _DEM_DI_CHUC_THEO_IP = GioiHanTanSuat(300, 60)     # 300 lần/phút mọi trang
 _DEM_DANG_NHAP_IP = GioiHanTanSuat(60, 60)        # 60 lần đăng nhập/phút mỗi IP
 _DEM_THU_SAI = GioiHanTanSuat(5, 900)             # 5 lần sai / 15 phút mỗi tài khoản
-_DEM_AI = GioiHanTanSuat(10, 60)                  # bấm nút Chạy AI
+_DEM_AI = GioiHanTanSuat(_s.AI_RATE_LIMIT, _s.AI_RATE_WINDOW)  # bấm nút Chạy AI
 _DEM_GHI = GioiHanTanSuat(60, 60)                 # thao tác ghi dữ liệu
 
 

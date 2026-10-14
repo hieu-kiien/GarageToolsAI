@@ -21,12 +21,12 @@ def parse_tien(raw) -> int | None:
     Cho phép cả `1.500.000`, `1500000`, `1,500,000` và số âm để kiểm tra được
     cả trường hợp sai, thay vì im lặng nuốt thành 0.
     """
-    if raw is None:
+    if raw is None or isinstance(raw, bool):
         return None
-    if isinstance(raw, bool):          # bool là int, chặn riêng cho rõ
-        return int(raw)
-    if isinstance(raw, (int, float)):
-        return int(raw)
+    if isinstance(raw, int):
+        return raw
+    if isinstance(raw, float):
+        return int(raw) if raw.is_integer() else None
     s = str(raw).strip()
     if not s:
         return None
@@ -67,7 +67,7 @@ def format_ngay(s, khuong_doi: bool = True) -> str:
     """Hiển thị giờ Việt Nam.
 
     SQLite lưu mốc thời gian bằng `datetime('now')` là UTC. Nếu in thẳng sẽ
-    lệch 7 tiêng so với giờ Việt Nam, nên mặc định quy đổi sang Asia/Ho_Chi_Minh.
+    lệch 7 tiếng so với giờ Việt Nam, nên mặc định quy đổi sang Asia/Ho_Chi_Minh.
     """
     if not s:
         return ''

@@ -76,7 +76,7 @@ def render(request: Request, ten_template: str, ctx: dict | None = None,
             max_age=settings.SESSION_MAX_AGE, httponly=False,
             secure=settings.SESSION_COOKIE_SECURE,
             samesite=settings.SESSION_COOKIE_SAMESITE, path='/')
-    flash_mod.xoa(response)
+    flash_mod.xoa(response, co_cookie=bool(request.cookies.get(flash_mod.COOKIE_FLASH)))
     return response
 
 

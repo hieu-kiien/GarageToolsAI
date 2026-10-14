@@ -130,14 +130,13 @@ def tao_tai_khoan(du_lieu: TaiKhoanInput, mat_khau: str) -> int:
 def sua_tai_khoan(du_lieu: TaiKhoanInput, mat_khau_moi: str | None = None) -> None:
     """Cập nhật tài khoản. `mat_khau_moi` khác None thì đổi mật khẩu luôn.
 
-    Trước đây mật khẩu gửi kèm bị bỏ qua im lặng — quản lý tưởng đã đổi mà
-    thực tế không đổi. Giờ thay đổi được ghi nhận (và không đụng tới
-    `auth_version` để các phiên đang đăng nhập của người khác không bị đá).
+    Khi đổi mật khẩu, đổi vai trò hoặc khoá tài khoản thì tăng `auth_version`
+    của tài khoản đó để vô hiệu hoá các phiên cũ của người dùng này.
     """
-    crud.yeu_cau_co('users', du_lieu.id, 'tài khoản')
+    cu = crud.yeu_cau_co('users', du_lieu.id, 'tài khoản')
     if crud.co_ban_ghi('users', 'username = ? AND id <> ?',
                        (du_lieu.username, du_lieu.id)):
-        raise XungDdot('Tên đăng nhận %s đã tồn tại.' % du_lieu.username,
+        raise XungDdot('Tên đăng nhập %s đã tồn tại.' % du_lieu.username,
                        truong='username')
     du = {
         'username': du_lieu.username,
@@ -149,6 +148,8 @@ def sua_tai_khoan(du_lieu: TaiKhoanInput, mat_khau_moi: str | None = None) -> No
     if mat_khau_moi:
         du['password_hash'] = _bam(mat_khau_moi)
     crud.sua('users', du_lieu.id, du)
+    if mat_khau_moi or cu.get('role') != du_lieu.role or not du_lieu.is_active:
+        crud.tang_phien_ban(du_lieu.id)
 
 
 def doi_mat_khau(user: NguoiDung, du_lieu: DoiMatKhauInput) -> None:
@@ -180,7 +181,7 @@ def _loi_integrity(e: sqlite3.IntegrityError) -> AppError:
     """Dịch lỗi ràng buộc CSDL thành thông báo tiếng Việt cho người dùng."""
     n = str(e)
     if 'username' in n:
-        return XungDdot('Tên đăng nhận đã tồn tại.', truong='username')
+        return XungDdot('Tên đăng nhập đã tồn tại.', truong='username')
     if 'plate' in n:
         return XungDdot('Biển số đã tồn tại.', truong='plate')
     if 'FOREIGN KEY' in n:

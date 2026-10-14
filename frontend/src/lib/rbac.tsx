@@ -32,7 +32,7 @@ export const AREA_QUYEN: Record<Area, string[]> = {
   orders: ["order.view"],
   inspection: ["order.create"],
   ai: ["ai.history", "ai.explain", "ai.quote", "ai.review"],
-  inventory: ["stock.manage"],
+  inventory: ["stock.manage", "order.view"],
   // Thu ngân không có report.view vẫn phải mở được màn hoá đơn để ghi thu (ADR-4).
   finance: ["report.view", "payment.record"],
   appointments: ["appointment.view"],
@@ -41,7 +41,7 @@ export const AREA_QUYEN: Record<Area, string[]> = {
   warranty: ["warranty.manage"],
   catalog: ["catalog.view"],
   users: ["user.manage"],
-  reports: ["report.view"],
+  reports: ["report.view", "history.view"],
   history: ["history.view"],
 };
 

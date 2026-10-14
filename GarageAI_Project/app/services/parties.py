@@ -43,6 +43,8 @@ def danh_sach_khach(trang, *, q: str = '') -> tuple[list[dict], int]:
 def luu_khach(du_lieu: KhachHangInput) -> int:
     du_lieu_dict = {'name': du_lieu.name, 'phone': du_lieu.phone,
                     'email': du_lieu.email, 'address': du_lieu.address}
+    if du_lieu.id:
+        crud.yeu_cau_co('customers', du_lieu.id, 'khách hàng')
     if crud.co_ban_ghi('customers', 'phone = ? AND id <> ?',
                        (du_lieu.phone, du_lieu.id or 0)):
         raise XungDdot('Số điện thoại đã được khách hàng khác sử dụng.',
@@ -87,6 +89,8 @@ def danh_sach_xe(trang, *, q: str = '', khach: int | None = None) -> tuple[list[
 
 
 def luu_xe(du_lieu: PhuongTienInput) -> int:
+    if du_lieu.id:
+        crud.yeu_cau_co('vehicles', du_lieu.id, 'phương tiện')
     if crud.khach_hang_theo_id(du_lieu.customer_id) is None:
         raise SaiQuyTac('Khách hàng không tồn tại.', truong='customer_id')
     if crud.co_ban_ghi('vehicles', 'plate = ? AND id <> ?',

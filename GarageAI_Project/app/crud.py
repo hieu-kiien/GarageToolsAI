@@ -195,7 +195,8 @@ def khach_hang_theo_id(khoa: int) -> dict | None:
 
 def phuong_tien_theo_id(khoa: int) -> dict | None:
     return fetch_one(
-        'SELECT v.id, v.plate, v.brand, v.model, v.year, v.customer_id, c.name AS khach'
+        'SELECT v.id, v.plate, v.brand, v.model, v.year, v.customer_id,'
+        ' v.is_active, c.name AS khach'
         ' FROM vehicles v JOIN customers c ON c.id = v.customer_id WHERE v.id = ?', (khoa,))
 
 

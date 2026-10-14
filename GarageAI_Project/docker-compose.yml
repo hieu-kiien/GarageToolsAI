@@ -18,6 +18,8 @@ services:
       AI_TIMEOUT: ${AI_TIMEOUT:-15}
       DEBUG: ${DEBUG:-false}
       SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-}
+      AUTO_MIGRATE: ${AUTO_MIGRATE:-true}
       # CSDL nằm ngoài image để không mất khi rebuild
       DATABASE_PATH: /data/garage.db
     volumes:

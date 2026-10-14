@@ -56,7 +56,7 @@ class DangNhapInput(BaseModel):
     @field_validator('username')
     @classmethod
     def _chuan_hoa(cls, v: str) -> str:
-        v = v.strip()
+        v = v.strip().lower()
         if not re.fullmatch(r'[a-z0-9._-]+', v):
             raise ValueError('Tên đăng nhập chỉ gồm chữ thường, số và các ký tự . _ -')
         return v
@@ -115,8 +115,15 @@ class TaiKhoanInput(BaseModel):
 
 
 class LuuTaiKhoanInput(TaiKhoanInput):
-    """Tạo/cập nhật tài khoản từ API. `password` chỉ bắt buộc khi tạo mới."""
+    """Tạo/cập nhật tài khoản từ API hoặc biểu mẫu. `password` chỉ bắt buộc khi tạo mới."""
     password: str | None = Field(default=None, min_length=8, max_length=128)
+
+    @field_validator('password', mode='before')
+    @classmethod
+    def _chuan_mat_khau(cls, v):
+        if v is None or str(v).strip() == '':
+            return None
+        return str(v)
 
 
 # ---------------------------------------------------------------------------

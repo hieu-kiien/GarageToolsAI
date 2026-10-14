@@ -129,9 +129,10 @@ if ($ok2) {
   # Thu tren hoa don con no that (khong gan id — du lieu da co the da thu truoc).
   $ds = Api GET '/api/invoices?moi_trang=50' $null $s2
   $no = $null
-  if ($ds.code -eq 200) { $no = @($ds.json.dong | Where-Object { $_.con_phai_thu -gt 0 })[0] }
+  if ($ds.code -eq 200) { $no = @($ds.json.dong | Where-Object { ([int]$_.total - [int]$_.paid) -gt 0 })[0] }
   if ($no) {
-    $tien = [Math]::Min(100000, [int]$no.con_phai_thu)
+    $conNo = [int]$no.total - [int]$no.paid
+    $tien = [Math]::Min(100000, $conNo)
     $x = Api POST "/api/invoices/$($no.id)/payments" @{ amount = $tien; method = 'CASH' } $s2
     Show 'thu_ngan ghi thu tien (200/201)' ($x.code -in 200, 201) "invoice=$($no.id) tien=$tien code=$($x.code) msg=$($x.json.thong_bao)"
   } else {
@@ -156,3 +157,4 @@ $results | Format-Table -AutoSize
 $pass = @($results | Where-Object { $_.Result -eq 'PASS' }).Count
 $fail = @($results | Where-Object { $_.Result -eq 'FAIL' }).Count
 Write-Output "TOTAL: $pass PASS / $fail FAIL"
+if ($fail -gt 0) { exit 1 }

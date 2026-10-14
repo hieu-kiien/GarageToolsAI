@@ -1,26 +1,17 @@
-# Thư mục lưu CSDL và tệp cấu hình thật.
-# KHÔNG đưa vào kho mã nguồn vì chứa dữ liệu và khoá.
 .env
+*.env
+!.env.example
 *.db
-*.db-wal
-*.db-shm
+*.db-*
+*.db.bak*
 backups/
-
-# Môi trường Python
 __pycache__/
 *.py[cod]
-.venv/
-venv/
 .pytest_cache/
 .mypy_cache/
-
-# Tệp sinh khi kiểm thử
-screenshots/*.tmp
-TEST_REPORT.tmp
-
-# Tệp hệ điều hành và trình soạn thảo
-.DS_Store
-Thumbs.db
-desktop.ini
-*.tmp
-~$*
+.venv/
+venv/
+*.log
+.git/
+.vscode/
+.idea/

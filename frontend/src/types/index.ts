@@ -17,7 +17,7 @@ export type StockReason = "RECEIPT" | "USAGE" | "RETURN" | "ADJUSTMENT";
 /** Trạng thái lịch hẹn — `LichHenInput.status` của backend. */
 export type AppointmentStatus = "SCHEDULED" | "CONFIRMED" | "CANCELLED" | "DONE";
 /** Trạng thái báo giá — cột `quotations.status`. */
-export type QuotationStatus = "DRAFT" | "SENT" | "APPROVED" | "REJECTED" | "CANCELLED";
+export type QuotationStatus = "DRAFT" | "SENT" | "APPROVED" | "REJECTED" | "EXPIRED";
 /** Trạng thái bảo hành — `warranties.TEN_TRANG_THAI_BAOHANH`. */
 export type WarrantyStatus = "ACTIVE" | "EXPIRED" | "CLAIMED" | "CANCELLED";
 
@@ -101,6 +101,9 @@ export interface Phieu {
   technician_id: number | null;
   status: RepairStatus;
   technical_notes: string | null;
+  acceptance_note: string | null;
+  accepted_by: number | null;
+  acceptance_at: string | null;
   created_at: string;
   plate: string;
   brand: string;
@@ -148,6 +151,7 @@ export interface TienIchTiepNhan {
   exterior_condition: string | null;
   accessories: string | null;
   notes: string | null;
+  created_by: number | null;
   created_at: string;
   nguoi_tiep_nhan: string | null;
 }
@@ -329,6 +333,10 @@ export interface BaoGia extends BaoGiaDong {
   brand: string;
   model: string;
   khach: string;
+  created_by: number | null;
+  approved_by: number | null;
+  approved_at: string | null;
+  applied_by: number | null;
   hang_muc: HangMucBaoGia[];
   tong: number;
 }

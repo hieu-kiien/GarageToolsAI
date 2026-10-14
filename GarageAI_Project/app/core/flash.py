@@ -12,6 +12,7 @@ Với ứng dụng gọi bằng JSON, server còn gửi thêm header `X-Flash-Er
 """
 from __future__ import annotations
 
+from contextvars import ContextVar
 from dataclasses import dataclass
 
 from itsdangerous import BadSignature, URLSafeSerializer
@@ -32,7 +33,7 @@ class Flash:
         return not self.loi and not self.thong_bao
 
 
-_flash_dang_doc: Flash | None = None
+_flash_dang_doc: ContextVar[Flash | None] = ContextVar('flash_dang_doc', default=None)
 
 
 def _serializer() -> URLSafeSerializer:
@@ -46,7 +47,7 @@ def _clean(text: str | None) -> str:
     t = str(text).strip()
     if len(t) > 500:
         t = t[:497] + '...'
-    # Cặt ký tự điều khiển, giữ nguyên chữ tiếng Việt.
+    # Cắt ký tự điều khiển, giữ nguyên chữ tiếng Việt.
     return ''.join(ch for ch in t if ch == '\n' or ord(ch) >= 32)
 
 
@@ -79,32 +80,32 @@ def ghi(response, flash: Flash) -> None:
 
 def doc(request) -> Flash:
     """Lấy thông báo đang chờ; giá trị chỉ có hiệu lực một lần."""
-    global _flash_dang_doc
-    if _flash_dang_doc is not None:
-        return _flash_dang_doc
+    da_doc = _flash_dang_doc.get()
+    if da_doc is not None:
+        return da_doc
     token = request.cookies.get(COOKIE_FLASH)
     if not token:
-        _flash_dang_doc = Flash()
-        return _flash_dang_doc
+        rong = Flash()
+        _flash_dang_doc.set(rong)
+        return rong
     try:
         du_lieu = _serializer().loads(token)
         flash = tao_flash(loi=du_lieu.get('e', ''), thong_bao=du_lieu.get('m', ''))
     except (BadSignature, Exception):
         flash = Flash()
-    _flash_dang_doc = flash
+    _flash_dang_doc.set(flash)
     return flash
 
 
-def xoa(response) -> None:
-    global _flash_dang_doc
-    _flash_dang_doc = None
-    response.delete_cookie(COOKIE_FLASH, path='/')
+def xoa(response, *, co_cookie: bool = True) -> None:
+    _flash_dang_doc.set(None)
+    if co_cookie:
+        response.delete_cookie(COOKIE_FLASH, path='/')
 
 
 def bat_dau_request() -> None:
     """Đặt lại bộ nhớ tạm trước mỗi request (middleware gọi)."""
-    global _flash_dang_doc
-    _flash_dang_doc = None
+    _flash_dang_doc.set(None)
 
 
 def chuyen_huong(request, duong_dan: str, *, loi: str = '', thong_bao: str = '',

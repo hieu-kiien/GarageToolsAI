@@ -81,7 +81,7 @@ export async function goi<T>(method: string, path: string, body?: unknown): Prom
   let res: Response;
   try {
     res = await fetch(
-      dayDu(path) + hangSo(method === "GET" ? (body as Record<string, unknown>) : undefined),
+      dayDu(path) + hangSo(doCung === "GET" ? (body as Record<string, unknown>) : undefined),
       {
         method: doCung,
         credentials: "same-origin",

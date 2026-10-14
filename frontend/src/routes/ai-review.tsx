@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Sparkles, CheckCircle2, XCircle, Cpu, ListFilter } from "lucide-react";
 import { api, q, ApiError } from "@/services/api";
@@ -52,11 +52,27 @@ function Review() {
 
   const coDuyet = can("ai.review");
 
+  const kinhAi = meta?.kinh_ai ?? {
+    history: "Tóm tắt lịch sử",
+    explain: "Giải thích dịch vụ",
+    quote: "Báo giá nháp",
+  };
+  const kinhDuocPhep = (Object.entries(kinhAi) as [AiKind, string][]).filter(([k]) =>
+    can(`ai.${k}`),
+  );
+
   // Chạy AI.
-  const [kind, setKind] = useState<AiKind>("history");
+  const [kind, setKind] = useState<AiKind>(() => kinhDuocPhep[0]?.[0] ?? "history");
   const [vehicleId, setVehicleId] = useState("");
   const [serviceId, setServiceId] = useState("");
   const [phieuId, setPhieuId] = useState("");
+
+  useEffect(() => {
+    const dauTien = kinhDuocPhep[0]?.[0];
+    if (dauTien && !kinhDuocPhep.some(([k]) => k === kind)) {
+      setKind(dauTien);
+    }
+  }, [kinhDuocPhep, kind]);
 
   // Hàng chờ duyệt / danh sách kết quả.
   const [loc, setLoc] = useState<"" | "PENDING" | "APPROVED" | "REJECTED">("PENDING");
@@ -104,17 +120,13 @@ function Review() {
 
   if (!area("ai")) return <NoAccess />;
 
-  const kinhAi = meta?.kinh_ai ?? {
-    history: "Tóm tắt lịch sử",
-    explain: "Giải thích dịch vụ",
-    quote: "Báo giá nháp",
-  };
   const dong = coDuyet ? (ketQua.data?.dong ?? []) : (ketQua.data?.dong ?? []);
   const chon = dong.find((d) => d.id === dangChon) ?? dong[0];
   const coTheChay =
-    (kind === "history" && !!vehicleId) ||
-    (kind === "explain" && !!serviceId) ||
-    (kind === "quote" && !!phieuId);
+    kinhDuocPhep.some(([k]) => k === kind) &&
+    ((kind === "history" && !!vehicleId) ||
+      (kind === "explain" && !!serviceId) ||
+      (kind === "quote" && !!phieuId));
 
   return (
     <>
@@ -146,7 +158,7 @@ function Review() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {Object.entries(kinhAi).map(([k, v]) => (
+                  {kinhDuocPhep.map(([k, v]) => (
                     <SelectItem key={k} value={k}>
                       {v}
                     </SelectItem>

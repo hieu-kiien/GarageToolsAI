@@ -1,4 +1,4 @@
-﻿import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState, type ReactNode } from "react";
 import { q, ApiError } from "@/services/api";
@@ -111,6 +111,10 @@ const CAC_BAO_CAO: Record<string, CauHinh> = {
   },
   "trang-thai": {
     ten: "Trạng thái phiếu",
+    cot: [
+      { tieuDe: "Trạng thái", hien: (d) => <StatusPill s={layChuoi(d, "status")} /> },
+      { tieuDe: "Số lượng phiếu", hien: dem((d) => laySo(d, "so_luong")) },
+    ],
     kpi: (dong, N) =>
       dong.map((d) => ({ nhan: N.trangThai(layChuoi(d, "status")), giaTri: laySo(d, "so_luong") })),
   },
@@ -126,10 +130,25 @@ function cotChot(dong: DongBaoCao[]): Cot[] {
 }
 
 function Reports() {
-  const { area } = useRole();
-  const [tab, setTab] = useState<"bao-cao" | "lich-su">("bao-cao");
+  const { area, can } = useRole();
+  const coBaoCao = can("report.view");
+  const coLichSu = can("history.view");
+  const [tab, setTab] = useState<"bao-cao" | "lich-su">(() => (coBaoCao ? "bao-cao" : "lich-su"));
+
+  useEffect(() => {
+    if (tab === "bao-cao" && !coBaoCao && coLichSu) {
+      setTab("lich-su");
+    } else if (tab === "lich-su" && !coLichSu && coBaoCao) {
+      setTab("bao-cao");
+    }
+  }, [coBaoCao, coLichSu, tab]);
 
   if (!area("reports")) return <NoAccess />;
+
+  const cacTab = [
+    ...(coBaoCao ? ([["bao-cao", "Báo cáo"]] as const) : []),
+    ...(coLichSu ? ([["lich-su", "Lịch sử"]] as const) : []),
+  ];
 
   return (
     <>
@@ -139,29 +158,26 @@ function Reports() {
         desc="Số liệu do backend tổng hợp từ cơ sở dữ liệu — chọn loại báo cáo hoặc tra cứu lịch sử hoạt động."
       />
       <div className="space-y-4 p-6 lg:p-8">
-        <div className="flex w-fit gap-1 rounded-lg border bg-card p-1 shadow-card">
-          {(
-            [
-              ["bao-cao", "Báo cáo"],
-              ["lich-su", "Lịch sử"],
-            ] as const
-          ).map(([k, ten]) => (
-            <button
-              key={k}
-              onClick={() => setTab(k)}
-              className={cn(
-                "rounded-md px-3 py-1.5 text-sm font-medium",
-                tab === k
-                  ? "bg-foreground text-background"
-                  : "text-muted-foreground hover:bg-muted",
-              )}
-            >
-              {ten}
-            </button>
-          ))}
-        </div>
+        {cacTab.length > 1 && (
+          <div className="flex w-fit gap-1 rounded-lg border bg-card p-1 shadow-card">
+            {cacTab.map(([k, ten]) => (
+              <button
+                key={k}
+                onClick={() => setTab(k)}
+                className={cn(
+                  "rounded-md px-3 py-1.5 text-sm font-medium",
+                  tab === k
+                    ? "bg-foreground text-background"
+                    : "text-muted-foreground hover:bg-muted",
+                )}
+              >
+                {ten}
+              </button>
+            ))}
+          </div>
+        )}
 
-        {tab === "bao-cao" ? <TabBaoCao /> : <TabLichSu />}
+        {tab === "bao-cao" && coBaoCao ? <TabBaoCao /> : <TabLichSu />}
       </div>
     </>
   );

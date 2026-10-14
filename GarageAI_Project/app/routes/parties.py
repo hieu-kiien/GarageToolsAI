@@ -348,8 +348,11 @@ def form_dich_vu_sua(request: Request, sid: int):
     user = auth_svc.yeu_cau_quyen(request, 'catalog.edit')
     if user is None:
         return _ve(request, '/accounts/login')
+    b = crud.lay_mot('services', sid)
+    if b is None:
+        raise KhongTimThay('Không tìm thấy dịch vụ.')
     return render(request, 'bieu_mau.html', {
-        'ten': 'services', 'tieu_de': 'Dịch vụ', 'b': crud.lay_mot('services', sid),
+        'ten': 'services', 'tieu_de': 'Dịch vụ', 'b': b,
         'id': sid,
         'truong': [('name', 'Tên dịch vụ', 'text', True),
                    ('price', 'Đơn giá (đồng)', 'int', True),
@@ -430,8 +433,11 @@ def form_phu_tung_sua(request: Request, pid: int):
     user = auth_svc.yeu_cau_quyen(request, 'catalog.edit')
     if user is None:
         return _ve(request, '/accounts/login')
+    b = crud.lay_mot('parts', pid)
+    if b is None:
+        raise KhongTimThay('Không tìm thấy phụ tùng.')
     return render(request, 'bieu_mau.html', {
-        'ten': 'parts', 'tieu_de': 'Phụ tùng', 'b': crud.lay_mot('parts', pid),
+        'ten': 'parts', 'tieu_de': 'Phụ tùng', 'b': b,
         'id': pid,
         'truong': [('name', 'Tên phụ tùng', 'text', True),
                    ('sku', 'Mã sản phẩm', 'text', False),

@@ -33,12 +33,12 @@ export const Route = createFileRoute("/inventory")({
 });
 
 function Inventory() {
-  const { area } = useRole();
+  const { area, can } = useRole();
   const N = useNhan();
   const L = useLookups();
   const qc = useQueryClient();
 
-  const [locLyDo, setLocLyDo] = useState("");
+  const [locLyDo, setLocLyDo] = useState("all");
   const [trang, setTrang] = useState(1);
 
   // Form nhập kho.
@@ -64,6 +64,8 @@ function Inventory() {
       setNhapSl(1);
       setNhapGhiChu("");
       await qc.invalidateQueries({ queryKey: ["stock"] });
+      await qc.invalidateQueries({ queryKey: ["parts"] });
+      await qc.invalidateQueries({ queryKey: ["lookups"] });
     },
     onError: loi,
   });
@@ -77,6 +79,8 @@ function Inventory() {
       setDcMoi(0);
       setDcGhiChu("");
       await qc.invalidateQueries({ queryKey: ["stock"] });
+      await qc.invalidateQueries({ queryKey: ["parts"] });
+      await qc.invalidateQueries({ queryKey: ["lookups"] });
     },
     onError: loi,
   });
@@ -92,6 +96,7 @@ function Inventory() {
   if (!ds.data) return <DangTai mat="Đang tải sổ kho…" />;
 
   const { dong, tong, trang: trangHienTai, tong_trang, canh_bao, lech, ly_do } = ds.data;
+  const coQuanLyKho = can("stock.manage");
 
   return (
     <>
@@ -119,80 +124,84 @@ function Inventory() {
         </div>
 
         <div className="grid gap-6 xl:grid-cols-3">
-          <Panel title="Nhập kho" className="xl:col-span-1">
-            <div className="space-y-3">
-              <Select value={nhapMa} onValueChange={setNhapMa}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Chọn phụ tùng…" />
-                </SelectTrigger>
-                <SelectContent>
-                  {L.phu_tung.map((p) => (
-                    <SelectItem key={p.id} value={String(p.id)}>
-                      {p.name} — còn {p.stock}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Input
-                type="number"
-                min={1}
-                value={nhapSl}
-                onChange={(e) => setNhapSl(Number(e.target.value))}
-                placeholder="Số lượng nhập"
-              />
-              <Input
-                value={nhapGhiChu}
-                onChange={(e) => setNhapGhiChu(e.target.value)}
-                placeholder="Ghi chú (nhà cung cấp, phiếu…)"
-              />
-              <Button
-                className="w-full"
-                disabled={!nhapMa || nhapSl < 1 || nhap.isPending}
-                onClick={() => nhap.mutate()}
-              >
-                <ArrowDownToLine className="size-4" />
-                Ghi nhận nhập kho
-              </Button>
-            </div>
-          </Panel>
+          {coQuanLyKho && (
+            <>
+              <Panel title="Nhập kho" className="xl:col-span-1">
+                <div className="space-y-3">
+                  <Select value={nhapMa} onValueChange={setNhapMa}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Chọn phụ tùng…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {L.phu_tung.map((p) => (
+                        <SelectItem key={p.id} value={String(p.id)}>
+                          {p.name} — còn {p.stock}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={nhapSl}
+                    onChange={(e) => setNhapSl(Number(e.target.value))}
+                    placeholder="Số lượng nhập"
+                  />
+                  <Input
+                    value={nhapGhiChu}
+                    onChange={(e) => setNhapGhiChu(e.target.value)}
+                    placeholder="Ghi chú (nhà cung cấp, phiếu…)"
+                  />
+                  <Button
+                    className="w-full"
+                    disabled={!nhapMa || nhapSl < 1 || nhap.isPending}
+                    onClick={() => nhap.mutate()}
+                  >
+                    <ArrowDownToLine className="size-4" />
+                    Ghi nhận nhập kho
+                  </Button>
+                </div>
+              </Panel>
 
-          <Panel title="Điều chỉnh tồn (kiểm kê)" className="xl:col-span-1">
-            <div className="space-y-3">
-              <Select value={dcMa} onValueChange={setDcMa}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Chọn phụ tùng…" />
-                </SelectTrigger>
-                <SelectContent>
-                  {L.phu_tung.map((p) => (
-                    <SelectItem key={p.id} value={String(p.id)}>
-                      {p.name} — tồn {p.stock}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Input
-                type="number"
-                min={0}
-                value={dcMoi}
-                onChange={(e) => setDcMoi(Number(e.target.value))}
-                placeholder="Số lượng tồn thực tế mới"
-              />
-              <Input
-                value={dcGhiChu}
-                onChange={(e) => setDcGhiChu(e.target.value)}
-                placeholder="Lý do điều chỉnh"
-              />
-              <Button
-                className="w-full"
-                variant="outline"
-                disabled={!dcMa || dieuChinh.isPending}
-                onClick={() => dieuChinh.mutate()}
-              >
-                <SlidersHorizontal className="size-4" />
-                Điều chỉnh tồn
-              </Button>
-            </div>
-          </Panel>
+              <Panel title="Điều chỉnh tồn (kiểm kê)" className="xl:col-span-1">
+                <div className="space-y-3">
+                  <Select value={dcMa} onValueChange={setDcMa}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Chọn phụ tùng…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {L.phu_tung.map((p) => (
+                        <SelectItem key={p.id} value={String(p.id)}>
+                          {p.name} — tồn {p.stock}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={dcMoi}
+                    onChange={(e) => setDcMoi(Number(e.target.value))}
+                    placeholder="Số lượng tồn thực tế mới"
+                  />
+                  <Input
+                    value={dcGhiChu}
+                    onChange={(e) => setDcGhiChu(e.target.value)}
+                    placeholder="Lý do điều chỉnh"
+                  />
+                  <Button
+                    className="w-full"
+                    variant="outline"
+                    disabled={!dcMa || dieuChinh.isPending}
+                    onClick={() => dieuChinh.mutate()}
+                  >
+                    <SlidersHorizontal className="size-4" />
+                    Điều chỉnh tồn
+                  </Button>
+                </div>
+              </Panel>
+            </>
+          )}
 
           <Panel
             className="xl:col-span-1"

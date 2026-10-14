@@ -2,10 +2,10 @@
 
 | | |
 |---|---|
-| Ngày chạy | 2026-10-14 21:20 |
+| Ngày chạy | 2026-10-14 22:41 |
 | Môi trường | Python 3.13.14, SQLite 3.50.4 |
-| Tổng số ca | **220** |
-| Kết quả | **220 đạt / 0 lỗi** |
+| Tổng số ca | **226** |
+| Kết quả | **226 đạt / 0 lỗi** |
 
 ---
 
@@ -40,7 +40,7 @@ chạy chứ không kiểm tra bản sao.
 
 - Tệp: `tests/test_api.py`
 - Phạm vi: Gọi các endpoint JSON mà giao diện React gọi: phiên và mã CSRF, lỗi theo từng trường, phong bì phân trang, luồng phiếu – báo giá – hoá đơn – thanh toán, kho, bảo hành, AI và phân quyền bốn vai trò.
-- Kết quả: 44 ca, 44 đạt, 0 lỗi
+- Kết quả: 50 ca, 50 đạt, 0 lỗi
 
 ## 2. Nhóm ca kiểm thử ràng buộc cơ sở dữ liệu
 

@@ -792,6 +792,79 @@ class TestChongTaiPhat(CoSoApi):
                              headers={'X-CSRF-Token': self.csrf()})
         self.assertEqual(r.status_code, 200, r.text)
 
+    def test_sua_khach_va_xe_khong_ton_tai_tra_404(self):
+        r = self.api('put', '/api/customers/99999',
+                     {'name': 'Khong Ton Tai', 'phone': '0911222333'})
+        self.assertEqual(r.status_code, 404, r.text)
+        self.assertEqual(r.json()['loi'], 'khong_tim_thay')
+
+        r = self.api('put', '/api/vehicles/99999',
+                     {'plate': '30Z-99999', 'brand': 'Toyota',
+                      'model': 'Vios', 'customer_id': 1})
+        self.assertEqual(r.status_code, 404, r.text)
+        self.assertEqual(r.json()['loi'], 'khong_tim_thay')
+
+    def test_trung_ten_dich_vu_tra_409_khong_phai_500(self):
+        ten_co_san = self.q1('SELECT name FROM services WHERE id = 1')['name']
+        r = self.api('post', '/api/services',
+                     {'name': ten_co_san, 'price': 200000})
+        self.assertEqual(r.status_code, 409, r.text)
+        self.assertEqual(r.json()['loi'], 'trung_du_lieu')
+
+    def test_xoa_dich_vu_phu_tung_dang_dung_trong_bao_gia_bi_chan(self):
+        r = self.api('post', '/api/services',
+                     {'name': 'Dich Vu Thu Bao Gia', 'price': 150000})
+        sid = r.json()['id']
+        r = self.api('post', '/api/parts',
+                     {'name': 'Phu Tung Thu Bao Gia', 'sku': 'PT-BG-01',
+                      'price': 250000, 'stock': 5})
+        pid = r.json()['id']
+
+        r = self.api('post', '/api/quotations', {'repair_order_id': 12})
+        qid = r.json()['id']
+        self.api('post', '/api/quotations/%d/items' % qid,
+                 {'loai': 'dich_vu', 'ma': sid, 'qty': 1})
+        self.api('post', '/api/quotations/%d/items' % qid,
+                 {'loai': 'phu_tung', 'ma': pid, 'qty': 1})
+
+        self.assertEqual(self.api('delete', '/api/services/%d' % sid).status_code, 409)
+        self.assertEqual(self.api('delete', '/api/parts/%d' % pid).status_code, 409)
+
+    def test_chan_tao_phieu_voi_xe_hoac_ktv_ngung_hoat_dong(self):
+        xe = self.q1('SELECT * FROM vehicles WHERE id = 12')
+        self.api('put', '/api/vehicles/12',
+                 {'plate': xe['plate'], 'brand': xe['brand'],
+                  'model': xe['model'], 'customer_id': xe['customer_id'],
+                  'is_active': False})
+        r = self.api('post', '/api/orders', {'vehicle_id': 12})
+        self.assertEqual(r.status_code, 409, r.text)
+
+        self.api('put', '/api/vehicles/12',
+                 {'plate': xe['plate'], 'brand': xe['brand'],
+                  'model': xe['model'], 'customer_id': xe['customer_id'],
+                  'is_active': True})
+        self.api('post', '/api/users/3/toggle')
+        r = self.api('post', '/api/orders',
+                     {'vehicle_id': 12, 'technician_id': 3})
+        self.assertEqual(r.status_code, 409, r.text)
+
+    def test_chan_tao_bao_gia_cho_phieu_da_hoan_thanh_va_bao_cao_dich_vu_tach_phu_tung(self):
+        # Phiếu #1 trong seed đang ở trạng thái COMPLETED.
+        r = self.api('post', '/api/quotations', {'repair_order_id': 1})
+        self.assertEqual(r.status_code, 409, r.text)
+
+        # Báo cáo dịch vụ chỉ chứa tên nằm trong bảng services, không lẫn parts.
+        bc = self.client.get('/api/reports/dich-vu').json()['dong']
+        ten_dich_vu = {r['name'] for r in self._tat_ca('SELECT name FROM services')}
+        for d in bc:
+            self.assertIn(d['ten'], ten_dich_vu)
+
+    def test_gia_tien_boolean_bi_tu_choi_400(self):
+        r = self.api('post', '/api/services',
+                     {'name': 'Dich Vu Boolean', 'price': True})
+        self.assertEqual(r.status_code, 400, r.text)
+        self.assertEqual(r.json()['loi'], 'dau_vao_khong_hop_le')
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

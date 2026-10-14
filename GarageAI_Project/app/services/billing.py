@@ -66,21 +66,23 @@ def danh_sach_hoa_don(trang, *, trang_thai: str = '', q: str = '') -> tuple[list
 # ---------------------------------------------------------------------------
 def lap_hoa_don(phieu_id: int, user) -> int:
     """Tổng tiền do backend tính, không nhận từ giao diện."""
-    phieu = fetch_one('SELECT * FROM repair_orders WHERE id = ?', (phieu_id,))
-    if phieu is None:
-        raise KhongTimThay('Không tìm thấy phiếu sửa chữa số %d.' % phieu_id)
-    if phieu['status'] != 'COMPLETED':
-        raise SaiQuyTac('Chỉ lập hoá đơn khi phiếu đã hoàn thành. Phiếu số %d'
-                        ' hiện đang %s.' % (phieu_id,
-                                           TEN_TRANG_THAI.get(phieu['status'])))
-    tong = tong_phieu(phieu_id)
-    if tong <= 0:
-        raise SaiQuyTac('Phiếu chưa có hạng mục nên chưa lập được hoá đơn.')
-
     with transaction() as c:
+        phieu = c.execute('SELECT * FROM repair_orders WHERE id = ?',
+                          (phieu_id,)).fetchone()
+        if phieu is None:
+            raise KhongTimThay('Không tìm thấy phiếu sửa chữa số %d.' % phieu_id)
+        if phieu['status'] != 'COMPLETED':
+            raise SaiQuyTac('Chỉ lập hoá đơn khi phiếu đã hoàn thành. Phiếu số %d'
+                            ' hiện đang %s.' % (phieu_id,
+                                               TEN_TRANG_THAI.get(phieu['status'])))
         if c.execute('SELECT 1 FROM invoices WHERE repair_order_id = ?',
                      (phieu_id,)).fetchone():
             raise SaiQuyTac('Phiếu này đã có hoá đơn.')
+        tong = int(c.execute(
+            'SELECT COALESCE(SUM(unit_price * qty), 0) FROM repair_order_items'
+            ' WHERE repair_order_id = ?', (phieu_id,)).fetchone()[0] or 0)
+        if tong <= 0:
+            raise SaiQuyTac('Phiếu chưa có hạng mục nên chưa lập được hoá đơn.')
         hd_id = int(c.execute(
             'INSERT INTO invoices (repair_order_id, total, paid, status, created_at)'
             ' VALUES (?, ?, 0, ?, ?)',

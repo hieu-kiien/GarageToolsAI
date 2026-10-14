@@ -1,4 +1,4 @@
-﻿import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { q, ApiError } from "@/services/api";
@@ -86,7 +86,7 @@ function List() {
       <PageHeader
         eyebrow="Vận hành"
         title="Báo giá"
-        desc={`${tong} báo giá khớp bộ lọc — tổng tiền do backend tính từ từng hàng mục.`}
+        desc={`${tong} báo giá khớp bộ lọc — tổng tiền do backend tính từ từng hạng mục.`}
       />
       <div className="p-6 lg:p-8">
         <Panel bodyClass="p-0">

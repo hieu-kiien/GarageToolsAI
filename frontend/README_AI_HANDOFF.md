@@ -35,15 +35,15 @@ màn hình → quyền qua `AREA_QUYEN` (`lib/rbac.tsx`), server vẫn kiểm l�
 
 | Nhóm | Method & path | Quyền |
 |---|---|---|
-| Phiếu | `GET/POST /orders`, `GET/PUT/DELETE /orders/{id}`, `POST /orders/{id}/status` | `order.view`, `order.create` (xoá), `order.progress` |
-| Tiếp nhận | `POST /orders/intake`, `POST /orders/{id}/accept` (nghiệm thu) | `order.create`, `order.accept` |
-| Hàng mục | `POST /orders/{id}/items`, `/items/{iid}`, `logs` | `order.item`, `order.progress` |
+| Phiếu | `GET/POST /orders`, `GET/DELETE /orders/{id}`, `POST /orders/{id}/status`, `POST /orders/{id}/assign` | `order.view`, `order.create` (tạo/xoá), `order.progress`, `order.assign` |
+| Tiếp nhận | `POST /orders/{id}/intake`, `POST /orders/{id}/accept` (nghiệm thu) | `order.create` ∨ `order.progress`, `order.accept` |
+| Hạng mục | `POST /orders/{id}/items`, `POST /orders/{id}/items/{iid}/remove`, `POST /orders/{id}/logs` | `order.item`, `order.progress` |
 | Báo giá | `GET/POST /quotations`, `GET /quotations/{id}`, `POST …/items`, `…/items/{iid}/remove`, `…/send`, `…/review`, `…/cancel`, `…/apply` | `quote.manage` (duyệt: `quote.approve`) |
 | Hoá đơn | `GET /invoices`, `GET /invoices/{id}`, `POST …/payments`, `POST …/payments/{khoan_id}/cancel` | `report.view` ∨ `payment.record` (xem), `payment.record` (ghi/huỷ) |
 | Khách/Xe/Lịch | `GET/POST/PUT/DELETE /customers`, `/vehicles`, `/appointments` | `customer.view`/`vehicle.view`/`appointment.view`, sửa: `*.edit` |
-| Kho | `GET /stock`, `/stock/warnings`, `POST /stock/receipt`, `/stock/adjust` | `stock.manage` |
+| Kho | `GET /stock`, `/stock/warnings`, `POST /stock/receipt`, `/stock/adjust` | `stock.manage` ∨ `order.view` (xem), `stock.manage` (ghi) |
 | Danh mục | `GET/POST/PUT/DELETE /services`, `/parts` | `catalog.view`, ghi: `catalog.edit` |
-| Bảo hành | `GET /warranties`, `GET /warranties/eligible`, `POST /warranties`, `POST /warranties/{id}/cancel` | `warranty.manage` |
+| Bảo hành | `GET /warranties`, `GET /orders/{id}/warranty-eligible`, `POST /warranties`, `POST /warranties/{id}/cancel` | `warranty.manage` |
 | AI | `POST /ai/run { kind, … }`, `GET /ai/results`, `/ai/recent`, `POST /ai/results/{id}/review` | `ai.*`, duyệt: `ai.review` |
 | Tài khoản | `GET/POST /users`, `POST /users/{id}/toggle` | `user.manage` / `user.edit` |
 | Báo cáo | `GET /reports/{kind}` (kind: `doanh-thu`, `dich-vu`, `phu-tung`, `khach-hang`, `trang-thai`), `GET /history`, `GET /lookups`, `GET /meta` | `report.view` / `history.view` |
@@ -57,5 +57,5 @@ màn hình → quyền qua `AREA_QUYEN` (`lib/rbac.tsx`), server vẫn kiểm l�
 - Nghiệm thu chỉ từ `COMPLETED`, `POST /orders/{id}/accept` 409 nếu chạy 2 lần.
 - Chuyển trạng thái theo bảng `meta.chuyen_trang_thai`; trạng thái terminal
   (`COMPLETED`, `CANCELLED`) không nhận chuyển tiếp.
-- Huỷ khoản thu ghi ledger `RETURN`, không xoá; huỷ bảo hành 1 lần.
-- Đơn vị tiền VND nguyên; VAT 10% backend tính.
+- Huỷ khoản thu xoá bản ghi trong `payments` và tính lại trạng thái hoá đơn; huỷ bảo hành 1 lần.
+- Đơn vị tiền VND nguyên; tổng tiền hoá đơn bằng tổng các hạng mục phiếu.

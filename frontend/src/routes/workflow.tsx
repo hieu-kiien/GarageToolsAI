@@ -41,7 +41,7 @@ export const Route = createFileRoute("/workflow")({
 });
 
 function Board() {
-  const { area, can } = useRole();
+  const { area, can, user } = useRole();
   const N = useNhan();
   const qc = useQueryClient();
   const L = useLookups();
@@ -58,6 +58,10 @@ function Board() {
     onSuccess: async (kq) => {
       toast.success(kq.thong_bao);
       await qc.invalidateQueries({ queryKey: ["orders"] });
+      await qc.invalidateQueries({ queryKey: ["dashboard"] });
+      await qc.invalidateQueries({ queryKey: ["stock"] });
+      await qc.invalidateQueries({ queryKey: ["parts"] });
+      await qc.invalidateQueries({ queryKey: ["lookups"] });
       setSel((s) => (s ? { ...s, status: (kq.phieu as PhieuDong).status } : s));
     },
     onError: (e) => toast.error(e instanceof ApiError ? e.message : "Chuyển trạng thái thất bại."),
@@ -88,6 +92,9 @@ function Board() {
   const tong = danhSach.data.tong;
   const canChuyen = can("order.progress");
   const canPhanCong = can("order.assign");
+  const ketThucSel = sel ? sel.status === "COMPLETED" || sel.status === "CANCELLED" : false;
+  const ktvDuocPhepSel =
+    user?.role !== "TECHNICIAN" || (phieu ? phieu.technician_id === user.id : true);
 
   const thuChuyen = (id: number, status: RepairStatus) => {
     if (!canChuyen) return toast.error("Bạn không có quyền chuyển trạng thái phiếu.");
@@ -206,7 +213,7 @@ function Board() {
                     Kỹ thuật viên phụ trách
                   </label>
                   <Select
-                    disabled={!canPhanCong}
+                    disabled={!canPhanCong || ketThucSel}
                     value={phieu?.technician_id ? String(phieu.technician_id) : "none"}
                     onValueChange={(v) =>
                       phanCong.mutate({
@@ -227,9 +234,11 @@ function Board() {
                       ))}
                     </SelectContent>
                   </Select>
-                  {!canPhanCong && (
+                  {(!canPhanCong || ketThucSel) && (
                     <p className="text-[11px] text-muted-foreground">
-                      Chỉ Quản lý hoặc Lễ tân được phân công.
+                      {ketThucSel
+                        ? "Phiếu đã kết thúc — không thể đổi phân công."
+                        : "Chỉ Quản lý hoặc Lễ tân được phân công."}
                     </p>
                   )}
                 </div>
@@ -239,28 +248,32 @@ function Board() {
                     Chuyển trạng thái (luật do backend quy định)
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {N.chuyenTrangThai(sel.status).map((tt) => (
-                      <Button
-                        key={tt}
-                        size="sm"
-                        variant={tt === "CANCELLED" ? "destructive" : "default"}
-                        onClick={() => {
-                          thuChuyen(sel.id, tt);
-                          setSel(null);
-                        }}
-                      >
-                        {N.trangThai(tt)}
-                      </Button>
-                    ))}
+                    {canChuyen &&
+                      ktvDuocPhepSel &&
+                      N.chuyenTrangThai(sel.status).map((tt) => (
+                        <Button
+                          key={tt}
+                          size="sm"
+                          variant={tt === "CANCELLED" ? "destructive" : "default"}
+                          onClick={() => {
+                            thuChuyen(sel.id, tt);
+                            setSel(null);
+                          }}
+                        >
+                          {N.trangThai(tt)}
+                        </Button>
+                      ))}
                     {N.chuyenTrangThai(sel.status).length === 0 && (
                       <p className="text-xs text-muted-foreground">
                         Phiếu đã kết thúc — không còn trạng thái chuyển tiếp.
                       </p>
                     )}
                   </div>
-                  {!canChuyen && (
+                  {(!canChuyen || !ktvDuocPhepSel) && (
                     <p className="text-[11px] text-muted-foreground">
-                      Tài khoản của bạn không có quyền chuyển trạng thái.
+                      {!canChuyen
+                        ? "Tài khoản của bạn không có quyền chuyển trạng thái."
+                        : "Chỉ kỹ thuật viên được phân công phụ trách phiếu mới được chuyển trạng thái."}
                     </p>
                   )}
                 </div>

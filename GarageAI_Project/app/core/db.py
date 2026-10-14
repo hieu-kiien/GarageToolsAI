@@ -228,11 +228,15 @@ def ban_ghi_da_bi_tham_chieu(bang: str, khoa: int) -> bool:
 
 
 _BANG_DUOC_XOA = {
-    'customers': [('vehicles', 'customer_id'), ('appointments', 'customer_id'),
-                  ('repair_orders', 'vehicle_id'), ('shop_orders', 'customer_id')],
+    'customers': [('vehicles', 'customer_id'), ('appointments', 'customer_id')],
     'vehicles': [('appointments', 'vehicle_id'), ('repair_orders', 'vehicle_id')],
-    'services': [('repair_order_items', 'service_id')],
-    'parts': [('repair_order_items', 'part_id')],
+    'services': [('repair_order_items', 'service_id'),
+                 ('quotation_items', 'service_id'),
+                 ('warranties', 'service_id')],
+    'parts': [('repair_order_items', 'part_id'),
+              ('quotation_items', 'part_id'),
+              ('stock_transactions', 'part_id'),
+              ('warranties', 'part_id')],
     'shop_categories': [('shop_products', 'category_id')],
     'shop_products': [('shop_order_items', 'product_id')],
 }

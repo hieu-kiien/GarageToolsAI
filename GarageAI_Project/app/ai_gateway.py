@@ -282,8 +282,8 @@ def bao_gia_nhap(order_id):
     else:
         parsed = _phan_tich_json(raw)
 
-    if parsed is None:
-        # Không đọc được JSON: dựng bản nháp từ dữ liệu CSDL, tuyệt đối không đoán
+    if not isinstance(parsed, dict):
+        # Không đọc được JSON dạng đối tượng: dựng bản nháp từ dữ liệu CSDL, tuyệt đối không đoán
         body_lines = '\n'.join('- %s x%d: %s đồng' % (i['ten'], i['qty'],
                                                       format(i['subtotal'], ',').replace(',', '.'))
                                for i in items)

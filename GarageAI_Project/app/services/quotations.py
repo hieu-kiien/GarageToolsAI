@@ -91,8 +91,8 @@ def tao_bao_gia(du_lieu: TaoBaoGiaInput, user) -> int:
                       (du_lieu.repair_order_id,))
     if phieu is None:
         raise KhongTimThay('Không tìm thấy phiếu sửa chữa.')
-    if phieu['status'] in ('CANCELLED',):
-        raise SaiQuyTac('Không tạo báo giá cho phiếu đã huỷ.')
+    if phieu['status'] in ('COMPLETED', 'CANCELLED'):
+        raise SaiQuyTac('Không tạo báo giá cho phiếu đã hoàn thành hoặc đã huỷ.')
     du = {'repair_order_id': du_lieu.repair_order_id, 'note': du_lieu.note,
           'valid_until': du_lieu.valid_until, 'created_by': user['id'],
           'total': 0}

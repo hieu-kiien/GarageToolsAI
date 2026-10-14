@@ -1,4 +1,4 @@
-﻿import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -405,6 +405,9 @@ function BangXe() {
   const [hang, setHang] = useState("");
   const [dongXe, setDongXe] = useState("");
   const [nam, setNam] = useState("");
+  const [vin, setVin] = useState("");
+  const [mau, setMau] = useState("");
+  const [soKm, setSoKm] = useState("");
   const [khachId, setKhachId] = useState("");
   const [hoatDong, setHoatDong] = useState(true);
   const [xoaId, setXoaId] = useState<number | null>(null);
@@ -431,6 +434,9 @@ function BangXe() {
         model: dongXe.trim(),
         customer_id: Number(khachId),
         year: nam.trim() ? Number(nam.trim()) : null,
+        vin: vin.trim() || null,
+        color: mau.trim() || null,
+        odometer: soKm.trim() ? Number(soKm.trim()) : null,
         is_active: hoatDong,
       };
       return dangSua ? api.suaXe(dangSua.id, body) : api.taoXe(body);
@@ -467,6 +473,9 @@ function BangXe() {
     setHang("");
     setDongXe("");
     setNam("");
+    setVin("");
+    setMau("");
+    setSoKm("");
     setKhachId("");
     setHoatDong(true);
     setMoForm(true);
@@ -478,6 +487,9 @@ function BangXe() {
     setHang(x.brand);
     setDongXe(x.model);
     setNam(x.year === null ? "" : String(x.year));
+    setVin(x.vin ?? "");
+    setMau(x.color ?? "");
+    setSoKm(x.odometer === null ? "" : String(x.odometer));
     setKhachId(String(x.customer_id));
     setHoatDong(!!x.is_active);
     setMoForm(true);
@@ -485,6 +497,9 @@ function BangXe() {
 
   const namSo = Number(nam);
   const namHopLe = !nam.trim() || (Number.isInteger(namSo) && namSo >= 1900 && namSo <= 2100);
+  const soKmSo = Number(soKm);
+  const soKmHopLe =
+    !soKm.trim() || (Number.isInteger(soKmSo) && soKmSo >= 0 && soKmSo <= 2_000_000);
 
   if (ds.isPending) return <DangTai mat="Đang tải danh sách phương tiện…" />;
   if (!ds.data)
@@ -537,9 +552,9 @@ function BangXe() {
               <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wider text-muted-foreground">
                 <tr>
                   <th className="px-4 py-2 font-medium">Biển số</th>
-                  <th className="px-4 py-2 font-medium">Hãng</th>
-                  <th className="px-4 py-2 font-medium">Dòng xe</th>
-                  <th className="px-4 py-2 font-medium">Năm</th>
+                  <th className="px-4 py-2 font-medium">Hãng · Dòng xe</th>
+                  <th className="px-4 py-2 font-medium">Năm · Màu</th>
+                  <th className="px-4 py-2 font-medium">VIN · ODO</th>
                   <th className="px-4 py-2 font-medium">Chủ xe</th>
                   <th className="px-4 py-2 font-medium">Trạng thái</th>
                   {coSua && <th className="px-4 py-2 text-right font-medium">Thao tác</th>}
@@ -551,9 +566,19 @@ function BangXe() {
                     <td className="px-4 py-2.5">
                       <Plate>{x.plate}</Plate>
                     </td>
-                    <td className="px-4 py-2.5">{x.brand}</td>
-                    <td className="px-4 py-2.5">{x.model}</td>
-                    <td className="tabular px-4 py-2.5 text-xs">{x.year ?? "—"}</td>
+                    <td className="px-4 py-2.5">
+                      <span className="font-medium">{x.brand}</span> {x.model}
+                    </td>
+                    <td className="tabular px-4 py-2.5 text-xs">
+                      {x.year ?? "—"}
+                      {x.color ? ` · ${x.color}` : ""}
+                    </td>
+                    <td className="px-4 py-2.5 text-xs text-muted-foreground">
+                      <div className="font-mono">{x.vin ?? "—"}</div>
+                      {x.odometer !== null && (
+                        <div className="tabular">{x.odometer.toLocaleString("vi-VN")} km</div>
+                      )}
+                    </td>
                     <td className="px-4 py-2.5 text-muted-foreground">{x.khach}</td>
                     <td className="px-4 py-2.5">
                       <Pill t={x.is_active ? "success" : "neutral"} dot>
@@ -670,6 +695,36 @@ function BangXe() {
               </div>
             </div>
 
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">Số khung (VIN)</label>
+                <Input
+                  value={vin}
+                  onChange={(e) => setVin(e.target.value)}
+                  placeholder="RL4BT9F3..."
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">Màu sơn</label>
+                <Input
+                  value={mau}
+                  onChange={(e) => setMau(e.target.value)}
+                  placeholder="Trắng / Đen..."
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">ODO (km)</label>
+                <Input
+                  type="number"
+                  min={0}
+                  max={2000000}
+                  value={soKm}
+                  onChange={(e) => setSoKm(e.target.value)}
+                  placeholder="45000"
+                />
+              </div>
+            </div>
+
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground">Chủ xe</label>
               <Select value={khachId} onValueChange={setKhachId}>
@@ -711,6 +766,7 @@ function BangXe() {
                 !dongXe.trim() ||
                 !khachId ||
                 !namHopLe ||
+                !soKmHopLe ||
                 luu.isPending
               }
               onClick={() => luu.mutate()}

@@ -1,4 +1,4 @@
-﻿import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -39,7 +39,7 @@ export const Route = createFileRoute("/quotations/$id")({
       { title: "Chi tiết báo giá — GarageTools AI" },
       {
         name: "description",
-        content: "Hàng mục báo giá, gửi khách, duyệt và áp dụng vào phiếu sửa chữa.",
+        content: "Hạng mục báo giá, gửi khách, duyệt và áp dụng vào phiếu sửa chữa.",
       },
       { property: "og:title", content: "Chi tiết báo giá — GarageTools AI" },
       { property: "og:description", content: "Chi tiết và điều phối một báo giá." },
@@ -78,6 +78,9 @@ function Detail() {
     await qc.invalidateQueries({ queryKey: ["quotations"] });
     await qc.invalidateQueries({ queryKey: ["orders"] });
     await qc.invalidateQueries({ queryKey: ["stock"] });
+    await qc.invalidateQueries({ queryKey: ["parts"] });
+    await qc.invalidateQueries({ queryKey: ["lookups"] });
+    await qc.invalidateQueries({ queryKey: ["dashboard"] });
   };
 
   const themDong = useMutation({
@@ -187,7 +190,7 @@ function Detail() {
             {sua && (
               <Button size="sm" variant="outline" onClick={() => setMoThem(true)}>
                 <Plus className="size-4" />
-                Sửa hàng mục
+                Sửa hạng mục
               </Button>
             )}
             {gui && (
@@ -250,7 +253,7 @@ function Detail() {
       <div className="grid gap-6 p-6 lg:p-8 xl:grid-cols-3">
         <div className="space-y-6 xl:col-span-2">
           <Panel
-            title="Hàng mục báo giá"
+            title="Hạng mục báo giá"
             bodyClass="p-0"
             action={
               <span className="tabular text-xs text-muted-foreground">{hang_muc.length} dòng</span>
@@ -259,14 +262,14 @@ function Detail() {
             {hang_muc.length === 0 ? (
               <div className="p-4">
                 <Empty
-                  title="Chưa có hàng mục"
+                  title="Chưa có hạng mục"
                   desc="Báo giá cần ít nhất một dòng thì mới gửi được cho khách."
                 />
                 {sua && (
                   <div className="mt-3 text-center">
                     <Button size="sm" variant="outline" onClick={() => setMoThem(true)}>
                       <Plus className="size-4" />
-                      Thêm hàng mục
+                      Thêm hạng mục
                     </Button>
                   </div>
                 )}
@@ -276,7 +279,7 @@ function Detail() {
                 <table className="w-full text-sm">
                   <thead className="text-left text-[11px] uppercase tracking-wider text-muted-foreground">
                     <tr className="border-b">
-                      <th className="px-4 py-2 font-medium">Tên hàng mục</th>
+                      <th className="px-4 py-2 font-medium">Tên hạng mục</th>
                       <th className="px-4 py-2 font-medium">Loại</th>
                       <th className="px-4 py-2 text-right font-medium">Đơn giá</th>
                       <th className="px-4 py-2 text-right font-medium">Số lượng</th>
@@ -309,7 +312,7 @@ function Detail() {
                               disabled={goDong.isPending}
                               onClick={() => goDong.mutate(m.id)}
                               className="rounded p-1 text-muted-foreground hover:text-destructive disabled:opacity-50"
-                              aria-label="Gỡ hàng mục khỏi báo giá"
+                              aria-label="Gỡ hạng mục khỏi báo giá"
                             >
                               <Trash2 className="size-4" />
                             </button>
@@ -382,7 +385,7 @@ function Detail() {
       <Dialog open={moThem} onOpenChange={(o) => !o && setMoThem(false)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Thêm hàng mục · báo giá #{bao_gia.id}</DialogTitle>
+            <DialogTitle>Thêm hạng mục · báo giá #{bao_gia.id}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 text-sm">
             <div className="space-y-1.5">

@@ -65,7 +65,7 @@ function Detail() {
   const { id } = Route.useParams();
   const oid = Number(id);
   const navigate = useNavigate();
-  const { area, can, meta } = useRole();
+  const { area, can, meta, user } = useRole();
   const N = useNhan();
   const L = useLookups();
   const qc = useQueryClient();
@@ -97,13 +97,21 @@ function Detail() {
     return true;
   };
 
+  const taiLaiKhoVaPhieu = async () => {
+    await qc.invalidateQueries({ queryKey: ["orders"] });
+    await qc.invalidateQueries({ queryKey: ["stock"] });
+    await qc.invalidateQueries({ queryKey: ["parts"] });
+    await qc.invalidateQueries({ queryKey: ["lookups"] });
+    await qc.invalidateQueries({ queryKey: ["dashboard"] });
+  };
+
   const themMuc = useMutation({
     mutationFn: () => api.themHangMuc(oid, { loai, ma: Number(ma), qty: sl }),
     onSuccess: async (kq) => {
       toast.success(kq.thong_bao);
       setMa("");
       setSl(1);
-      await qc.invalidateQueries({ queryKey: ["orders"] });
+      await taiLaiKhoVaPhieu();
     },
     onError: loi,
   });
@@ -111,7 +119,7 @@ function Detail() {
     mutationFn: (iid: number) => api.goHangMuc(oid, iid),
     onSuccess: async (kq) => {
       toast.success(kq.thong_bao);
-      await qc.invalidateQueries({ queryKey: ["orders"] });
+      await taiLaiKhoVaPhieu();
     },
     onError: loi,
   });
@@ -128,7 +136,7 @@ function Detail() {
     mutationFn: (status: string) => api.doiTrangThai(oid, status),
     onSuccess: async (kq) => {
       toast.success(kq.thong_bao);
-      await qc.invalidateQueries({ queryKey: ["orders"] });
+      await taiLaiKhoVaPhieu();
     },
     onError: loi,
   });
@@ -145,6 +153,8 @@ function Detail() {
     onSuccess: async (kq) => {
       toast.success(kq.thong_bao);
       await qc.invalidateQueries({ queryKey: ["orders"] });
+      await qc.invalidateQueries({ queryKey: ["invoices"] });
+      await qc.invalidateQueries({ queryKey: ["dashboard"] });
     },
     onError: loi,
   });
@@ -154,6 +164,8 @@ function Detail() {
       toast.success(kq.thong_bao);
       setDangThu(false);
       await qc.invalidateQueries({ queryKey: ["orders"] });
+      await qc.invalidateQueries({ queryKey: ["invoices"] });
+      await qc.invalidateQueries({ queryKey: ["dashboard"] });
     },
     onError: loi,
   });
@@ -172,6 +184,8 @@ function Detail() {
     onSuccess: async (kq) => {
       toast.success(kq.thong_bao);
       await qc.invalidateQueries({ queryKey: ["orders"] });
+      await qc.invalidateQueries({ queryKey: ["dashboard"] });
+      await qc.invalidateQueries({ queryKey: ["lookups"] });
       navigate({ to: "/repair-orders" });
     },
     onError: loi,
@@ -189,7 +203,7 @@ function Detail() {
     mutationFn: (bgId: number) => api.apDungBaoGia(bgId),
     onSuccess: async (kq) => {
       toast.success(kq.thong_bao);
-      await qc.invalidateQueries({ queryKey: ["orders"] });
+      await taiLaiKhoVaPhieu();
       await qc.invalidateQueries({ queryKey: ["quotations"] });
     },
     onError: loi,
@@ -213,6 +227,12 @@ function Detail() {
   const dsBaoGia = bg.data?.dong.filter((b) => b.repair_order_id === oid) ?? [];
   const daApDungBaoGia = dsBaoGia.some((b) => b.applied_at !== null);
 
+  const ketThuc = phieu.status === "COMPLETED" || phieu.status === "CANCELLED";
+  const ktvDuocPhep = user?.role !== "TECHNICIAN" || phieu.technician_id === user.id;
+  const coSuaHangMuc = can("order.item") && ktvDuocPhep && !ketThuc && !hoa_don;
+  const coChuyenTT = can("order.progress") && ktvDuocPhep;
+  const coPhanCong = can("order.assign") && !ketThuc;
+
   return (
     <>
       <PageHeader
@@ -234,18 +254,20 @@ function Detail() {
                 {daApDungBaoGia ? "Đã áp dụng báo giá" : `${dsBaoGia.length} báo giá`}
               </Pill>
             )}
+            {phieu.acceptance_at && <Pill t="success">Đã nghiệm thu</Pill>}
             <StatusPill s={phieu.status} />
-            {N.chuyenTrangThai(phieu.status).map((tt) => (
-              <Button
-                key={tt}
-                size="sm"
-                variant={tt === "CANCELLED" ? "destructive" : "outline"}
-                onClick={() => hopQuyen("order.progress") && chuyenTT.mutate(tt)}
-              >
-                → {N.trangThai(tt)}
-              </Button>
-            ))}
-            {phieu.status === "COMPLETED" && can("order.accept") && (
+            {coChuyenTT &&
+              N.chuyenTrangThai(phieu.status).map((tt) => (
+                <Button
+                  key={tt}
+                  size="sm"
+                  variant={tt === "CANCELLED" ? "destructive" : "outline"}
+                  onClick={() => hopQuyen("order.progress") && chuyenTT.mutate(tt)}
+                >
+                  → {N.trangThai(tt)}
+                </Button>
+              ))}
+            {phieu.status === "COMPLETED" && !phieu.acceptance_at && can("order.accept") && (
               <Button size="sm" onClick={() => setDangNghiemThu(true)}>
                 <ClipboardCheck className="size-4" />
                 Nghiệm thu (khách ký nhận)
@@ -328,7 +350,7 @@ function Detail() {
                       <td className="tabular px-4 text-right">{vnd(m.unit_price)}</td>
                       <td className="tabular px-4 text-right font-medium">{vnd(m.thanh_tien)}</td>
                       <td className="px-2 text-right">
-                        {can("order.item") && (
+                        {coSuaHangMuc && (
                           <button
                             onClick={() => hopQuyen("order.item") && goMuc.mutate(m.id)}
                             className="rounded p-1 text-muted-foreground hover:text-destructive"
@@ -344,7 +366,7 @@ function Detail() {
               </table>
             )}
 
-            {can("order.item") && (
+            {coSuaHangMuc ? (
               <div className="flex flex-wrap items-end gap-2 border-t bg-muted/30 px-4 py-3">
                 <div className="space-y-1">
                   <label className="text-[11px] text-muted-foreground">Loại</label>
@@ -400,6 +422,16 @@ function Detail() {
                   Thêm
                 </Button>
               </div>
+            ) : (
+              can("order.item") && (
+                <p className="border-t bg-muted/20 px-4 py-2 text-[11px] text-muted-foreground">
+                  {hoa_don
+                    ? "Không thể sửa hạng mục khi phiếu đã lập hoá đơn."
+                    : ketThuc
+                      ? "Phiếu đã hoàn thành hoặc đã huỷ — không thể thêm/gỡ hạng mục."
+                      : "Chỉ kỹ thuật viên được phân công phụ trách phiếu mới được sửa hạng mục."}
+                </p>
+              )
             )}
             <dl className="space-y-1.5 border-t bg-muted/40 px-4 py-3 text-sm">
               <div className="flex justify-between border-t pt-1.5 font-semibold">
@@ -421,7 +453,8 @@ function Detail() {
               </span>
             }
             action={
-              can("quote.manage") && (
+              can("quote.manage") &&
+              !ketThuc && (
                 <Button
                   size="sm"
                   variant="outline"
@@ -464,16 +497,20 @@ function Detail() {
                     <StatusPill s={b.status} />
                     {b.applied_at && <Pill t="success">Đã áp dụng</Pill>}
                     <span className="tabular ml-auto text-sm font-medium">{vnd(b.total)}</span>
-                    {b.status === "APPROVED" && !b.applied_at && can("quote.manage") && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={apDung.isPending}
-                        onClick={() => hopQuyen("quote.manage") && apDung.mutate(b.id)}
-                      >
-                        Áp dụng
-                      </Button>
-                    )}
+                    {b.status === "APPROVED" &&
+                      !b.applied_at &&
+                      can("quote.manage") &&
+                      !ketThuc &&
+                      !hoa_don && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={apDung.isPending}
+                          onClick={() => hopQuyen("quote.manage") && apDung.mutate(b.id)}
+                        >
+                          Áp dụng
+                        </Button>
+                      )}
                   </li>
                 ))}
               </ul>
@@ -487,18 +524,18 @@ function Detail() {
                 onChange={(e) => setGhiChu(e.target.value)}
                 placeholder="Ghi nhận phát hiện, đo đạc, khuyến nghị…"
                 className="min-h-[60px]"
-                disabled={!can("order.progress")}
+                disabled={!coChuyenTT}
               />
               <Button
-                disabled={!ghiChu.trim() || themLog.isPending}
+                disabled={!coChuyenTT || !ghiChu.trim() || themLog.isPending}
                 onClick={() => hopQuyen("order.progress") && themLog.mutate()}
               >
                 Lưu
               </Button>
             </div>
-            {!can("order.progress") && (
+            {!coChuyenTT && (
               <p className="mt-2 text-[11px] text-muted-foreground">
-                Chỉ Quản lý hoặc Kỹ thuật viên được ghi nhật ký.
+                Chỉ Quản lý hoặc Kỹ thuật viên được phân công phụ trách phiếu mới được ghi nhật ký.
               </p>
             )}
             <ol className="mt-4 space-y-4 border-l pl-4">
@@ -531,6 +568,7 @@ function Detail() {
             <div className="mt-4 space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground">Kỹ thuật viên</label>
               <Select
+                disabled={!coPhanCong}
                 value={phieu.technician_id ? String(phieu.technician_id) : "none"}
                 onValueChange={(v) =>
                   hopQuyen("order.assign") && phanCong.mutate(v === "none" ? null : Number(v))
@@ -548,10 +586,24 @@ function Detail() {
                   ))}
                 </SelectContent>
               </Select>
-              {!can("order.assign") && (
-                <p className="text-[11px] text-muted-foreground">Chỉ xem — cần quyền phân công.</p>
+              {!coPhanCong && (
+                <p className="text-[11px] text-muted-foreground">
+                  {ketThuc
+                    ? "Phiếu đã hoàn thành hoặc đã huỷ — không thể đổi phân công."
+                    : "Chỉ xem — cần quyền phân công."}
+                </p>
               )}
             </div>
+            {phieu.acceptance_at && (
+              <div className="mt-4 rounded-md border bg-muted/40 p-2.5 text-xs">
+                <div className="font-medium text-foreground">
+                  Đã nghiệm thu lúc {fmtTime(phieu.acceptance_at)}
+                </div>
+                {phieu.acceptance_note && (
+                  <p className="mt-1 text-muted-foreground">{phieu.acceptance_note}</p>
+                )}
+              </div>
+            )}
           </Panel>
 
           <Panel title="Khách hàng">
@@ -578,7 +630,7 @@ function Detail() {
             {!tiep_nhan ? (
               <div>
                 <Empty title="Chưa ghi biên bản" desc="Ghi biên bản khi tiếp nhận xe." />
-                {can("order.create") && (
+                {can("order.create") && !ketThuc && (
                   <div className="mt-3">
                     <Button variant="outline" size="sm" asChild>
                       <Link to="/inspection">Đi tới màn tiếp nhận</Link>
@@ -622,7 +674,7 @@ function Detail() {
                   title="Chưa lập hoá đơn"
                   desc="Hoá đơn do backend tính tổng từ hạng mục phiếu."
                 />
-                {can("invoice.manage") && (
+                {can("invoice.manage") && phieu.status !== "CANCELLED" && phieu.tong > 0 && (
                   <Button
                     className="mt-3 w-full"
                     size="sm"

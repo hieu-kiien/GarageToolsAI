@@ -250,9 +250,13 @@ async def lap_hoa_don(request: Request, oid: int):
 @router.get('/invoices')
 def danh_sach_hoa_don(request: Request):
     """Trang danh sách hoá đơn — bổ sung so với phiên bản trước."""
-    user = auth_svc.yeu_cau_quyen(request, 'report.view')
+    user = auth_svc.nguoi_dung_hien_tai(request)
     if user is None:
         return _ve(request, '/accounts/login')
+    if not (auth_svc.co_the_quyen(user, 'report.view')
+            or auth_svc.co_the_quyen(user, 'payment.record')):
+        from ..core.errors import KhongCoQuyen
+        raise KhongCoQuyen('Vai trò của bạn không được phép xem danh sách hoá đơn.')
     trang = doc_trang(request)
     qs = request.query_params
     dong, tong = billing.danh_sach_hoa_don(

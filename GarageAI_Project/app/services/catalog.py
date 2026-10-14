@@ -17,6 +17,8 @@ def _loi_integrity(e: sqlite3.IntegrityError) -> AppError:
         return SaiQuyTac('Đơn giá phải lớn hơn hoặc bằng 0.')
     if 'CHECK' in n and 'stock' in n:
         return SaiQuyTac('Tồn kho phải lớn hơn hoặc bằng 0.')
+    if 'name' in n:
+        return XungDdot('Tên mục đã tồn tại trong danh mục.', truong='name')
     if 'sku' in n:
         return XungDdot('Mã sản phẩm đã tồn tại.', truong='sku')
     if 'FOREIGN KEY' in n:
@@ -46,11 +48,11 @@ def luu_dich_vu(du_lieu: DichVuInput) -> int:
     du = {'name': du_lieu.name, 'price': du_lieu.price,
           'description': du_lieu.description,
           'is_active': 1 if du_lieu.is_active else 0}
-    if du_lieu.id:
-        crud.yeu_cau_co('services', du_lieu.id, 'dịch vụ')
-        crud.sua('services', du_lieu.id, du)
-        return du_lieu.id
     try:
+        if du_lieu.id:
+            crud.yeu_cau_co('services', du_lieu.id, 'dịch vụ')
+            crud.sua('services', du_lieu.id, du)
+            return du_lieu.id
         return crud.them('services', du)
     except sqlite3.IntegrityError as e:
         raise _loi_integrity(e)
@@ -60,6 +62,12 @@ def xoa_dich_vu(khoa: int) -> None:
     crud.yeu_cau_co('services', khoa, 'dịch vụ')
     if crud.co_ban_ghi('repair_order_items', 'service_id = ?', (khoa,)):
         raise SaiQuyTac('Dịch vụ đã dùng trong hạng mục của phiếu nên không thể xoá.'
+                        ' Hãy chuyển sang trạng thái ngừng dùng.')
+    if crud.co_ban_ghi('quotation_items', 'service_id = ?', (khoa,)):
+        raise SaiQuyTac('Dịch vụ đã dùng trong báo giá nên không thể xoá.'
+                        ' Hãy chuyển sang trạng thái ngừng dùng.')
+    if crud.co_ban_ghi('warranties', 'service_id = ?', (khoa,)):
+        raise SaiQuyTac('Dịch vụ đã có phiếu bảo hành nên không thể xoá.'
                         ' Hãy chuyển sang trạng thái ngừng dùng.')
     crud.xoa('services', khoa)
 
@@ -99,8 +107,9 @@ def luu_phu_tung(du_lieu: PhuTungInput) -> int:
     try:
         if du_lieu.id:
             crud.yeu_cau_co('parts', du_lieu.id, 'phụ tùng')
-            cu = fetch_one('SELECT stock FROM parts WHERE id = ?', (du_lieu.id,))
             with transaction() as c:
+                cu = c.execute('SELECT stock FROM parts WHERE id = ?',
+                               (du_lieu.id,)).fetchone()
                 # Không đưa `stock` vào UPDATE trực tiếp — chỉ sửa các cột khác.
                 c.execute('UPDATE parts SET name=?, sku=?, price=?, min_stock=?,'
                           ' description=?, is_active=? WHERE id=?',
@@ -132,6 +141,12 @@ def xoa_phu_tung(khoa: int) -> None:
     if crud.co_ban_ghi('repair_order_items', 'part_id = ?', (khoa,)):
         raise SaiQuyTac('Phụ tùng đã dùng trong hạng mục của phiếu nên không thể xoá.'
                         ' Hãy chuyển sang trạng thái ngừng dùng.')
+    if crud.co_ban_ghi('quotation_items', 'part_id = ?', (khoa,)):
+        raise SaiQuyTac('Phụ tùng đã dùng trong báo giá nên không thể xoá.'
+                        ' Hãy chuyển sang trạng thái ngừng dùng.')
+    if crud.co_ban_ghi('warranties', 'part_id = ?', (khoa,)):
+        raise SaiQuyTac('Phụ tùng đã có phiếu bảo hành nên không thể xoá.'
+                        ' Hãy chuyển sang trạng thái ngừng dùng.')
     if crud.co_ban_ghi('stock_transactions', 'part_id = ?', (khoa,)):
         raise SaiQuyTac('Phụ tùng đã phát sinh giao dịch kho nên không thể xoá.'
                         ' Hãy chuyển sang trạng thái ngừng dùng.')
@@ -162,10 +177,11 @@ def luu_san_pham(du_lieu: SanPhamInput) -> int:
           'price': du_lieu.price, 'stock': du_lieu.stock,
           'description': du_lieu.description,
           'is_active': 1 if du_lieu.is_active else 0}
-    if du_lieu.id:
-        crud.sua('shop_products', du_lieu.id, du)
-        return du_lieu.id
     try:
+        if du_lieu.id:
+            crud.yeu_cau_co('shop_products', du_lieu.id, 'sản phẩm')
+            crud.sua('shop_products', du_lieu.id, du)
+            return du_lieu.id
         return crud.them('shop_products', du)
     except sqlite3.IntegrityError as e:
         raise _loi_integrity(e)

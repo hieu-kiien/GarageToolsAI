@@ -63,14 +63,14 @@ Thứ tự theo依赖: api client → trang mới → trang có sẵn.
 | FE-4 | **Nghiệm thu** trên chi tiết phiếu | nút "Nghiệm thu (khách ký nhận)" gọi `POST /orders/{id}/accept` | ☑ |
 | FE-5 | Trang **Bảo hành** `/warranties` | danh sách, lọc, tạo từ hạng mục đủ điều kiện của phiếu COMPLETED, huỷ | ☑ |
 | FE-6 | Trang **Danh mục DV/PT** `/catalog` | CRUD dịch vụ + phụ tùng (quản lý) — cần để chọn `ma` khi làm báo giá | ☑ |
-| FE-7 | Sửa lỗi finance filter "Mọi trạng thái" | `value="all"` gửi `trang_thai=all` → rỗng. Sửa thành `""` | ☑ |
+| FE-7 | Sửa lỗi bộ lọc Select (`finance`, `users`) | Dùng `value="all"` cho `SelectItem` mặc định (tránh crash Radix Select khi `value=""`) và chuyển thành `undefined` khi gọi API | ☑ |
 | FE-8 | **Lệch giờ UTC** | `fmtTime`/`fmtNgay` thiếu `Z` → UTC bị hiển thị như giờ VN. Thêm `Z` | ☑ |
 | FE-9 | Thu ngân không vào được `/finance` | area gate: `report.view` ∨ `payment.record` | ☑ |
 | FE-10 | Board workflow khoá 100 phiếu im lặng | hiển thị "đang hiển thị 100/n, xem danh sách đầy đủ" | ☑ |
 | FE-11 | Trang **Người dùng** `/users` (quản lý) + **Đổi mật khẩu** | CRUD tài khoản, bật/tắt, đổi mật khẩu cá nhân | ☑ |
 | FE-12 | Trang **Báo cáo** `/reports` | doanh thu, công nợ, tồn kho, lịch sử (dùng `/api/reports/*`, `/api/history`) | ☑ |
 | FE-13 | Lint/typecheck | thêm script `typecheck`; sửa mọi warning eslint; lỗi 404/405 ngôn ngữ Việt | ☑ |
-| FE-14 | Test frontend | thêm test route tree đủ 10 routes; test rbac/format; giữ lint + build xanh | ☑ |
+| FE-14 | Test frontend | thêm test route tree đủ 16 routes; test rbac/format; giữ lint + build xanh | ☑ |
 | FE-15 | Tài liệu | cập nhật `README_AI_HANDOFF.md` (hết mock, đúng auth cookie+CSRF, đúng endpoint) | ☑ |
 
 ## Giai đoạn 4 — Vận hành: CI, backup, migration, Docker, smoke
@@ -89,7 +89,7 @@ Thứ tự theo依赖: api client → trang mới → trang có sẵn.
 
 | Việc | Trạng thái |
 |------|-----------|
-| Chạy đủ backend suite (`tests/run_all.py`) — 0 fail (220/220 ngày 14/10) | ☑ |
+| Chạy đủ backend suite (`tests/run_all.py`) — 0 fail (226/226 ngày 14/10) | ☑ |
 | Frontend: `npm run lint`, `npm run typecheck`, `npm run test`, `npm run build` — 0 fail | ☑ |
 | E2E nghiệp vụ qua HTTP thật (uvicorn + script `scripts/e2e.ps1`): tiếp nhận → báo giá → áp dụng ×2 → sửa chữa → nghiệm thu → hoá đơn → thu tiền → bảo hành — 32/32 | ☑ |
 | Kiểm tra sổ cái kho sau E2E: `GET /api/stock/audit` rỗng | ☑ |

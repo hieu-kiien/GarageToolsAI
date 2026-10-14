@@ -1,0 +1,25 @@
+# --- Bí mật ---
+.env
+*.env
+!.env.example
+
+# --- Cơ sở dữ liệu & Sao lưu ---
+backups/
+*.backup
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.db.bak*
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# --- Hệ điều hành & IDE ---
+.DS_Store
+Thumbs.db
+*.log

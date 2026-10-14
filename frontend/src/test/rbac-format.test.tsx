@@ -45,6 +45,15 @@ describe("AREA_QUYEN — ánh xạ màn hình → quyền backend", () => {
     expect(AREA_QUYEN.users).toEqual(["user.manage"]);
   });
 
+  it("Tiếp nhận xe chỉ dành cho quyền order.create — khớp POST /api/orders", () => {
+    expect(AREA_QUYEN.inspection).toEqual(["order.create"]);
+  });
+
+  it("Kho và Bảo hành khớp quyền backend (stock.manage | order.view / warranty.manage)", () => {
+    expect(AREA_QUYEN.inventory).toEqual(["stock.manage", "order.view"]);
+    expect(AREA_QUYEN.warranty).toEqual(["warranty.manage"]);
+  });
+
   it("mọi area khai báo là khóa hợp lệ của kiểu Area", () => {
     const hopLe: Area[] = [
       "dashboard",

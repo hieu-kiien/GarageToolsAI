@@ -54,7 +54,7 @@ function Finance() {
   const N = useNhan();
   const qc = useQueryClient();
 
-  const [trangThai, setTrangThai] = useState("");
+  const [trangThai, setTrangThai] = useState("all");
   const [tim, setTim] = useState("");
   const [timDe, setTimDe] = useState("");
   const [trang, setTrang] = useState(1);
@@ -75,7 +75,12 @@ function Finance() {
 
   const dash = useQuery(q.dashboard());
   const ds = useQuery(
-    q.invoices({ trang, moi_trang: 20, trang_thai: trangThai || undefined, q: timDe || undefined }),
+    q.invoices({
+      trang,
+      moi_trang: 20,
+      trang_thai: trangThai === "all" ? undefined : trangThai,
+      q: timDe || undefined,
+    }),
   );
   const chiTiet = useQuery({ ...q.invoice(chon ?? 0), enabled: chon !== null });
 
@@ -86,6 +91,7 @@ function Finance() {
       setThu(null);
       setLoiGhiThu(null);
       await qc.invalidateQueries({ queryKey: ["invoices"] });
+      await qc.invalidateQueries({ queryKey: ["orders"] });
       await qc.invalidateQueries({ queryKey: ["dashboard"] });
       if (chon !== null) await qc.invalidateQueries({ queryKey: ["invoices", chon] });
     },
@@ -102,6 +108,7 @@ function Finance() {
     onSuccess: async (kq) => {
       toast.success(kq.thong_bao);
       await qc.invalidateQueries({ queryKey: ["invoices"] });
+      await qc.invalidateQueries({ queryKey: ["orders"] });
       await qc.invalidateQueries({ queryKey: ["dashboard"] });
     },
     onError: (e) => toast.error(e instanceof ApiError ? e.message : "Huỷ khoản thu thất bại."),
@@ -176,7 +183,7 @@ function Finance() {
                   <SelectValue placeholder="Mọi trạng thái" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Mọi trạng thái</SelectItem>
+                  <SelectItem value="all">Mọi trạng thái</SelectItem>
                   {(["UNPAID", "PARTIAL", "PAID"] as const).map((k) => (
                     <SelectItem key={k} value={k}>
                       {N.trangThai(k)}
@@ -340,7 +347,11 @@ function Finance() {
                   {hd.con_phai_thu > 0 && can("payment.record") && (
                     <Button
                       size="sm"
-                      onClick={() => setThu({ id: hd.id, conLai: hd.con_phai_thu })}
+                      onClick={() => {
+                        setThu({ id: hd.id, conLai: hd.con_phai_thu });
+                        setSoTien(hd.con_phai_thu);
+                        setHinhThuc("CASH");
+                      }}
                     >
                       Ghi thu
                     </Button>

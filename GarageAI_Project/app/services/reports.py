@@ -55,14 +55,13 @@ def bao_cao_doanh_thu(so_thang: int = 6) -> list[dict]:
 
 def bao_cao_dich_vu(limit: int = 15) -> list[dict]:
     return fetch_all(
-        'SELECT COALESCE(s.name, pt.name) AS ten, SUM(i.qty) AS so_luong,'
+        'SELECT s.name AS ten, SUM(i.qty) AS so_luong,'
         ' SUM(i.unit_price * i.qty) AS doanh_thu'
         ' FROM repair_order_items i'
-        ' LEFT JOIN services s ON s.id = i.service_id'
-        ' LEFT JOIN parts pt ON pt.id = i.part_id'
+        ' JOIN services s ON s.id = i.service_id'
         ' JOIN repair_orders r ON r.id = i.repair_order_id'
         " WHERE r.status <> 'CANCELLED'"
-        ' GROUP BY ten ORDER BY doanh_thu DESC LIMIT ?', (limit,))
+        ' GROUP BY s.id ORDER BY doanh_thu DESC LIMIT ?', (limit,))
 
 
 def bao_cao_phu_tung(limit: int = 20) -> list[dict]:

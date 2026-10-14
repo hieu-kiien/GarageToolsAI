@@ -8,7 +8,7 @@ from fastapi import APIRouter, Form, Request
 
 from ..core import flash
 from ..core.errors import AppError, KhongXacThuc
-from ..models import DangNhapInput, DoiMatKhauInput, TaiKhoanInput
+from ..models import DangNhapInput, DoiMatKhauInput, LuuTaiKhoanInput
 from ..core.pagination import doc_trang
 from .. import crud
 from ..services import auth as svc
@@ -80,7 +80,7 @@ def dang_xuat(request: Request):
 async def doi_mat_khau(request: Request,
                         mat_khau_cu: str = Form(...),
                         mat_khau_moi: str = Form(...)):
-    user = svc.yeu_cau_quyen(request, 'customer.edit')
+    user = svc.yeu_cau_dang_nhap(request)
     if user is None:
         return flash.chuyen_huong(request, '/accounts/login')
     try:
@@ -130,15 +130,18 @@ async def luu_tai_khoan(request: Request):
         return flash.chuyen_huong(request, '/accounts/login')
     form = await request.form()
     try:
-        du_lieu = du_lieu_form(form, TaiKhoanInput)
+        du_lieu = du_lieu_form(form, LuuTaiKhoanInput)
         if du_lieu.id:
-            svc.sua_tai_khoan(du_lieu)
+            if du_lieu.id == user['id']:
+                return flash.chuyen_huong(
+                    request, '/users',
+                    loi='Không thể tự sửa vai trò hoặc trạng thái tài khoản đang đăng nhập.')
+            svc.sua_tai_khoan(du_lieu, du_lieu.password)
             tb = 'Đã cập nhật tài khoản.'
         else:
-            mat_khau = form.get('password') or ''
-            if len(mat_khau) < 8:
+            if not du_lieu.password:
                 raise LoiForm({'password': ['Mật khẩu phải có ít nhất 8 ký tự.']}, {})
-            svc.tao_tai_khoan(du_lieu, mat_khau)
+            svc.tao_tai_khoan(du_lieu, du_lieu.password)
             tb = 'Đã thêm tài khoản.'
     except LoiForm as e:
         return flash.chuyen_huong(request, '/users', loi=' · '.join(e.danh_sach_loi))

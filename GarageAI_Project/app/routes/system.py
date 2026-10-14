@@ -88,9 +88,13 @@ def bao_cao(request: Request, kind: str):
 # ===========================================================================
 @router.get('/ai')
 def cong_ai(request: Request):
-    user = auth_svc.yeu_cau_quyen(request, 'ai.history')
+    user = auth_svc.nguoi_dung_hien_tai(request)
     if user is None:
         return _ve(request, '/accounts/login')
+    if not any(auth_svc.co_the_quyen(user, q)
+               for q in ('ai.history', 'ai.explain', 'ai.quote', 'ai.review')):
+        from ..core.errors import KhongCoQuyen
+        raise KhongCoQuyen('Vai trò của bạn không được phép sử dụng trợ lý AI.')
     from ..core.config import get_settings
     return render(request, 'ai.html', {
         'dich_vu': crud.lua_chon_dich_vu(),
