@@ -9,18 +9,29 @@
  */
 import { queryOptions } from "@tanstack/react-query";
 import type {
+  BaoCao,
+  BaoGiaDong,
+  BaoHanhDong,
+  ChiTietBaoGia,
   ChiTietPhieu,
   Dashboard,
+  DichVuDong,
   HoaDonChiTietPhan,
   HoaDonDong,
   KhoPhanTrang,
   KetQuaAI,
   KetQuaGanNhat,
+  KhachHangDong,
+  LichHenDong,
+  LichSuDong,
   Lookups,
   Meta,
+  NguoiDungDong,
   PhanTrang,
-  Phien,
   PhieuDong,
+  Phien,
+  PhuTungDong,
+  PhuongTienDong,
 } from "@/types";
 
 /** Mã sự kiện báo "phiên hết hạn" để `RoleProvider` tải lại session. */
@@ -166,13 +177,197 @@ export const api = {
   ) => goi<{ thong_bao: string }>("POST", `/orders/${id}/intake`, body),
   lapHoaDon: (id: number) =>
     goi<{ thong_bao: string; id: number }>("POST", `/orders/${id}/invoice`),
+  nghiemThu: (id: number, acceptance_note?: string) =>
+    goi<{ thong_bao: string; phieu: unknown }>("POST", `/orders/${id}/accept`, {
+      acceptance_note,
+    }),
+  xoaPhieu: (id: number) => goi<{ thong_bao: string; id: number }>("DELETE", `/orders/${id}`),
+
+  // --- khách hàng / xe / lịch hẹn ---
+  customers: (p: ThamSoDanhSach = {}) => goi<PhanTrang<KhachHangDong>>("GET", "/customers", p),
+  taoKhach: (body: {
+    name: string;
+    phone: string;
+    email?: string | null | undefined;
+    address?: string | null | undefined;
+  }) => goi<{ thong_bao: string; id: number }>("POST", "/customers", body),
+  suaKhach: (
+    id: number,
+    body: {
+      name: string;
+      phone: string;
+      email?: string | null | undefined;
+      address?: string | null | undefined;
+    },
+  ) => goi<{ thong_bao: string; id: number }>("PUT", `/customers/${id}`, body),
+  xoaKhach: (id: number) => goi<{ thong_bao: string; id: number }>("DELETE", `/customers/${id}`),
+
+  vehicles: (p: ThamSoDanhSach & { khach?: number | undefined } = {}) =>
+    goi<PhanTrang<PhuongTienDong>>("GET", "/vehicles", p),
+  taoXe: (body: {
+    plate: string;
+    brand: string;
+    model: string;
+    customer_id: number;
+    year?: number | null | undefined;
+    vin?: string | null | undefined;
+    color?: string | null | undefined;
+    odometer?: number | null | undefined;
+    is_active?: boolean | undefined;
+  }) => goi<{ thong_bao: string; id: number }>("POST", "/vehicles", body),
+  suaXe: (
+    id: number,
+    body: {
+      plate: string;
+      brand: string;
+      model: string;
+      customer_id: number;
+      year?: number | null | undefined;
+      vin?: string | null | undefined;
+      color?: string | null | undefined;
+      odometer?: number | null | undefined;
+      is_active?: boolean | undefined;
+    },
+  ) => goi<{ thong_bao: string; id: number }>("PUT", `/vehicles/${id}`, body),
+  xoaXe: (id: number) => goi<{ thong_bao: string; id: number }>("DELETE", `/vehicles/${id}`),
+
+  appointments: (p: ThamSoDanhSach & { trang_thai?: string | undefined } = {}) =>
+    goi<PhanTrang<LichHenDong>>("GET", "/appointments", p),
+  taoLich: (body: {
+    customer_id: number;
+    vehicle_id: number;
+    scheduled_at: string;
+    notes?: string | null | undefined;
+    status?: string | undefined;
+  }) => goi<{ thong_bao: string; id: number }>("POST", "/appointments", body),
+  suaLich: (
+    id: number,
+    body: {
+      customer_id: number;
+      vehicle_id: number;
+      scheduled_at: string;
+      notes?: string | null | undefined;
+      status?: string | undefined;
+    },
+  ) => goi<{ thong_bao: string; id: number }>("PUT", `/appointments/${id}`, body),
+  xoaLich: (id: number) => goi<{ thong_bao: string; id: number }>("DELETE", `/appointments/${id}`),
+
+  // --- báo giá ---
+  quotations: (p: ThamSoDanhSach & { trang_thai?: string | undefined } = {}) =>
+    goi<PhanTrang<BaoGiaDong>>("GET", "/quotations", p),
+  quotation: (id: number) => goi<ChiTietBaoGia>("GET", `/quotations/${id}`),
+  taoBaoGia: (body: {
+    repair_order_id: number;
+    note?: string | null | undefined;
+    valid_until?: string | null | undefined;
+  }) => goi<{ thong_bao: string; id: number }>("POST", "/quotations", body),
+  themDongBaoGia: (id: number, body: { loai: "dich_vu" | "phu_tung"; ma: number; qty: number }) =>
+    goi<{ thong_bao: string }>("POST", `/quotations/${id}/items`, body),
+  goDongBaoGia: (id: number, iid: number) =>
+    goi<{ thong_bao: string }>("POST", `/quotations/${id}/items/${iid}/remove`),
+  guiBaoGia: (id: number) => goi<{ thong_bao: string }>("POST", `/quotations/${id}/send`),
+  duyetBaoGia: (id: number, quyet_dinh: "APPROVED" | "REJECTED") =>
+    goi<{ thong_bao: string }>("POST", `/quotations/${id}/review`, { quyet_dinh }),
+  huyBaoGia: (id: number) => goi<{ thong_bao: string }>("POST", `/quotations/${id}/cancel`),
+  apDungBaoGia: (id: number) =>
+    goi<{ thong_bao: string; phieu_id: number }>("POST", `/quotations/${id}/apply`),
+
+  // --- bảo hành ---
+  warranties: (p: ThamSoDanhSach & { trang_thai?: string | undefined } = {}) =>
+    goi<PhanTrang<BaoHanhDong>>("GET", "/warranties", p),
+  taoBaoHanh: (body: {
+    repair_order_id: number;
+    months: number;
+    service_id?: number | null | undefined;
+    part_id?: number | null | undefined;
+    note?: string | null | undefined;
+    start_date: string;
+  }) => goi<{ thong_bao: string; id: number }>("POST", "/warranties", body),
+  hangMucBaoHanh: (repairOrderId: number) =>
+    goi<{
+      dong: {
+        item_id: number;
+        service_id: number | null;
+        part_id: number | null;
+        ten_hang_muc: string;
+      }[];
+    }>("GET", `/warranties/eligible`, { repair_order_id: repairOrderId }),
+  huyBaoHanh: (id: number, body: { note?: string | undefined } = {}) =>
+    goi<{ thong_bao: string }>("POST", `/warranties/${id}/cancel`, body),
+
+  // --- danh mục dịch vụ / phụ tùng ---
+  services: (p: ThamSoDanhSach & { dang_dung?: string | undefined } = {}) =>
+    goi<PhanTrang<DichVuDong>>("GET", "/services", p),
+  luuDichVu: (body: {
+    id?: number | null | undefined;
+    name: string;
+    price: number | string;
+    description?: string | null | undefined;
+    is_active?: boolean | undefined;
+  }) =>
+    body.id
+      ? goi<{ thong_bao: string; id: number }>("PUT", `/services/${body.id}`, body)
+      : goi<{ thong_bao: string; id: number }>("POST", "/services", body),
+  xoaDichVu: (id: number) => goi<{ thong_bao: string; id: number }>("DELETE", `/services/${id}`),
+  parts: (
+    p: ThamSoDanhSach & {
+      dang_dung?: string | undefined;
+      het_kho?: string | undefined;
+    } = {},
+  ) => goi<PhanTrang<PhuTungDong>>("GET", "/parts", p),
+  luuPhuTung: (body: {
+    id?: number | null | undefined;
+    name: string;
+    sku?: string | null | undefined;
+    price: number | string;
+    stock: number | string;
+    min_stock?: number | string | undefined;
+    description?: string | null | undefined;
+    is_active?: boolean | undefined;
+  }) =>
+    body.id
+      ? goi<{ thong_bao: string; id: number }>("PUT", `/parts/${body.id}`, body)
+      : goi<{ thong_bao: string; id: number }>("POST", "/parts", body),
+  xoaPhuTung: (id: number) => goi<{ thong_bao: string; id: number }>("DELETE", `/parts/${id}`),
+
+  // --- tài khoản ---
+  users: (
+    p: ThamSoDanhSach & {
+      vai_tro?: string | undefined;
+      dang_hoat_dong?: string | undefined;
+    } = {},
+  ) => goi<PhanTrang<NguoiDungDong> & { vai_tro: Record<string, string> }>("GET", "/users", p),
+  luuNguoiDung: (body: {
+    id?: number | null | undefined;
+    username: string;
+    full_name: string;
+    email?: string | null | undefined;
+    role: string;
+    is_active?: boolean | undefined;
+    password?: string | undefined;
+  }) => goi<{ thong_bao: string; id: number }>("POST", "/users", body),
+  batTatNguoiDung: (id: number) =>
+    goi<{ thong_bao: string; id: number; is_active: boolean }>("POST", `/users/${id}/toggle`),
+  doiMatKhau: (body: { mat_khau_cu: string; mat_khau_moi: string }) =>
+    goi<{ thong_bao: string }>("POST", "/auth/password", body),
+
+  // --- báo cáo / lịch sử ---
+  baoCao: (kind: string) => goi<BaoCao>("GET", `/reports/${kind}`),
+  lichSu: (p: ThamSoDanhSach = {}) => goi<PhanTrang<LichSuDong>>("GET", "/history", p),
+
+  // --- hoá đơn: huỷ khoản thu (thu ngân ghi nhầm) ---
+  huyKhoanThu: (iid: number, khoanId: number) =>
+    goi<HoaDonChiTietPhan & { thong_bao: string }>(
+      "POST",
+      `/invoices/${iid}/payments/${khoanId}/cancel`,
+    ),
 
   // --- hoá đơn & thu tiền ---
   invoices: (p: ThamSoDanhSach & { trang_thai?: string | undefined } = {}) =>
     goi<PhanTrang<HoaDonDong>>("GET", "/invoices", p),
   invoice: (id: number) => goi<HoaDonChiTietPhan>("GET", `/invoices/${id}`),
   thuTien: (id: number, body: { amount: number; method: string }) =>
-    goi<{ thong_bao: string }>("POST", `/invoices/${id}/payments`, body),
+    goi<HoaDonChiTietPhan & { thong_bao: string }>("POST", `/invoices/${id}/payments`, body),
 
   // --- kho ---
   stock: (p: ThamSoDanhSach & { part_id?: number | undefined; reason?: string | undefined } = {}) =>
@@ -222,4 +417,26 @@ export const q = {
   aiResults: (p: Parameters<typeof api.aiResults>[0] = {}) =>
     queryOptions({ queryKey: ["ai-results", p], queryFn: () => api.aiResults(p) }),
   aiRecent: () => queryOptions({ queryKey: ["ai-recent"], queryFn: api.aiRecent }),
+  customers: (p: Parameters<typeof api.customers>[0] = {}) =>
+    queryOptions({ queryKey: ["customers", p], queryFn: () => api.customers(p) }),
+  vehicles: (p: Parameters<typeof api.vehicles>[0] = {}) =>
+    queryOptions({ queryKey: ["vehicles", p], queryFn: () => api.vehicles(p) }),
+  appointments: (p: Parameters<typeof api.appointments>[0] = {}) =>
+    queryOptions({ queryKey: ["appointments", p], queryFn: () => api.appointments(p) }),
+  quotations: (p: Parameters<typeof api.quotations>[0] = {}) =>
+    queryOptions({ queryKey: ["quotations", p], queryFn: () => api.quotations(p) }),
+  quotation: (id: number) =>
+    queryOptions({ queryKey: ["quotations", id], queryFn: () => api.quotation(id) }),
+  warranties: (p: Parameters<typeof api.warranties>[0] = {}) =>
+    queryOptions({ queryKey: ["warranties", p], queryFn: () => api.warranties(p) }),
+  services: (p: Parameters<typeof api.services>[0] = {}) =>
+    queryOptions({ queryKey: ["services", p], queryFn: () => api.services(p) }),
+  parts: (p: Parameters<typeof api.parts>[0] = {}) =>
+    queryOptions({ queryKey: ["parts", p], queryFn: () => api.parts(p) }),
+  users: (p: Parameters<typeof api.users>[0] = {}) =>
+    queryOptions({ queryKey: ["users", p], queryFn: () => api.users(p) }),
+  lichSu: (p: Parameters<typeof api.lichSu>[0] = {}) =>
+    queryOptions({ queryKey: ["history", p], queryFn: () => api.lichSu(p) }),
+  baoCao: (kind: string) =>
+    queryOptions({ queryKey: ["reports", kind], queryFn: () => api.baoCao(kind) }),
 };

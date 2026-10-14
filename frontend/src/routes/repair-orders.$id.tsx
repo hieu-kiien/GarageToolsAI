@@ -1,8 +1,17 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, Phone, User, Receipt, Trash2, FileText } from "lucide-react";
+import {
+  ArrowLeft,
+  Plus,
+  Phone,
+  User,
+  Receipt,
+  Trash2,
+  FileText,
+  ClipboardCheck,
+} from "lucide-react";
 import { api, q, ApiError } from "@/services/api";
 import { useLookups } from "@/services/lookups";
 import { useNhan, useRole, fmtTime, vnd } from "@/lib/rbac";
@@ -15,6 +24,7 @@ import {
   Empty,
   DangTai,
   InvoicePill,
+  Pill,
 } from "@/components/app/ui-kit";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,12 +64,17 @@ export const Route = createFileRoute("/repair-orders/$id")({
 function Detail() {
   const { id } = Route.useParams();
   const oid = Number(id);
+  const navigate = useNavigate();
   const { area, can, meta } = useRole();
   const N = useNhan();
   const L = useLookups();
   const qc = useQueryClient();
 
   const ds = useQuery(q.order(oid));
+  const bg = useQuery({
+    ...q.quotations({ q: String(oid), moi_trang: 100 }),
+    enabled: can("quote.manage"),
+  });
   const [ghiChu, setGhiChu] = useState("");
   const [loai, setLoai] = useState<"dich_vu" | "phu_tung">("dich_vu");
   const [ma, setMa] = useState<string>("");
@@ -67,6 +82,10 @@ function Detail() {
   const [soTien, setSoTien] = useState(0);
   const [hinhThuc, setHinhThuc] = useState<PayMethod>("CASH");
   const [dangThu, setDangThu] = useState(false);
+  const [dangNghiemThu, setDangNghiemThu] = useState(false);
+  const [ghiChuNghiemThu, setGhiChuNghiemThu] = useState("");
+  const [dangXoa, setDangXoa] = useState(false);
+  const [maXoa, setMaXoa] = useState("");
 
   const loi = (e: unknown) => toast.error(e instanceof ApiError ? e.message : "Thao tác thất bại.");
 
@@ -138,6 +157,43 @@ function Detail() {
     },
     onError: loi,
   });
+  const nghiemThu = useMutation({
+    mutationFn: () => api.nghiemThu(oid, ghiChuNghiemThu.trim() || undefined),
+    onSuccess: async (kq) => {
+      toast.success(kq.thong_bao);
+      setDangNghiemThu(false);
+      setGhiChuNghiemThu("");
+      await qc.invalidateQueries({ queryKey: ["orders"] });
+    },
+    onError: loi,
+  });
+  const xoa = useMutation({
+    mutationFn: () => api.xoaPhieu(oid),
+    onSuccess: async (kq) => {
+      toast.success(kq.thong_bao);
+      await qc.invalidateQueries({ queryKey: ["orders"] });
+      navigate({ to: "/repair-orders" });
+    },
+    onError: loi,
+  });
+  const taoBG = useMutation({
+    mutationFn: () => api.taoBaoGia({ repair_order_id: oid }),
+    onSuccess: async (kq) => {
+      toast.success(kq.thong_bao);
+      await qc.invalidateQueries({ queryKey: ["quotations"] });
+      navigate({ to: "/quotations/$id", params: { id: String(kq.id) } });
+    },
+    onError: loi,
+  });
+  const apDung = useMutation({
+    mutationFn: (bgId: number) => api.apDungBaoGia(bgId),
+    onSuccess: async (kq) => {
+      toast.success(kq.thong_bao);
+      await qc.invalidateQueries({ queryKey: ["orders"] });
+      await qc.invalidateQueries({ queryKey: ["quotations"] });
+    },
+    onError: loi,
+  });
 
   if (!area("orders")) return <NoAccess />;
   if (ds.isPending) return <DangTai mat="Đang tải phiếu…" />;
@@ -154,6 +210,8 @@ function Detail() {
   const dichVu = L.dich_vu;
   const phuTung = L.phu_tung;
   const conPhaiThu = hoa_don ? hoa_don.total - hoa_don.paid : 0;
+  const dsBaoGia = bg.data?.dong.filter((b) => b.repair_order_id === oid) ?? [];
+  const daApDungBaoGia = dsBaoGia.some((b) => b.applied_at !== null);
 
   return (
     <>
@@ -171,6 +229,11 @@ function Detail() {
         desc={phieu.technical_notes ?? "Không có ghi chú kỹ thuật."}
         actions={
           <>
+            {can("quote.manage") && dsBaoGia.length > 0 && (
+              <Pill t={daApDungBaoGia ? "success" : "info"}>
+                {daApDungBaoGia ? "Đã áp dụng báo giá" : `${dsBaoGia.length} báo giá`}
+              </Pill>
+            )}
             <StatusPill s={phieu.status} />
             {N.chuyenTrangThai(phieu.status).map((tt) => (
               <Button
@@ -182,6 +245,25 @@ function Detail() {
                 → {N.trangThai(tt)}
               </Button>
             ))}
+            {phieu.status === "COMPLETED" && can("order.accept") && (
+              <Button size="sm" onClick={() => setDangNghiemThu(true)}>
+                <ClipboardCheck className="size-4" />
+                Nghiệm thu (khách ký nhận)
+              </Button>
+            )}
+            {can("order.create") && (
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={() => {
+                  setMaXoa("");
+                  setDangXoa(true);
+                }}
+              >
+                <Trash2 className="size-4" />
+                Xoá phiếu
+              </Button>
+            )}
           </>
         }
       />
@@ -329,6 +411,73 @@ function Detail() {
                 chỉ hiển thị.
               </p>
             </dl>
+          </Panel>
+
+          <Panel
+            title={
+              <span className="flex items-center gap-2">
+                <FileText className="size-4" />
+                Báo giá
+              </span>
+            }
+            action={
+              can("quote.manage") && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={taoBG.isPending}
+                  onClick={() => hopQuyen("quote.manage") && taoBG.mutate()}
+                >
+                  <Plus className="size-4" />
+                  Tạo báo giá nháp
+                </Button>
+              )
+            }
+          >
+            {!can("quote.manage") ? (
+              <p className="text-sm text-muted-foreground">
+                Cần quyền quản lý báo giá để xem danh sách báo giá của phiếu.
+              </p>
+            ) : bg.isError ? (
+              <p className="text-sm text-destructive">Không tải được báo giá của phiếu.</p>
+            ) : bg.isPending ? (
+              <p className="text-sm text-muted-foreground">Đang tải báo giá…</p>
+            ) : dsBaoGia.length === 0 ? (
+              <Empty
+                title="Chưa có báo giá"
+                desc="Tạo báo giá nháp từ phiếu này, thêm hạng mục rồi gửi khách duyệt."
+              />
+            ) : (
+              <ul className="space-y-2">
+                {dsBaoGia.map((b) => (
+                  <li
+                    key={b.id}
+                    className="flex flex-wrap items-center gap-2 rounded-md border px-3 py-2"
+                  >
+                    <Link
+                      to="/quotations/$id"
+                      params={{ id: String(b.id) }}
+                      className="font-mono text-xs font-semibold hover:underline"
+                    >
+                      BG #{b.id}
+                    </Link>
+                    <StatusPill s={b.status} />
+                    {b.applied_at && <Pill t="success">Đã áp dụng</Pill>}
+                    <span className="tabular ml-auto text-sm font-medium">{vnd(b.total)}</span>
+                    {b.status === "APPROVED" && !b.applied_at && can("quote.manage") && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={apDung.isPending}
+                        onClick={() => hopQuyen("quote.manage") && apDung.mutate(b.id)}
+                      >
+                        Áp dụng
+                      </Button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
           </Panel>
 
           <Panel title="Nhật ký sửa chữa">
@@ -560,6 +709,67 @@ function Detail() {
               onClick={() => hopQuyen("payment.record") && thuTien.mutate()}
             >
               Xác nhận thu tiền
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={dangNghiemThu} onOpenChange={(o) => !o && setDangNghiemThu(false)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nghiệm thu · Phiếu #{phieu.id}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 text-sm">
+            <p className="text-muted-foreground">
+              Khách hàng ký nhận xe sau khi sửa xong. Ghi chú nghiệm thu là tuỳ chọn.
+            </p>
+            <Textarea
+              value={ghiChuNghiemThu}
+              onChange={(e) => setGhiChuNghiemThu(e.target.value)}
+              placeholder="Ghi chú nghiệm thu (tình trạng giao xe, đồ đạc còn lại…)"
+              className="min-h-[80px]"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDangNghiemThu(false)}>
+              Huỷ
+            </Button>
+            <Button
+              disabled={nghiemThu.isPending}
+              onClick={() => hopQuyen("order.accept") && nghiemThu.mutate()}
+            >
+              Xác nhận nghiệm thu
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={dangXoa} onOpenChange={(o) => !o && setDangXoa(false)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xoá phiếu #{phieu.id}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 text-sm">
+            <p className="text-muted-foreground">
+              Chỉ xoá được phiếu trống (chưa phát sinh hạng mục, hoá đơn, biên bản, báo giá). Hành
+              động này không thể hoàn tác — nhập <b>#{phieu.id}</b> để xác nhận.
+            </p>
+            <Input
+              value={maXoa}
+              onChange={(e) => setMaXoa(e.target.value)}
+              placeholder={`#${phieu.id}`}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDangXoa(false)}>
+              Huỷ
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={maXoa.trim() !== `#${phieu.id}` || xoa.isPending}
+              onClick={() => hopQuyen("order.create") && xoa.mutate()}
+            >
+              Xoá vĩnh viễn
             </Button>
           </DialogFooter>
         </DialogContent>

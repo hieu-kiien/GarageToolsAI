@@ -1,48 +1,61 @@
-# GarageTools AI — Backend Handoff (FastAPI)
+# GarageTools AI — Frontend ↔ Backend Handoff
 
-Frontend types: `src/types/index.ts` (mirror as Pydantic models). Mock client: `src/services/api.ts` — each function is annotated with its endpoint; swap the mock body for `fetch`.
+## Hiện trạng
 
-Conventions: JSON, money = integer VND, dates = ISO 8601 UTC, auth via bearer token carrying `role ∈ {manager, receptionist, technician, cashier}`.
+Frontend **không còn mock**: toàn bộ dữ liệu lấy thật từ FastAPI qua `src/services/api.ts`
+(`goi()` = `fetch` + ném `ApiError`). Types mirror backend tại `src/types/index.ts`
+(khớp JSON của `GarageAI_Project/app/services/*.py` — backend là nguồn duy nhất).
 
-## Business rules (must be enforced server-side)
-- AI never approves quotations and never computes authoritative totals.
-- Only `manager` may call `POST /api/ai/drafts/{id}/review`.
-- Totals (`OrderTotals`: parts_subtotal, labor_subtotal, vat 10%, grand_total) are computed by the backend.
-- `awaiting_approval → in_repair` requires an approved quotation (manager).
-- Every review edit/approve/reject writes an `AuditEntry`.
+## Auth & CSRF
 
-## Endpoints
+- Đăng nhập `POST /api/auth/login` → backend đặt cookie phiên **`garage_session`**
+  (httOnly). Không dùng bearer token.
+- Mọi POST/PUT/DELETE kèm header **`X-CSRF-Token`** đọc từ cookie **`garage_csrf`**
+  (backend cấp kèm trang). Client gửi `credentials: "same-origin"` — cùng origin
+  qua Vite proxy `/api → http://127.0.0.1:8000` (không cần CORS).
+- Response 401 phát event `SU_KIEN_HET_PHIEN` → quay về màn đăng nhập.
+- `POST /api/auth/password { mat_khau_cu, mat_khau_moi }` đổi mật khẩu cá nhân;
+  backend tăng phiên bản → mọi phiên đang mở bị đăng xuất.
 
-| Method | Path | Request | Response | Roles |
-|---|---|---|---|---|
-| GET | /api/dashboard/stats | — | DashboardStats | manager, receptionist, cashier |
-| GET | /api/repair-orders | ?status= | RepairOrder[] | all |
-| GET | /api/repair-orders/{id} | — | RepairOrder & { totals: OrderTotals } | all |
-| PATCH | /api/repair-orders/{id}/status | { status: RepairStatus } | RepairOrder | manager, receptionist, technician |
-| PATCH | /api/repair-orders/{id}/assignment | { technician_id, bay_id } | RepairOrder | manager, receptionist |
-| PATCH | /api/repair-orders/{id}/tasks/{task_id} | — (toggle) | RepairTask | manager, technician |
-| POST | /api/repair-orders/{id}/notes | { author, body } | TechNote | all |
-| POST | /api/repair-orders/{id}/inspection | InspectionCreate | Inspection | manager, receptionist, technician |
-| GET | /api/customers | — | Customer[] | all |
-| GET | /api/vehicles | — | Vehicle[] | all |
-| GET | /api/technicians | — | Technician[] | all |
-| GET | /api/bays | — | Bay[] | all |
-| GET | /api/inventory | — | InventoryItem[] | manager |
-| GET | /api/invoices | — | Invoice[] | manager, cashier |
-| POST | /api/payments | PaymentCreate { invoice_id, amount, method } | Invoice | manager, cashier |
-| GET | /api/ai/drafts | — | AiDraft[] | manager |
-| GET | /api/ai/drafts/{id}/audit | — | AuditEntry[] | manager |
-| POST | /api/ai/drafts/{id}/review | { decision: "approve"\|"reject", lines: AiDraftLine[], changes: string[], reason? } | { draft: AiDraft, totals: OrderTotals } | manager only (403 otherwise) |
+## Quy ước
 
-## Enums
-- RepairStatus: intake, diagnosis, awaiting_approval, in_repair, qc, delivered
-- Priority: normal, high, urgent
-- InvoiceStatus: unpaid, partial, paid, void
-- AiDraftStatus: pending_review, approved, rejected
-- DamageType: scratch, dent, crack, missing
+- JSON, tiền = số nguyên VND, ngày giờ backend = `YYYY-MM-DD HH:MM:SS` **UTC**
+  (giao diện gắn `Z` trước khi hiển thị — xem `fmtTime`/`fmtNgay` trong `lib/rbac.tsx`).
+- Phân trang: `{ dong, tong, trang, tong_trang }` với query `?trang=&moi_trang=&q=`.
+- Lỗi backend: `{ loi, thong_diep, truong? }` → `ApiError(status, loi, thong_diep)`.
+  Validate body lỗi 400 `dau_vao_khong_hop_le` kèm bản đồ `truong`.
 
-## Role navigation
-- Quản lý: all screens
-- Tiếp tân: Tổng quan, Bảng điều phối, Lệnh sửa chữa, Kiểm tra tiếp nhận
-- Kỹ thuật viên: Bảng điều phối, Lệnh sửa chữa, Kiểm tra tiếp nhận
-- Thu ngân: Tổng quan, Lệnh sửa chữa, Hoá đơn & Thanh toán
+## Phân quyền
+
+Vai trò: `MANAGER` (Quản lý), `RECEPTIONIST` (Lễ tân), `TECHNICIAN` (Kỹ thuật viên),
+`CASHIER` (Thu ngân). Ma trận duy nhất: `security_matrix.py`; giao diện ánh xạ
+màn hình → quyền qua `AREA_QUYEN` (`lib/rbac.tsx`), server vẫn kiểm lại từng route.
+
+## Endpoint chính (prefix `/api`)
+
+| Nhóm | Method & path | Quyền |
+|---|---|---|
+| Phiếu | `GET/POST /orders`, `GET/PUT/DELETE /orders/{id}`, `POST /orders/{id}/status` | `order.view`, `order.create` (xoá), `order.progress` |
+| Tiếp nhận | `POST /orders/intake`, `POST /orders/{id}/accept` (nghiệm thu) | `order.create`, `order.accept` |
+| Hàng mục | `POST /orders/{id}/items`, `/items/{iid}`, `logs` | `order.item`, `order.progress` |
+| Báo giá | `GET/POST /quotations`, `GET /quotations/{id}`, `POST …/items`, `…/items/{iid}/remove`, `…/send`, `…/review`, `…/cancel`, `…/apply` | `quote.manage` (duyệt: `quote.approve`) |
+| Hoá đơn | `GET /invoices`, `GET /invoices/{id}`, `POST …/payments`, `POST …/payments/{khoan_id}/cancel` | `report.view` ∨ `payment.record` (xem), `payment.record` (ghi/huỷ) |
+| Khách/Xe/Lịch | `GET/POST/PUT/DELETE /customers`, `/vehicles`, `/appointments` | `customer.view`/`vehicle.view`/`appointment.view`, sửa: `*.edit` |
+| Kho | `GET /stock`, `/stock/warnings`, `POST /stock/receipt`, `/stock/adjust` | `stock.manage` |
+| Danh mục | `GET/POST/PUT/DELETE /services`, `/parts` | `catalog.view`, ghi: `catalog.edit` |
+| Bảo hành | `GET /warranties`, `GET /warranties/eligible`, `POST /warranties`, `POST /warranties/{id}/cancel` | `warranty.manage` |
+| AI | `POST /ai/run { kind, … }`, `GET /ai/results`, `/ai/recent`, `POST /ai/results/{id}/review` | `ai.*`, duyệt: `ai.review` |
+| Tài khoản | `GET/POST /users`, `POST /users/{id}/toggle` | `user.manage` / `user.edit` |
+| Báo cáo | `GET /reports/{kind}` (kind: `doanh-thu`, `dich-vu`, `phu-tung`, `khach-hang`, `trang-thai`), `GET /history`, `GET /lookups`, `GET /meta` | `report.view` / `history.view` |
+| Phiên | `GET /auth/session`, `POST /auth/login`, `POST /auth/logout`, `POST /auth/password` | — |
+
+## Quy tắc nghiệp vụ (backend đã enforce, UI chỉ hiển thị)
+
+- AI không tự duyệt báo giá, không tính tổng quyết định — tổng do backend tính.
+- `APPROVED → áp dụng` (`POST /quotations/{id}/apply`) trừ kho theo ledger `USAGE`,
+  idempotent (áp lần 2 → 409); báo giá chỉ áp 1 lần (`applied_at`).
+- Nghiệm thu chỉ từ `COMPLETED`, `POST /orders/{id}/accept` 409 nếu chạy 2 lần.
+- Chuyển trạng thái theo bảng `meta.chuyen_trang_thai`; trạng thái terminal
+  (`COMPLETED`, `CANCELLED`) không nhận chuyển tiếp.
+- Huỷ khoản thu ghi ledger `RETURN`, không xoá; huỷ bảo hành 1 lần.
+- Đơn vị tiền VND nguyên; VAT 10% backend tính.

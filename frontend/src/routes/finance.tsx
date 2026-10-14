@@ -62,6 +62,7 @@ function Finance() {
   const [thu, setThu] = useState<{ id: number; conLai: number } | null>(null);
   const [soTien, setSoTien] = useState(0);
   const [hinhThuc, setHinhThuc] = useState<PayMethod>("CASH");
+  const [loiGhiThu, setLoiGhiThu] = useState<string | null>(null);
 
   // Tìm kiếm gộp sau 300ms để không gọi API từng ký tự.
   useEffect(() => {
@@ -78,18 +79,32 @@ function Finance() {
   );
   const chiTiet = useQuery({ ...q.invoice(chon ?? 0), enabled: chon !== null });
 
-  const loi = (e: unknown) => toast.error(e instanceof ApiError ? e.message : "Thao tác thất bại.");
-
   const ghiThu = useMutation({
     mutationFn: () => api.thuTien(thu!.id, { amount: soTien, method: hinhThuc }),
     onSuccess: async (kq) => {
       toast.success(kq.thong_bao);
       setThu(null);
+      setLoiGhiThu(null);
       await qc.invalidateQueries({ queryKey: ["invoices"] });
       await qc.invalidateQueries({ queryKey: ["dashboard"] });
       if (chon !== null) await qc.invalidateQueries({ queryKey: ["invoices", chon] });
     },
-    onError: loi,
+    onError: (e) => {
+      const m = e instanceof ApiError ? e.message : "Ghi thu tiền thất bại.";
+      setLoiGhiThu(m);
+      toast.error(m);
+    },
+  });
+
+  const huyThu = useMutation({
+    mutationFn: ({ iid, khoanId }: { iid: number; khoanId: number }) =>
+      api.huyKhoanThu(iid, khoanId),
+    onSuccess: async (kq) => {
+      toast.success(kq.thong_bao);
+      await qc.invalidateQueries({ queryKey: ["invoices"] });
+      await qc.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+    onError: (e) => toast.error(e instanceof ApiError ? e.message : "Huỷ khoản thu thất bại."),
   });
 
   if (!area("finance")) return <NoAccess />;
@@ -161,7 +176,7 @@ function Finance() {
                   <SelectValue placeholder="Mọi trạng thái" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Mọi trạng thái</SelectItem>
+                  <SelectItem value="">Mọi trạng thái</SelectItem>
                   {(["UNPAID", "PARTIAL", "PAID"] as const).map((k) => (
                     <SelectItem key={k} value={k}>
                       {N.trangThai(k)}
@@ -340,6 +355,7 @@ function Finance() {
                         <th className="py-1 font-medium">Thời gian</th>
                         <th className="py-1 font-medium">Hình thức</th>
                         <th className="py-1 text-right font-medium">Số tiền</th>
+                        {can("payment.record") && <th className="py-1" />}
                       </tr>
                     </thead>
                     <tbody className="divide-y">
@@ -348,6 +364,27 @@ function Finance() {
                           <td className="tabular py-1.5">{fmtTime(k.paid_at)}</td>
                           <td className="py-1.5">{N.hinhThuc(k.method)}</td>
                           <td className="tabular py-1.5 text-right">{vnd(k.amount)}</td>
+                          {can("payment.record") && (
+                            <td className="py-1.5 text-right">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-6 px-2 text-xs text-destructive hover:text-destructive"
+                                disabled={huyThu.isPending}
+                                onClick={() => {
+                                  if (
+                                    !window.confirm(
+                                      `Huỷ khoản thu ${vnd(k.amount)} lúc ${fmtTime(k.paid_at)}?`,
+                                    )
+                                  )
+                                    return;
+                                  huyThu.mutate({ iid: hd.id, khoanId: k.id });
+                                }}
+                              >
+                                Huỷ thu
+                              </Button>
+                            </td>
+                          )}
                         </tr>
                       ))}
                     </tbody>
@@ -360,11 +397,24 @@ function Finance() {
       </Sheet>
 
       {/* Dialog ghi nhận thu tiền. */}
-      <Dialog open={!!thu} onOpenChange={(o) => !o && setThu(null)}>
+      <Dialog
+        open={!!thu}
+        onOpenChange={(o) => {
+          if (!o) {
+            setThu(null);
+            setLoiGhiThu(null);
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Ghi nhận thanh toán · HD-{thu?.id}</DialogTitle>
           </DialogHeader>
+          {loiGhiThu && (
+            <div className="rounded-md border border-destructive/25 bg-danger-soft px-3 py-2 text-xs text-destructive">
+              {loiGhiThu}
+            </div>
+          )}
           {thu && (
             <div className="space-y-3 text-sm">
               <div className="flex justify-between">

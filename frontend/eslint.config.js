@@ -36,5 +36,10 @@ export default tseslint.config(
       "@typescript-eslint/no-unused-vars": "off",
     },
   },
+  {
+    // Thư viện UI (shadcn) và rbac cố tình export cả hằng số/hook cùng file component.
+    files: ["src/components/ui/**/*.{ts,tsx}", "src/lib/rbac.tsx"],
+    rules: { "react-refresh/only-export-components": "off" },
+  },
   eslintPluginPrettier,
 );

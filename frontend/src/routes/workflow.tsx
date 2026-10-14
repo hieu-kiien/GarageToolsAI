@@ -85,6 +85,7 @@ function Board() {
     );
 
   const dong = danhSach.data.dong;
+  const tong = danhSach.data.tong;
   const canChuyen = can("order.progress");
   const canPhanCong = can("order.assign");
 
@@ -108,6 +109,14 @@ function Board() {
           </span>
         }
       />
+      {tong > dong.length && (
+        <div className="mx-4 mt-4 rounded-md border border-warning/40 bg-warning-soft px-4 py-2.5 text-xs lg:mx-6">
+          Đang hiển thị {dong.length}/{tong} phiếu — xem danh sách đầy đủ tại{" "}
+          <Link to="/repair-orders" className="font-medium text-primary">
+            Phiếu sửa chữa
+          </Link>
+        </div>
+      )}
       <div className="overflow-x-auto p-4 lg:p-6">
         <div className="flex min-w-max gap-3">
           {N.trangThaiPhieu.map((st) => {

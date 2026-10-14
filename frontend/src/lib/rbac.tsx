@@ -3,7 +3,22 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, q, SU_KIEN_HET_PHIEN } from "@/services/api";
 import type { Meta, Phien, ThanhVien } from "@/types";
 
-export type Area = "dashboard" | "board" | "orders" | "inspection" | "ai" | "inventory" | "finance";
+export type Area =
+  | "dashboard"
+  | "board"
+  | "orders"
+  | "inspection"
+  | "ai"
+  | "inventory"
+  | "finance"
+  | "appointments"
+  | "customers"
+  | "quotes"
+  | "warranty"
+  | "catalog"
+  | "users"
+  | "reports"
+  | "history";
 
 /**
  * Mỗi màn hình ánh xạ tới quyền backend — không tự suy đoán theo vai trò.
@@ -11,14 +26,23 @@ export type Area = "dashboard" | "board" | "orders" | "inspection" | "ai" | "inv
  * Lưu ý: xem và thao tác tách quyền riêng (vd: thấy bảng `order.view`,
  * kéo trạng thái `order.progress`) nên nút thao tác check quyền lẻ phía trong.
  */
-const AREA_QUYEN: Record<Area, string[]> = {
+export const AREA_QUYEN: Record<Area, string[]> = {
   dashboard: ["dashboard.view"],
   board: ["order.view"],
   orders: ["order.view"],
   inspection: ["order.create"],
   ai: ["ai.history", "ai.explain", "ai.quote", "ai.review"],
   inventory: ["stock.manage"],
-  finance: ["report.view"],
+  // Thu ngân không có report.view vẫn phải mở được màn hoá đơn để ghi thu (ADR-4).
+  finance: ["report.view", "payment.record"],
+  appointments: ["appointment.view"],
+  customers: ["customer.view", "vehicle.view"],
+  quotes: ["quote.manage"],
+  warranty: ["warranty.manage"],
+  catalog: ["catalog.view"],
+  users: ["user.manage"],
+  reports: ["report.view"],
+  history: ["history.view"],
 };
 
 type Ctx = {
@@ -111,9 +135,19 @@ export const vndShort = (n: number) =>
       ? (n / 1e6).toFixed(1).replace(".0", "") + " tr"
       : vnd(n);
 
+/**
+ * Chuỗi của backend là UTC `YYYY-MM-DD HH:MM:SS` (không múi giờ).
+ * Phải gắn `Z` trước khi `new Date` parse, nếu không JS hiểu là giờ máy local
+ * rồi hiển thị lệch 7 tiếng so với thực tế.
+ */
+const sangUtc = (iso: string) => {
+  const t = iso.trim().replace(" ", "T");
+  return /(Z|[+-]\d{2}:?\d{2})$/.test(t) ? t : t + "Z";
+};
+
 /** Chuỗi ngày giờ của backend dạng `YYYY-MM-DD HH:MM:SS` (UTC) → hiển thị VN. */
 export const fmtTime = (iso: string) => {
-  const d = new Date(iso.includes("T") || iso.includes(" ") ? iso.replace(" ", "T") : iso);
+  const d = new Date(sangUtc(iso));
   if (Number.isNaN(d.getTime())) return iso;
   return d.toLocaleString("vi-VN", {
     hour: "2-digit",
@@ -125,7 +159,7 @@ export const fmtTime = (iso: string) => {
 };
 
 export const fmtNgay = (iso: string) => {
-  const d = new Date(iso.includes("T") || iso.includes(" ") ? iso.replace(" ", "T") : iso);
+  const d = new Date(sangUtc(iso));
   if (Number.isNaN(d.getTime())) return iso;
   return d.toLocaleDateString("vi-VN", {
     day: "2-digit",

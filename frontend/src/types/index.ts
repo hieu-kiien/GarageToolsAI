@@ -14,6 +14,13 @@ export type FuelLevel = "EMPTY" | "QUARTER" | "HALF" | "THREE_QUARTER" | "FULL" 
 export type AiKind = "history" | "explain" | "quote";
 export type StockReason = "RECEIPT" | "USAGE" | "RETURN" | "ADJUSTMENT";
 
+/** Trạng thái lịch hẹn — `LichHenInput.status` của backend. */
+export type AppointmentStatus = "SCHEDULED" | "CONFIRMED" | "CANCELLED" | "DONE";
+/** Trạng thái báo giá — cột `quotations.status`. */
+export type QuotationStatus = "DRAFT" | "SENT" | "APPROVED" | "REJECTED" | "CANCELLED";
+/** Trạng thái bảo hành — `warranties.TEN_TRANG_THAI_BAOHANH`. */
+export type WarrantyStatus = "ACTIVE" | "EXPIRED" | "CLAIMED" | "CANCELLED";
+
 /** Người dùng đã đăng nhập — `GET /api/auth/session`. */
 export interface ThanhVien {
   id: number;
@@ -249,6 +256,162 @@ export interface KetQuaGanNhat {
   is_valid: number;
   created_at: string;
   plate: string | null;
+}
+
+// --- Khách hàng, xe, lịch hẹn ----------------------------------------------
+/** Dòng `GET /api/customers`. */
+export interface KhachHangDong {
+  id: number;
+  name: string;
+  phone: string;
+  email: string | null;
+  address: string | null;
+  created_at: string;
+}
+
+/** Dòng `GET /api/vehicles`. */
+export interface PhuongTienDong {
+  id: number;
+  plate: string;
+  brand: string;
+  model: string;
+  year: number | null;
+  vin: string | null;
+  color: string | null;
+  odometer: number | null;
+  customer_id: number;
+  khach: string;
+  is_active: number | boolean;
+}
+
+/** Dòng `GET /api/appointments`. */
+export interface LichHenDong {
+  id: number;
+  customer_id: number;
+  khach: string;
+  vehicle_id: number;
+  plate: string;
+  scheduled_at: string;
+  notes: string | null;
+  status: AppointmentStatus;
+  created_at: string;
+}
+
+// --- Báo giá ----------------------------------------------------------------
+/** Dòng `GET /api/quotations`. */
+export interface BaoGiaDong {
+  id: number;
+  repair_order_id: number;
+  plate: string;
+  status: QuotationStatus;
+  total: number;
+  valid_until: string | null;
+  created_at: string;
+  note: string | null;
+  applied_at: string | null;
+}
+
+/** Dòng báo giá trong `GET /api/quotations/{id}` → hang_muc. */
+export interface HangMucBaoGia {
+  id: number;
+  service_id: number | null;
+  part_id: number | null;
+  qty: number;
+  unit_price: number;
+  ten: string;
+  thanh_tien: number;
+}
+
+/** `bao_gia` trong `GET /api/quotations/{id}` — `q.*` + JOIN + hang_muc + tong. */
+export interface BaoGia extends BaoGiaDong {
+  vehicle_id: number;
+  phieu_status: RepairStatus;
+  brand: string;
+  model: string;
+  khach: string;
+  hang_muc: HangMucBaoGia[];
+  tong: number;
+}
+
+/** Trả về đủ khoá của `quotations.chi_tiet` — kèm cờ bật/tắt nút. */
+export interface ChiTietBaoGia {
+  bao_gia: BaoGia;
+  hang_muc: HangMucBaoGia[];
+  co_sua: boolean;
+  co_gui: boolean;
+  co_duyet: boolean;
+  co_huy: boolean;
+  co_ap_dung: boolean;
+}
+
+// --- Bảo hành ---------------------------------------------------------------
+/** Dòng `GET /api/warranties`. */
+export interface BaoHanhDong {
+  id: number;
+  repair_order_id: number;
+  plate: string;
+  scope: "SERVICE" | "PART";
+  ten_hang_muc: string;
+  months: number;
+  start_date: string;
+  end_date: string;
+  status: WarrantyStatus;
+  note: string | null;
+  nguoi_lap: string | null;
+}
+
+// --- Danh mục ----------------------------------------------------------------
+/** Dòng `GET /api/services`. */
+export interface DichVuDong {
+  id: number;
+  name: string;
+  price: number;
+  description: string | null;
+  is_active: number | boolean;
+}
+
+/** Dòng `GET /api/parts`. */
+export interface PhuTungDong {
+  id: number;
+  name: string;
+  sku: string | null;
+  price: number;
+  stock: number;
+  min_stock: number;
+  description: string | null;
+  is_active: number | boolean;
+}
+
+// --- Người dùng -------------------------------------------------------------
+/** Dòng `GET /api/users` (không có mật khẩu). */
+export interface NguoiDungDong {
+  id: number;
+  username: string;
+  full_name: string;
+  email: string | null;
+  role: Role;
+  is_active: number | boolean;
+}
+
+// --- Báo cáo / lịch sử -------------------------------------------------------
+/** Dòng `GET /api/history`. */
+export interface LichSuDong {
+  id: number;
+  status: RepairStatus;
+  created_at: string;
+  plate: string;
+  brand: string;
+  model: string;
+  khach: string;
+  phone: string | null;
+  technician_id: number | null;
+}
+
+/** `GET /api/reports/{kind}` — `dong` tuỳ loại báo cáo, backend tự tính. */
+export interface BaoCao {
+  kind: string;
+  loai: string[];
+  dong: Record<string, string | number | null>[];
 }
 
 // --- Tra cứu & từ điển ------------------------------------------------------

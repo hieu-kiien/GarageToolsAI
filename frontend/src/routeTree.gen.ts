@@ -11,10 +11,18 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AiReviewRouteImport } from './routes/ai-review'
+import { Route as AppointmentsRouteImport } from './routes/appointments'
+import { Route as CatalogRouteImport } from './routes/catalog'
+import { Route as CustomersRouteImport } from './routes/customers'
 import { Route as FinanceRouteImport } from './routes/finance'
 import { Route as InspectionRouteImport } from './routes/inspection'
 import { Route as InventoryRouteImport } from './routes/inventory'
+import { Route as QuotationsRouteImport } from './routes/quotations'
+import { Route as ReportsRouteImport } from './routes/reports'
+import { Route as UsersRouteImport } from './routes/users'
+import { Route as WarrantiesRouteImport } from './routes/warranties'
 import { Route as WorkflowRouteImport } from './routes/workflow'
+import { Route as QuotationsIdRouteImport } from './routes/quotations.$id'
 import { Route as RepairOrdersIndexRouteImport } from './routes/repair-orders.index'
 import { Route as RepairOrdersIdRouteImport } from './routes/repair-orders.$id'
 
@@ -26,6 +34,21 @@ const IndexRoute = IndexRouteImport.update({
 const AiReviewRoute = AiReviewRouteImport.update({
   id: '/ai-review',
   path: '/ai-review',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppointmentsRoute = AppointmentsRouteImport.update({
+  id: '/appointments',
+  path: '/appointments',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CatalogRoute = CatalogRouteImport.update({
+  id: '/catalog',
+  path: '/catalog',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CustomersRoute = CustomersRouteImport.update({
+  id: '/customers',
+  path: '/customers',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FinanceRoute = FinanceRouteImport.update({
@@ -43,10 +66,35 @@ const InventoryRoute = InventoryRouteImport.update({
   path: '/inventory',
   getParentRoute: () => rootRouteImport,
 } as any)
+const QuotationsRoute = QuotationsRouteImport.update({
+  id: '/quotations',
+  path: '/quotations',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportsRoute = ReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UsersRoute = UsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WarrantiesRoute = WarrantiesRouteImport.update({
+  id: '/warranties',
+  path: '/warranties',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WorkflowRoute = WorkflowRouteImport.update({
   id: '/workflow',
   path: '/workflow',
   getParentRoute: () => rootRouteImport,
+} as any)
+const QuotationsIdRoute = QuotationsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => QuotationsRoute,
 } as any)
 const RepairOrdersIndexRoute = RepairOrdersIndexRouteImport.update({
   id: '/repair-orders/',
@@ -62,20 +110,36 @@ const RepairOrdersIdRoute = RepairOrdersIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/ai-review': typeof AiReviewRoute
+  '/appointments': typeof AppointmentsRoute
+  '/catalog': typeof CatalogRoute
+  '/customers': typeof CustomersRoute
   '/finance': typeof FinanceRoute
   '/inspection': typeof InspectionRoute
   '/inventory': typeof InventoryRoute
+  '/quotations': typeof QuotationsRouteWithChildren
+  '/reports': typeof ReportsRoute
+  '/users': typeof UsersRoute
+  '/warranties': typeof WarrantiesRoute
   '/workflow': typeof WorkflowRoute
+  '/quotations/$id': typeof QuotationsIdRoute
   '/repair-orders/$id': typeof RepairOrdersIdRoute
   '/repair-orders/': typeof RepairOrdersIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/ai-review': typeof AiReviewRoute
+  '/appointments': typeof AppointmentsRoute
+  '/catalog': typeof CatalogRoute
+  '/customers': typeof CustomersRoute
   '/finance': typeof FinanceRoute
   '/inspection': typeof InspectionRoute
   '/inventory': typeof InventoryRoute
+  '/quotations': typeof QuotationsRouteWithChildren
+  '/reports': typeof ReportsRoute
+  '/users': typeof UsersRoute
+  '/warranties': typeof WarrantiesRoute
   '/workflow': typeof WorkflowRoute
+  '/quotations/$id': typeof QuotationsIdRoute
   '/repair-orders/$id': typeof RepairOrdersIdRoute
   '/repair-orders': typeof RepairOrdersIndexRoute
 }
@@ -83,10 +147,18 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/ai-review': typeof AiReviewRoute
+  '/appointments': typeof AppointmentsRoute
+  '/catalog': typeof CatalogRoute
+  '/customers': typeof CustomersRoute
   '/finance': typeof FinanceRoute
   '/inspection': typeof InspectionRoute
   '/inventory': typeof InventoryRoute
+  '/quotations': typeof QuotationsRouteWithChildren
+  '/reports': typeof ReportsRoute
+  '/users': typeof UsersRoute
+  '/warranties': typeof WarrantiesRoute
   '/workflow': typeof WorkflowRoute
+  '/quotations/$id': typeof QuotationsIdRoute
   '/repair-orders/$id': typeof RepairOrdersIdRoute
   '/repair-orders/': typeof RepairOrdersIndexRoute
 }
@@ -95,30 +167,54 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/ai-review'
+    | '/appointments'
+    | '/catalog'
+    | '/customers'
     | '/finance'
     | '/inspection'
     | '/inventory'
+    | '/quotations'
+    | '/reports'
+    | '/users'
+    | '/warranties'
     | '/workflow'
+    | '/quotations/$id'
     | '/repair-orders/$id'
     | '/repair-orders/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/ai-review'
+    | '/appointments'
+    | '/catalog'
+    | '/customers'
     | '/finance'
     | '/inspection'
     | '/inventory'
+    | '/quotations'
+    | '/reports'
+    | '/users'
+    | '/warranties'
     | '/workflow'
+    | '/quotations/$id'
     | '/repair-orders/$id'
     | '/repair-orders'
   id:
     | '__root__'
     | '/'
     | '/ai-review'
+    | '/appointments'
+    | '/catalog'
+    | '/customers'
     | '/finance'
     | '/inspection'
     | '/inventory'
+    | '/quotations'
+    | '/reports'
+    | '/users'
+    | '/warranties'
     | '/workflow'
+    | '/quotations/$id'
     | '/repair-orders/$id'
     | '/repair-orders/'
   fileRoutesById: FileRoutesById
@@ -126,9 +222,16 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AiReviewRoute: typeof AiReviewRoute
+  AppointmentsRoute: typeof AppointmentsRoute
+  CatalogRoute: typeof CatalogRoute
+  CustomersRoute: typeof CustomersRoute
   FinanceRoute: typeof FinanceRoute
   InspectionRoute: typeof InspectionRoute
   InventoryRoute: typeof InventoryRoute
+  QuotationsRoute: typeof QuotationsRouteWithChildren
+  ReportsRoute: typeof ReportsRoute
+  UsersRoute: typeof UsersRoute
+  WarrantiesRoute: typeof WarrantiesRoute
   WorkflowRoute: typeof WorkflowRoute
   RepairOrdersIdRoute: typeof RepairOrdersIdRoute
   RepairOrdersIndexRoute: typeof RepairOrdersIndexRoute
@@ -148,6 +251,27 @@ declare module '@tanstack/react-router' {
       path: '/ai-review'
       fullPath: '/ai-review'
       preLoaderRoute: typeof AiReviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/appointments': {
+      id: '/appointments'
+      path: '/appointments'
+      fullPath: '/appointments'
+      preLoaderRoute: typeof AppointmentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/catalog': {
+      id: '/catalog'
+      path: '/catalog'
+      fullPath: '/catalog'
+      preLoaderRoute: typeof CatalogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/customers': {
+      id: '/customers'
+      path: '/customers'
+      fullPath: '/customers'
+      preLoaderRoute: typeof CustomersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/finance': {
@@ -171,12 +295,47 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InventoryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/quotations': {
+      id: '/quotations'
+      path: '/quotations'
+      fullPath: '/quotations'
+      preLoaderRoute: typeof QuotationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reports': {
+      id: '/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof ReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/users': {
+      id: '/users'
+      path: '/users'
+      fullPath: '/users'
+      preLoaderRoute: typeof UsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/warranties': {
+      id: '/warranties'
+      path: '/warranties'
+      fullPath: '/warranties'
+      preLoaderRoute: typeof WarrantiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/workflow': {
       id: '/workflow'
       path: '/workflow'
       fullPath: '/workflow'
       preLoaderRoute: typeof WorkflowRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/quotations/$id': {
+      id: '/quotations/$id'
+      path: '/$id'
+      fullPath: '/quotations/$id'
+      preLoaderRoute: typeof QuotationsIdRouteImport
+      parentRoute: typeof QuotationsRoute
     }
     '/repair-orders/': {
       id: '/repair-orders/'
@@ -195,12 +354,31 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface QuotationsRouteChildren {
+  QuotationsIdRoute: typeof QuotationsIdRoute
+}
+
+const QuotationsRouteChildren: QuotationsRouteChildren = {
+  QuotationsIdRoute: QuotationsIdRoute,
+}
+
+const QuotationsRouteWithChildren = QuotationsRoute._addFileChildren(
+  QuotationsRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AiReviewRoute: AiReviewRoute,
+  AppointmentsRoute: AppointmentsRoute,
+  CatalogRoute: CatalogRoute,
+  CustomersRoute: CustomersRoute,
   FinanceRoute: FinanceRoute,
   InspectionRoute: InspectionRoute,
   InventoryRoute: InventoryRoute,
+  QuotationsRoute: QuotationsRouteWithChildren,
+  ReportsRoute: ReportsRoute,
+  UsersRoute: UsersRoute,
+  WarrantiesRoute: WarrantiesRoute,
   WorkflowRoute: WorkflowRoute,
   RepairOrdersIdRoute: RepairOrdersIdRoute,
   RepairOrdersIndexRoute: RepairOrdersIndexRoute,

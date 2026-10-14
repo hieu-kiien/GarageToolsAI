@@ -12,13 +12,29 @@ import {
   X,
   Wrench,
   LogOut,
+  CalendarDays,
+  Car,
+  FileText,
+  ShieldCheck,
+  Tags,
+  UserCog,
+  BarChart3,
+  KeyRound,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useNhan, useRole, type Area } from "@/lib/rbac";
-import { ApiError } from "@/services/api";
+import { api, ApiError } from "@/services/api";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const NAV: {
   group: string;
@@ -31,6 +47,9 @@ const NAV: {
       { to: "/workflow", label: "Bảng điều phối", icon: KanbanSquare, area: "board" },
       { to: "/repair-orders", label: "Phiếu sửa chữa", icon: ClipboardList, area: "orders" },
       { to: "/inspection", label: "Tiếp nhận xe", icon: ScanSearch, area: "inspection" },
+      { to: "/appointments", label: "Lịch hẹn", icon: CalendarDays, area: "appointments" },
+      { to: "/customers", label: "Khách hàng & Xe", icon: Car, area: "customers" },
+      { to: "/quotations", label: "Báo giá", icon: FileText, area: "quotes" },
     ],
   },
   {
@@ -41,8 +60,15 @@ const NAV: {
     group: "Kho & Tài chính",
     items: [
       { to: "/inventory", label: "Kho phụ tung", icon: Boxes, area: "inventory" },
+      { to: "/catalog", label: "Danh mục DV/PT", icon: Tags, area: "catalog" },
+      { to: "/warranties", label: "Bảo hành", icon: ShieldCheck, area: "warranty" },
       { to: "/finance", label: "Hoá đơn & Thanh toán", icon: Receipt, area: "finance" },
+      { to: "/reports", label: "Báo cáo & Lịch sử", icon: BarChart3, area: "reports" },
     ],
+  },
+  {
+    group: "Hệ thống",
+    items: [{ to: "/users", label: "Người dùng", icon: UserCog, area: "users" }],
   },
 ];
 
@@ -200,8 +226,112 @@ function DangNhap() {
   );
 }
 
+/** Đổi mật khẩu cá nhân — backend tăng phiên bản, mọi phiên đang mở bị vô hiệu. */
+function DoiMatKhau({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
+  const { dangXuat } = useRole();
+  const [cu, setCu] = useState("");
+  const [moi, setMoi] = useState("");
+  const [xac, setXac] = useState("");
+  const [dangGui, setDangGui] = useState(false);
+  const [loi, setLoi] = useState("");
+
+  const dong = (o: boolean) => {
+    if (dangGui) return;
+    setCu("");
+    setMoi("");
+    setXac("");
+    setLoi("");
+    onOpenChange(o);
+  };
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!cu || !moi || !xac) return setLoi("Nhập đủ cả ba trường.");
+    if (moi.length < 8) return setLoi("Mật khẩu mới cần ít nhất 8 ký tự.");
+    if (moi === cu) return setLoi("Mật khẩu mới phải khác mật khẩu cũ.");
+    if (moi !== xac) return setLoi("Xác nhận mật khẩu không khớp.");
+    setLoi("");
+    setDangGui(true);
+    try {
+      await api.doiMatKhau({ mat_khau_cu: cu, mat_khau_moi: moi });
+      onOpenChange(false);
+      toast.success("Đã đổi mật khẩu. Vui lòng đăng nhập lại bằng mật khẩu mới.");
+      await dangXuat();
+    } catch (err) {
+      setLoi(err instanceof ApiError ? err.message : "Đổi mật khẩu thất bại.");
+    } finally {
+      setDangGui(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={dong}>
+      <DialogContent className="sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Đổi mật khẩu</DialogTitle>
+          <DialogDescription>
+            Sau khi đổi, mọi phiên đang mở sẽ bị đăng xuất để bảo mật.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={submit} className="space-y-3">
+          <div className="space-y-1.5">
+            <label htmlFor="mk-cu" className="text-xs font-medium text-muted-foreground">
+              Mật khẩu hiện tại
+            </label>
+            <Input
+              id="mk-cu"
+              type="password"
+              autoComplete="current-password"
+              value={cu}
+              onChange={(e) => setCu(e.target.value)}
+              required
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label htmlFor="mk-moi" className="text-xs font-medium text-muted-foreground">
+              Mật khẩu mới
+            </label>
+            <Input
+              id="mk-moi"
+              type="password"
+              autoComplete="new-password"
+              value={moi}
+              onChange={(e) => setMoi(e.target.value)}
+              placeholder="Ít nhất 8 ký tự"
+              required
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label htmlFor="mk-xac" className="text-xs font-medium text-muted-foreground">
+              Xác nhận mật khẩu mới
+            </label>
+            <Input
+              id="mk-xac"
+              type="password"
+              autoComplete="new-password"
+              value={xac}
+              onChange={(e) => setXac(e.target.value)}
+              required
+            />
+          </div>
+          {loi && <p className="text-xs text-destructive">{loi}</p>}
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => dong(false)} disabled={dangGui}>
+              Huỷ
+            </Button>
+            <Button type="submit" disabled={dangGui}>
+              {dangGui ? "Đang lưu…" : "Đổi mật khẩu"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export function AppShell({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
+  const [doiMk, setDoiMk] = useState(false);
   const { trangThaiPhien, dangXuat } = useRole();
 
   if (trangThaiPhien === "dang_tai") {
@@ -248,6 +378,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
           <div className="ml-auto flex items-center gap-2">
             <span className="hidden text-xs text-muted-foreground sm:inline">Đã đăng nhập</span>
+            <Button variant="outline" size="sm" onClick={() => setDoiMk(true)}>
+              <KeyRound className="size-4" /> <span className="hidden sm:inline">Đổi mật khẩu</span>
+            </Button>
             <Button variant="outline" size="sm" onClick={() => void dangXuat()}>
               <LogOut className="size-4" /> Đăng xuất
             </Button>
@@ -255,6 +388,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </header>
         <main>{children}</main>
       </div>
+      <DoiMatKhau open={doiMk} onOpenChange={setDoiMk} />
     </div>
   );
 }
