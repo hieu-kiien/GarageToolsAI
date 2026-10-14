@@ -17,6 +17,7 @@ import logging
 import re
 
 from .core.config import get_settings
+from .core.errors import KhongTimThay
 
 log = logging.getLogger('garage.ai')
 
@@ -147,7 +148,8 @@ def tom_tat_lich_su(vehicle_id):
         'SELECT v.*, c.name AS customer_name FROM vehicles v'
         ' JOIN customers c ON c.id = v.customer_id WHERE v.id = ?', (vehicle_id,))
     if xe is None:
-        raise AiError('Không tìm thấy xe')
+        # Thiếu bản ghi là lỗi nghiệp vụ 404, không phải lỗi dịch vụ ngoài 502.
+        raise KhongTimThay('Không tìm thấy xe số %s.' % vehicle_id)
 
     phieu = db.fetch_all(
         'SELECT r.id, r.status, r.technical_notes, r.created_at, v.plate'
@@ -210,7 +212,7 @@ def giai_thich_dich_vu(service_id):
 
     dv = db.fetch_one('SELECT * FROM services WHERE id = ?', (service_id,))
     if dv is None:
-        raise AiError('Không tìm thấy dịch vụ')
+        raise KhongTimThay('Không tìm thấy dịch vụ số %s.' % service_id)
 
     user = get_settings().render_prompt(get_settings().load_prompt('explain.txt'),
                                   service='Tên dịch vụ: %s\nMô tả trong danh mục: %s'
@@ -247,7 +249,7 @@ def bao_gia_nhap(order_id):
 
     phieu = db.fetch_one('SELECT * FROM repair_orders WHERE id = ?', (order_id,))
     if phieu is None:
-        raise AiError('Không tìm thấy phiếu sửa chữa')
+        raise KhongTimThay('Không tìm thấy phiếu sửa chữa số %s.' % order_id)
 
     items = db.fetch_all(
         'SELECT i.id, COALESCE(s.name, pt.name) AS ten, i.qty, i.unit_price,'

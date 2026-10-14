@@ -2,10 +2,10 @@
 
 | | |
 |---|---|
-| Ngày chạy | 2026-10-13 15:09 |
+| Ngày chạy | 2026-10-14 21:20 |
 | Môi trường | Python 3.13.14, SQLite 3.50.4 |
-| Tổng số ca | **206** |
-| Kết quả | **206 đạt / 0 lỗi** |
+| Tổng số ca | **220** |
+| Kết quả | **220 đạt / 0 lỗi** |
 
 ---
 
@@ -40,7 +40,7 @@ chạy chứ không kiểm tra bản sao.
 
 - Tệp: `tests/test_api.py`
 - Phạm vi: Gọi các endpoint JSON mà giao diện React gọi: phiên và mã CSRF, lỗi theo từng trường, phong bì phân trang, luồng phiếu – báo giá – hoá đơn – thanh toán, kho, bảo hành, AI và phân quyền bốn vai trò.
-- Kết quả: 30 ca, 30 đạt, 0 lỗi
+- Kết quả: 44 ca, 44 đạt, 0 lỗi
 
 ## 2. Nhóm ca kiểm thử ràng buộc cơ sở dữ liệu
 
@@ -103,7 +103,24 @@ python tests/test_backend.py
 python tests/test_api.py
 ```
 
-## 7. Ghi chú
+## 7. Kiểm thử vận hành và E2E trên môi trường thật (14/10/2026)
+
+Chạy trên backend thật `uvicorn app.main:app --port 8000` (SQLite `garage.db`,
+`APP_ENV=development`, `AUTO_MIGRATE=true` — migration chạy lúc khởi động).
+
+| Bộ kiểm thử | Công cụ | Kết quả |
+|---|---|---|
+| Smoke HTTP toàn endpoint + phân quyền | `scripts/smoke.ps1` | **31/31** |
+| E2E nghiệp vụ: tiếp nhận → báo giá → áp dụng ×2 → sửa chữa → nghiệm thu ×2 → hoá đơn → thu tiền (thu đủ/vượt/huỷ) → bảo hành → sổ cái | `scripts/e2e.ps1` | **32/32** |
+| Docker image build | `docker build GarageAI_Project` | **Đạt** (image `garage-tools-ai:ci-check`) |
+| Sao lưu / khôi phục runtime | `scripts/backup.ps1` + `scripts/restore.ps1` | **Đạt** (backup 352KB, restore + `integrity_check` OK) |
+
+Nội dung E2E bao phủ: áp dụng báo giá đúng **một lần** (lần 2 → 409) và **trừ
+kho đúng 2 phụ tùng** qua sổ cái; nghiệm thu lặp → 409; thu vượt nợ → 409;
+huỷ khoản thu cập nhật lại `con_phai_thu`; bảo hành lặp → 409; sau toàn bộ
+quy trình `GET /api/stock/audit` **rỗng** (sổ cái khớp tồn kho).
+
+## 8. Ghi chú
 
 - Các ca kiểm thử ứng dụng dùng `AI_PROVIDER=mock` nên không cần kết mối
   mạng, không cần khoá API và cho kết quả lặp lại được.

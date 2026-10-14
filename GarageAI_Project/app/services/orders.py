@@ -19,7 +19,7 @@ from __future__ import annotations
 from .. import crud
 from ..core.db import (fetch_all, fetch_one, phieu_da_quyet_toan,
                         tong_phieu, transaction)
-from ..core.errors import (KhongTimThay, SaiQuyTac,
+from ..core.errors import (KhongCoQuyen, KhongTimThay, SaiQuyTac,
                            XungDdot)
 from ..core.money import utc_now
 from ..models import (DoiTrangThaiInput, NghiemThuInput, NhatKyInput,
@@ -134,16 +134,18 @@ def tao_phieu(du_lieu: TaoPhieuInput, user) -> int:
         if ktv is None or ktv['role'] != 'TECHNICIAN':
             raise SaiQuyTac('Người được chọn không phải kỹ thuật viên.',
                             truong='technician_id')
-    dang_mo = fetch_one(
-        "SELECT id FROM repair_orders WHERE vehicle_id = ?"
-        " AND status IN ('RECEIVED','INSPECTING','ESTIMATING','REPAIRING') LIMIT 1",
-        (du_lieu.vehicle_id,))
-    if dang_mo:
-        raise SaiQuyTac(
-            'Xe %s đang có phiếu sửa chữa số %d chưa hoàn tất.'
-            % (xe['plate'], dang_mo['id']))
 
     with transaction() as c:
+        # Kiểm tra "xe chưa có phiếu mở" PHẢI nằm trong BEGIN IMMEDIATE:
+        # hai lễ tân cùng tiếp nhận một xe sẽ không cùng tạo được phiếu.
+        dang_mo = c.execute(
+            "SELECT id FROM repair_orders WHERE vehicle_id = ?"
+            " AND status IN ('RECEIVED','INSPECTING','ESTIMATING','REPAIRING') LIMIT 1",
+            (du_lieu.vehicle_id,)).fetchone()
+        if dang_mo:
+            raise SaiQuyTac(
+                'Xe %s đang có phiếu sửa chữa số %d chưa hoàn tất.'
+                % (xe['plate'], dang_mo['id']))
         khoa = int(c.execute(
             'INSERT INTO repair_orders (vehicle_id, technician_id, status,'
             ' technical_notes, created_at) VALUES (?, ?, ?, ?, ?)',
@@ -200,6 +202,8 @@ def them_hang_muc(phieu_id: int, du_lieu: ThemHangMucInput, user) -> None:
                              ' WHERE id = ?', (du_lieu.ma,)).fetchone()
             if dong is None:
                 raise SaiQuyTac('Dịch vụ không tồn tại.', truong='ma')
+            if not dong['is_active']:
+                raise SaiQuyTac('Dịch vụ đã ngừng sử dụng.', truong='ma')
             sid, pid, gia, ten = dong['id'], None, int(dong['price']), dong['name']
         else:
             dong = c.execute('SELECT id, name, price, stock, is_active FROM parts'
@@ -294,7 +298,7 @@ def _hoan_tra_ton_kho(conn, phieu_id: int) -> None:
         # hiện chứ không phải nhân viên nào ghi tay.
         conn.execute('INSERT INTO repair_logs (repair_order_id, technician_id, note)'
                      ' VALUES (?, NULL, ?)',
-                     (phieu_id, 'Hoàn trả tồn kho phụ tùng %d cáy (huỷ phiếu).'
+                     (phieu_id, 'Hoàn trả tồn kho phụ tùng %d cái (huỷ phiếu).'
                       % h['qty']))
 
 
@@ -309,19 +313,42 @@ def them_nhat_ky(phieu_id: int, du_lieu: NhatKyInput, user) -> None:
 
 
 def xoa_phieu(phieu_id: int, user) -> None:
-    """Chỉ cho xoá phiếu chưa phát sinh hạng mục, hoá đơn hay thanh toán."""
-    phieu = fetch_one('SELECT * FROM repair_orders WHERE id = ?', (phieu_id,))
-    if phieu is None:
-        raise KhongTimThay('Không tìm thấy phiếu cần xoá.')
-    for bang, cot in (('repair_order_items', 'repair_order_id'),
-                      ('invoices', 'repair_order_id'),
-                      ('repair_logs', 'repair_order_id')):
-        if crud.co_ban_ghi(bang, '%s = ?' % cot, (phieu_id,)):
+    """Chỉ cho xoá phiếu "trống": chưa hạng mục, hoá đơn, biên bản, báo giá.
+
+    Nhật ký tự sinh lúc tiếp nhận ("Tiếp nhận xe …") được xoá kèm; mọi dấu
+    vết hoạt động khác (hạng mục, hoá đơn, biên bản, báo giá, nhật ký tay)
+    đều chặn xoá — dùng huỷ phiếu thay vì xoá.
+    """
+    from .security_matrix import co_quyen
+    if not co_quyen(user['role'], 'order.create'):
+        raise KhongCoQuyen('Vai trò của bạn không được phép xoá phiếu sửa chữa.')
+    with transaction() as c:
+        phieu = c.execute('SELECT * FROM repair_orders WHERE id = ?',
+                          (phieu_id,)).fetchone()
+        if phieu is None:
+            raise KhongTimThay('Không tìm thấy phiếu cần xoá.')
+        for bang, cot in (('repair_order_items', 'repair_order_id'),
+                          ('invoices', 'repair_order_id'),
+                          ('intake_records', 'repair_order_id'),
+                          ('quotations', 'repair_order_id')):
+            if c.execute('SELECT 1 FROM %s WHERE %s = ? LIMIT 1' % (bang, cot),
+                         (phieu_id,)).fetchone():
+                raise SaiQuyTac(
+                    'Phiếu đã phát sinh %s nên không thể xoá.'
+                    ' Hãy huỷ phiếu thay vì xoá.'
+                    % {'repair_order_items': 'hạng mục', 'invoices': 'hoá đơn',
+                       'intake_records': 'biên bản tiếp nhận',
+                       'quotations': 'báo giá'}[bang])
+        logs = c.execute('SELECT note FROM repair_logs WHERE repair_order_id = ?',
+                         (phieu_id,)).fetchall()
+        if any(not r['note'].startswith('Tiếp nhận xe') for r in logs):
             raise SaiQuyTac(
-                'Phiếu đã phát sinh %s nên không thể xoá. Hãy huỷ phiếu thay vì xoá.'
-                % {'repair_order_items': 'hạng mục', 'invoices': 'hoá đơn',
-                   'repair_logs': 'nhật ký'}[bang])
-    crud.xoa('repair_orders', phieu_id)
+                'Phiếu đã có nhật ký hoạt động nên không thể xoá.'
+                ' Hãy huỷ phiếu thay vì xoá.')
+        c.execute('DELETE FROM repair_logs WHERE repair_order_id = ?', (phieu_id,))
+        n = c.execute('DELETE FROM repair_orders WHERE id = ?', (phieu_id,)).rowcount
+        if n != 1:
+            raise KhongTimThay('Không tìm thấy phiếu cần xoá.')
 
 
 # ---------------------------------------------------------------------------
@@ -330,17 +357,6 @@ def xoa_phieu(phieu_id: int, user) -> None:
 def ghi_tiep_nhan(phieu_id: int, du_lieu: TiepNhanInput, user) -> None:
     """Ghi biên bản tiếp nhận. Chỉ được ghi khi phiếu còn ở trạng thái RECEIVED."""
     _kiem_tra_quyen_thao_tac(user, phieu_id)
-    phieu = fetch_one('SELECT * FROM repair_orders WHERE id = ?', (phieu_id,))
-    if phieu is None:
-        raise KhongTimThay('Không tìm thấy phiếu sửa chữa.')
-    if phieu['status'] not in ('RECEIVED', 'INSPECTING'):
-        raise SaiQuyTac(
-            'Chỉ ghi biên bản tiếp nhận khi phiếu còn ở trạng thái'
-            ' Đã tiếp nhận hoặc Đang kiểm tra. Hiện tại: %s.'
-            % TEN_TRANG_THAI.get(phieu['status'], phieu['status']))
-    if fetch_one('SELECT id FROM intake_records WHERE repair_order_id = ?',
-                 (phieu_id,)):
-        raise XungDdot('Phiếu này đã có biên bản tiếp nhận.')
     du = {'repair_order_id': phieu_id,
           'odometer_at_intake': du_lieu.odometer_at_intake,
           'fuel_level': du_lieu.fuel_level,
@@ -349,6 +365,20 @@ def ghi_tiep_nhan(phieu_id: int, du_lieu: TiepNhanInput, user) -> None:
           'notes': du_lieu.notes,
           'created_by': user['id']}
     with transaction() as c:
+        # Mọi kiểm tra nằm trong transaction: hai lần bấm "lưu biên bản"
+        # đồng thời chỉ ghi được một bản (bản thứ hai thấy đã có và báo 409).
+        phieu = c.execute('SELECT * FROM repair_orders WHERE id = ?',
+                          (phieu_id,)).fetchone()
+        if phieu is None:
+            raise KhongTimThay('Không tìm thấy phiếu sửa chữa.')
+        if phieu['status'] not in ('RECEIVED', 'INSPECTING'):
+            raise SaiQuyTac(
+                'Chỉ ghi biên bản tiếp nhận khi phiếu còn ở trạng thái'
+                ' Đã tiếp nhận hoặc Đang kiểm tra. Hiện tại: %s.'
+                % TEN_TRANG_THAI.get(phieu['status'], phieu['status']))
+        if c.execute('SELECT id FROM intake_records WHERE repair_order_id = ?',
+                     (phieu_id,)).fetchone():
+            raise XungDdot('Phiếu này đã có biên bản tiếp nhận.')
         c.execute(
             'INSERT INTO intake_records'
             ' (repair_order_id, odometer_at_intake, fuel_level, exterior_condition,'
@@ -367,19 +397,23 @@ def ghi_tiep_nhan(phieu_id: int, du_lieu: TiepNhanInput, user) -> None:
 # ---------------------------------------------------------------------------
 def nghiem_thu(phieu_id: int, du_lieu: NghiemThuInput, user) -> None:
     """Nghiệm thu: khách ký nhận xe. Chỉ phiếu COMPLETED mới được nghiệm thu."""
-    phieu = fetch_one('SELECT * FROM repair_orders WHERE id = ?', (phieu_id,))
-    if phieu is None:
-        raise KhongTimThay('Không tìm thấy phiếu sửa chữa.')
-    if phieu['status'] != 'COMPLETED':
-        raise SaiQuyTac(
-            'Chỉ nghiệm thu khi phiếu đã Hoàn thành. Hiện tại: %s.'
-            % TEN_TRANG_THAI.get(phieu['status'], phieu['status']))
-    if phieu['acceptance_at']:
-        raise XungDdot('Phiếu này đã được nghiệm thu.')
     with transaction() as c:
-        c.execute(
+        # UPDATE có điều kiện nguyên tử: hai lần bấm "nghiệm thu" đồng thời
+        # chỉ đúng một lần thành công, không ghi nhật ký trùng.
+        n = c.execute(
             'UPDATE repair_orders SET acceptance_note = ?, accepted_by = ?,'
-            ' acceptance_at = datetime(\'now\') WHERE id = ?',
-            (du_lieu.acceptance_note, user['id'], phieu_id))
+            " acceptance_at = datetime('now')"
+            " WHERE id = ? AND status = 'COMPLETED' AND acceptance_at IS NULL",
+            (du_lieu.acceptance_note, user['id'], phieu_id)).rowcount
+        if n != 1:
+            phieu = c.execute('SELECT * FROM repair_orders WHERE id = ?',
+                              (phieu_id,)).fetchone()
+            if phieu is None:
+                raise KhongTimThay('Không tìm thấy phiếu sửa chữa.')
+            if phieu['status'] != 'COMPLETED':
+                raise SaiQuyTac(
+                    'Chỉ nghiệm thu khi phiếu đã Hoàn thành. Hiện tại: %s.'
+                    % TEN_TRANG_THAI.get(phieu['status'], phieu['status']))
+            raise XungDdot('Phiếu này đã được nghiệm thu.')
         _ghi_nhat_ky(c, phieu_id, user['id'],
                      'Nghiệm thu: khách ký nhận xe.')

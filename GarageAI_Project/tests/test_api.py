@@ -80,7 +80,10 @@ class CoSoApi(unittest.TestCase):
         hd = {'X-CSRF-Token': self.csrf()}
         if method == 'get':
             return self.client.get(url, headers=hd)
-        return getattr(self.client, method)(url, json=data, headers=hd)
+        if method in ('post', 'put', 'patch'):
+            return getattr(self.client, method)(url, json=data, headers=hd)
+        # DELETE/HEAD của httpx không nhận tham số `json`.
+        return getattr(self.client, method)(url, headers=hd)
 
     def dang_nhap(self, tk='quan_ly'):
         self.client.cookies.clear()
@@ -434,9 +437,12 @@ class TestPhanQuyen(CoSoApi):
         self.assertEqual(self.client.get('/api/reports/doanh-thu').status_code, 403)
         r = self.api('post', '/api/orders', {'vehicle_id': 1})
         self.assertEqual(r.status_code, 403)
-        # Vẫn xem được phiếu và ghi được thanh toán (đúng vai trò thu ngân).
+        # Vẫn xem được phiếu, xem và ghi được thanh toán (đúng vai trò thu ngân).
         self.assertEqual(self.client.get('/api/orders').status_code, 200)
-        self.assertEqual(self.client.get('/api/invoices/7').status_code, 403)
+        self.assertEqual(self.client.get('/api/invoices/7').status_code, 200)
+        # Nhưng không xem được báo cáo doanh thu (đã chặn ở trên) và
+        # không quản lý được tài khoản.
+        self.assertEqual(self.client.get('/api/users').status_code, 403)
 
     def test_ky_thuat_vien_khong_tao_duoc_phieu(self):
         self.dang_nhap('ky_thuat_vien')
@@ -483,6 +489,308 @@ class TestBaoCaoVaTraCuu(CoSoApi):
                      'kinh_ai', 'hinh_thuc_thanh_toan'):
             self.assertIn(khoa, body)
         self.assertIn('order.create', body['quyen'])
+
+
+# ===========================================================================
+class TestChongTaiPhat(CoSoApi):
+    """Chống tái phát cho các lỗi P0/P1 đã sửa (xem KEP_HOACH_HOAN_THIEN.md)."""
+
+    # ------------------------------------------------------------ báo giá
+    def test_ap_dung_bao_gia_chi_mot_lan_va_tru_kho(self):
+        ton_truoc = self.q1('SELECT stock FROM parts WHERE id = 1')['stock']
+        r = self.api('post', '/api/quotations',
+                     {'repair_order_id': 12, 'note': 'ap dung 2 lan'})
+        qid = r.json()['id']
+        self.api('post', '/api/quotations/%d/items' % qid,
+                 {'loai': 'dich_vu', 'ma': '1', 'qty': '1'})
+        self.api('post', '/api/quotations/%d/items' % qid,
+                 {'loai': 'phu_tung', 'ma': '1', 'qty': '3'})
+        self.api('post', '/api/quotations/%d/send' % qid)
+        r = self.api('post', '/api/quotations/%d/review' % qid,
+                     {'quyet_dinh': 'APPROVED'})
+        self.assertEqual(r.status_code, 200, r.text)
+
+        r = self.api('post', '/api/quotations/%d/apply' % qid)
+        self.assertEqual(r.status_code, 200, r.text)
+        # Trừ kho đúng 3 cái qua sổ cái USAGE (không phải ghi thẳng stock).
+        self.assertEqual(
+            self.q1('SELECT stock FROM parts WHERE id = 1')['stock'],
+            ton_truoc - 3)
+        n_usage = self.q1(
+            "SELECT COUNT(*) c FROM stock_transactions"
+            " WHERE part_id = 1 AND reason = 'USAGE'"
+            " AND note LIKE '%Áp dụng báo giá%'")['c']
+        self.assertEqual(n_usage, 1)
+        # Sổ khớp tồn: không có dòng nào lệch.
+        self.assertEqual(self.client.get('/api/stock').json()['lech'], [])
+
+        # Áp dụng lần hai phải bị chặn và không nhân đôi hạng mục/kho.
+        r = self.api('post', '/api/quotations/%d/apply' % qid)
+        self.assertEqual(r.status_code, 409)
+        self.assertEqual(r.json()['loi'], 'trung_du_lieu')
+        self.assertEqual(
+            self.q1('SELECT stock FROM parts WHERE id = 1')['stock'],
+            ton_truoc - 3)
+        dong = self.q1('SELECT COUNT(*) c FROM repair_order_items'
+                       ' WHERE repair_order_id = 12 AND part_id = 1')['c']
+        self.assertEqual(dong, 1)
+        # Nút "áp dụng" tắt sau khi đã áp dụng.
+        chi_tiet = self.api('get', '/api/quotations/%d' % qid).json()
+        self.assertFalse(chi_tiet['co_ap_dung'])
+        # Báo giá đã áp dụng không còn chặn báo giá mới cho phiếu.
+        r = self.api('post', '/api/quotations',
+                     {'repair_order_id': 12, 'note': 'ban moi'})
+        self.assertEqual(r.status_code, 201, r.text)
+
+    def test_tao_bao_gia_thu_hai_bi_chan(self):
+        r = self.api('post', '/api/quotations',
+                     {'repair_order_id': 12, 'note': 'nhap 1'})
+        self.assertEqual(r.status_code, 201)
+        r = self.api('post', '/api/quotations',
+                     {'repair_order_id': 12, 'note': 'nhap 2'})
+        self.assertEqual(r.status_code, 409)
+        self.assertEqual(r.json()['loi'], 'trung_du_lieu')
+
+    # ------------------------------------------------------------ phiếu
+    def test_nghiem_thu_chi_mot_lan(self):
+        r = self.api('post', '/api/orders', {'vehicle_id': 12})
+        oid = r.json()['id']
+        self.api('post', '/api/orders/%d/items' % oid,
+                 {'loai': 'dich_vu', 'ma': '2', 'qty': '1'})
+        for tt in ('INSPECTING', 'ESTIMATING', 'REPAIRING', 'COMPLETED'):
+            r = self.api('post', '/api/orders/%d/status' % oid, {'status': tt})
+            self.assertEqual(r.status_code, 200, r.text)
+
+        r = self.api('post', '/api/orders/%d/accept' % oid,
+                     {'acceptance_note': 'khach nhan xe'})
+        self.assertEqual(r.status_code, 200, r.text)
+        lan_dau = self.q1('SELECT acceptance_at FROM repair_orders WHERE id = ?',
+                          (oid,))['acceptance_at']
+        self.assertTrue(lan_dau)
+
+        # Bấm nghiệm thu lần hai: không ghi đè, không tạo nhật ký trùng.
+        n_log = self.q1('SELECT COUNT(*) c FROM repair_logs'
+                        ' WHERE repair_order_id = ?', (oid,))['c']
+        r = self.api('post', '/api/orders/%d/accept' % oid,
+                     {'acceptance_note': 'nhan lan nua'})
+        self.assertEqual(r.status_code, 409)
+        self.assertEqual(r.json()['loi'], 'trung_du_lieu')
+        hien_tai = self.q1('SELECT acceptance_at, acceptance_note'
+                           ' FROM repair_orders WHERE id = ?', (oid,))
+        self.assertEqual(hien_tai['acceptance_at'], lan_dau)
+        self.assertEqual(hien_tai['acceptance_note'], 'khach nhan xe')
+        self.assertEqual(self.q1('SELECT COUNT(*) c FROM repair_logs'
+                                 ' WHERE repair_order_id = ?', (oid,))['c'],
+                         n_log)
+
+    def test_khong_them_dich_vu_ngung_hoat_dong(self):
+        # Ngừng hoạt động dịch vụ 1 qua API danh mục (đúng vai trò quản lý).
+        r = self.api('put', '/api/services/1',
+                     {'name': 'Thay dầu máy va loc gio', 'price': '450000',
+                      'description': 'Ngung dung thu', 'is_active': False})
+        self.assertEqual(r.status_code, 200, r.text)
+
+        r = self.api('post', '/api/orders/12/items',
+                     {'loai': 'dich_vu', 'ma': '1', 'qty': '1'})
+        self.assertEqual(r.status_code, 409)
+        self.assertEqual(r.json()['loi'], 'sai_quy_tac')
+        self.assertEqual(
+            self.q1('SELECT COUNT(*) c FROM repair_order_items'
+                    " WHERE repair_order_id = 12 AND service_id = 1")['c'], 0)
+
+    def test_xoa_phieu_trang_va_chan_phieu_co_hoat_dong(self):
+        r = self.api('post', '/api/orders', {'vehicle_id': 12})
+        oid = r.json()['id']
+        r = self.api('delete', '/api/orders/%d' % oid)
+        self.assertEqual(r.status_code, 200, r.text)
+        self.assertIsNone(self.q1('SELECT id FROM repair_orders WHERE id = ?',
+                                  (oid,)))
+        # Xoá lần hai: 404, không 500.
+        r = self.api('delete', '/api/orders/%d' % oid)
+        self.assertEqual(r.status_code, 404)
+
+        r = self.api('post', '/api/orders', {'vehicle_id': 12})
+        oid2 = r.json()['id']
+        self.api('post', '/api/orders/%d/items' % oid2,
+                 {'loai': 'dich_vu', 'ma': '3', 'qty': '1'})
+        r = self.api('delete', '/api/orders/%d' % oid2)
+        self.assertEqual(r.status_code, 409)
+        self.assertTrue(self.q1('SELECT id FROM repair_orders WHERE id = ?',
+                                (oid2,)), 'Phiếu có hạng mục không được xoá')
+
+    def test_nhap_bien_ban_chi_mot_lan(self):
+        r = self.api('post', '/api/orders', {'vehicle_id': 12})
+        oid = r.json()['id']
+        r = self.api('post', '/api/orders/%d/intake' % oid,
+                     {'odometer_at_intake': '12345', 'fuel_level': 'HALF',
+                      'notes': 'lan 1'})
+        self.assertEqual(r.status_code, 201, r.text)
+        r = self.api('post', '/api/orders/%d/intake' % oid,
+                     {'odometer_at_intake': '99999', 'fuel_level': 'EMPTY',
+                      'notes': 'lan 2'})
+        self.assertEqual(r.status_code, 409)
+        ban = self.api('get', '/api/orders/%d' % oid).json()['tiep_nhan']
+        self.assertEqual(ban['notes'], 'lan 1')
+
+    def test_huy_phieu_tra_kho_mot_lan(self):
+        ton_truoc = self.q1('SELECT stock FROM parts WHERE id = 2')['stock']
+        r = self.api('post', '/api/orders', {'vehicle_id': 12})
+        oid = r.json()['id']
+        self.api('post', '/api/orders/%d/items' % oid,
+                 {'loai': 'phu_tung', 'ma': '2', 'qty': '4'})
+        self.assertEqual(
+            self.q1('SELECT stock FROM parts WHERE id = 2')['stock'],
+            ton_truoc - 4)
+
+        r = self.api('post', '/api/orders/%d/status' % oid,
+                     {'status': 'CANCELLED'})
+        self.assertEqual(r.status_code, 200, r.text)
+        self.assertEqual(
+            self.q1('SELECT stock FROM parts WHERE id = 2')['stock'],
+            ton_truoc, 'Huỷ phiếu phải trả đủ 4 cái về kho')
+        n_return = self.q1(
+            "SELECT COUNT(*) c FROM stock_transactions"
+            " WHERE part_id = 2 AND reason = 'RETURN' AND repair_order_id = ?",
+            (oid,))['c']
+        self.assertEqual(n_return, 1, 'Chỉ trả kho đúng một lần qua sổ cái')
+
+        # CANCELLED là trạng thái cuối: không chuyển tiếp được nữa → không
+        # thể trả kho lần thứ hai.
+        r = self.api('post', '/api/orders/%d/status' % oid,
+                     {'status': 'RECEIVED'})
+        self.assertEqual(r.status_code, 409)
+        self.assertEqual(
+            self.q1('SELECT stock FROM parts WHERE id = 2')['stock'],
+            ton_truoc)
+        self.assertEqual(self.client.get('/api/stock').json()['lech'], [])
+
+    # ------------------------------------------------------------ danh mục
+    def test_het_kho_loc_dung(self):
+        # Ép hai mức tồn: một phụ tùng hết (0) và một còn đúng 1 cái —
+        # lỗi cũ bỏ sót cả hai trường hợp.
+        self.api('post', '/api/stock/adjust', {'part_id': 3, 'moi': 0,
+                                                'note': 'het hang'})
+        self.api('post', '/api/stock/adjust', {'part_id': 4, 'moi': 1,
+                                                'note': 'con 1 cai'})
+        r = self.api('get', '/api/parts?het_kho=1&moi_trang=100')
+        self.assertEqual(r.status_code, 200)
+        id_het = {d['id'] for d in r.json()['dong']}
+        du_kien_het = {row['id'] for row in self._tat_ca(
+            'SELECT id FROM parts WHERE stock = 0')}
+        self.assertEqual(id_het, du_kien_het)
+        self.assertIn(3, id_het)
+        self.assertTrue(all(d['stock'] == 0 for d in r.json()['dong']))
+
+        r = self.api('get', '/api/parts?het_kho=0&moi_trang=100')
+        id_con = {d['id'] for d in r.json()['dong']}
+        du_kien_con = {row['id'] for row in self._tat_ca(
+            'SELECT id FROM parts WHERE stock > 0')}
+        self.assertEqual(id_con, du_kien_con)
+        # Phụ tùng còn đúng 1 cái phải NẰM TRONG danh sách "còn hàng".
+        self.assertIn(4, id_con)
+        self.assertNotIn(3, id_con)
+
+    def _tat_ca(self, sql, p=()):
+        c = sqlite3.connect(self.db)
+        c.row_factory = sqlite3.Row
+        try:
+            return [dict(r) for r in c.execute(sql, p).fetchall()]
+        finally:
+            c.close()
+
+    # ------------------------------------------------------------ tiền
+    def test_huy_khoan_thu_cap_nhat_lai_da_thu(self):
+        r = self.api('post', '/api/orders', {'vehicle_id': 12})
+        oid = r.json()['id']
+        self.api('post', '/api/orders/%d/items' % oid,
+                 {'loai': 'dich_vu', 'ma': '1', 'qty': '1'})
+        for tt in ('INSPECTING', 'ESTIMATING', 'REPAIRING', 'COMPLETED'):
+            self.api('post', '/api/orders/%d/status' % oid, {'status': tt})
+        r = self.api('post', '/api/invoices', {'repair_order_id': oid})
+        iid, tong = r.json()['id'], r.json()['hoa_don']['total']
+
+        r = self.api('post', '/api/invoices/%d/payments' % iid,
+                     {'amount': '100000', 'method': 'CASH'})
+        self.assertEqual(r.status_code, 201, r.text)
+        khoan_id = self.q1('SELECT id FROM payments WHERE invoice_id = ?',
+                           (iid,))['id']
+        self.assertEqual(
+            self.q1('SELECT paid FROM invoices WHERE id = ?', (iid,))['paid'],
+            100000)
+
+        # Huỷ khoản thu: tổng đã thu và trạng thái phải tính lại.
+        r = self.api('post', '/api/invoices/%d/payments/%d/cancel'
+                     % (iid, khoan_id))
+        self.assertEqual(r.status_code, 200, r.text)
+        self.assertEqual(r.json()['hoa_don']['paid'], 0)
+        self.assertEqual(r.json()['hoa_don']['status'], 'UNPAID')
+        self.assertEqual(r.json()['khoan_thu'], [])
+        # Huỷ lần hai: khoản đã xoá → 404, không 500.
+        r = self.api('post', '/api/invoices/%d/payments/%d/cancel'
+                     % (iid, khoan_id))
+        self.assertEqual(r.status_code, 404)
+        self.assertEqual(
+            self.q1('SELECT paid FROM invoices WHERE id = ?', (iid,))['paid'], 0)
+        self.assertGreaterEqual(tong, 0)
+
+    # ------------------------------------------------------------ AI / đầu vào
+    def test_ai_khong_tim_thay_tra_404(self):
+        r = self.api('post', '/api/ai/run', {'kind': 'history',
+                                             'vehicle_id': 99999})
+        self.assertEqual(r.status_code, 404, r.text)
+        self.assertEqual(r.json()['loi'], 'khong_tim_thay')
+
+    def test_thien_dau_vao_sai_tra_400_khong_phai_422(self):
+        r = self.api('post', '/api/ai/run', [])
+        self.assertEqual(r.status_code, 400, r.text)
+        self.assertEqual(r.json()['loi'], 'dau_vao_khong_hop_le')
+
+        r = self.api('post', '/api/ai/run',
+                     {'kind': 'history', 'vehicle_id': 'khong phai so'})
+        self.assertEqual(r.status_code, 400, r.text)
+        self.assertIn('vehicle_id', r.json().get('truong', {}))
+
+    def test_trang_thai_khong_hop_le_tra_400(self):
+        r = self.api('post', '/api/orders/12/status', {'status': 'XYZ'})
+        self.assertEqual(r.status_code, 400, r.text)
+        self.assertEqual(r.json()['loi'], 'dau_vao_khong_hop_le')
+        self.assertEqual(
+            self.q1('SELECT status FROM repair_orders WHERE id = 12')['status'],
+            'RECEIVED')
+
+    # ------------------------------------------------------------ tài khoản
+    def test_khong_tu_sua_tai_khoan_chinh_minh(self):
+        user = self.client.get('/api/auth/session').json()['user']
+        r = self.api('post', '/api/users',
+                     {'id': user['id'], 'username': 'quan_ly',
+                      'full_name': 'Doi Vai Tro', 'email': 'huy.nguyen@garage.vn',
+                      'role': 'TECHNICIAN', 'is_active': True})
+        self.assertEqual(r.status_code, 403, r.text)
+        self.assertEqual(r.json()['loi'], 'khong_co_quyen')
+        self.assertEqual(
+            self.q1('SELECT role FROM users WHERE id = ?', (user['id'],))['role'],
+            'MANAGER')
+
+    def test_doi_mat_khau_qua_quan_ly_co_hieu_luc(self):
+        r = self.api('post', '/api/users',
+                     {'id': 2, 'username': 'le_tan', 'full_name': 'Tran Thu Ha',
+                      'email': 'ha.tran@garage.vn', 'role': 'RECEPTIONIST',
+                      'is_active': True, 'password': 'Moi@2026x'})
+        self.assertEqual(r.status_code, 200, r.text)
+        self.assertTrue(self.q1(
+            "SELECT password_hash FROM users WHERE id = 2")['password_hash'])
+
+        # Mật khẩu cũ hết hiệu lực, mật khẩu mới đăng nhập được.
+        self.client.cookies.clear()
+        self.client.get('/api/auth/session')
+        r = self.client.post('/api/auth/login',
+                             json={'username': 'le_tan', 'password': MAT_KHAU},
+                             headers={'X-CSRF-Token': self.csrf()})
+        self.assertEqual(r.status_code, 401)
+        r = self.client.post('/api/auth/login',
+                             json={'username': 'le_tan', 'password': 'Moi@2026x'},
+                             headers={'X-CSRF-Token': self.csrf()})
+        self.assertEqual(r.status_code, 200, r.text)
 
 
 if __name__ == '__main__':

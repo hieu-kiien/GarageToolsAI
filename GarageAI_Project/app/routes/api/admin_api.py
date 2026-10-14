@@ -5,7 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
-from ...core.errors import KhongTimThay
+from ...core.errors import KhongCoQuyen, KhongTimThay
 from ...models import LuuTaiKhoanInput
 from ...services import auth as auth_svc
 from ...services import security_matrix as sm
@@ -38,8 +38,8 @@ async def luu(request: Request):
     if du_lieu.id:
         if du_lieu.id == user['id']:
             # Không cho tự sửa vai trò/username qua chính mình để tránh mất quyền.
-            raise DauVaoKhongHopLe('Không thể tự sửa tài khoản của chính mình.')
-        auth_svc.sua_tai_khoan(du_lieu)
+            raise KhongCoQuyen('Không thể tự sửa tài khoản của chính mình.')
+        auth_svc.sua_tai_khoan(du_lieu, du_lieu.password)
         return JSONResponse(thanh_cong('Đã cập nhật tài khoản.', id=du_lieu.id))
     if not du_lieu.password:
         raise DauVaoKhongHopLe('Tài khoản mới cần mật khẩu.',
@@ -52,7 +52,7 @@ async def luu(request: Request):
 def bat_tat(request: Request, uid: int):
     user = quyen(request, 'user.edit')
     if uid == user['id']:
-        raise DauVaoKhongHopLe('Không thể khoá tài khoản của chính mình.')
+        raise KhongCoQuyen('Không thể khoá tài khoản của chính mình.')
     ban_ghi = crud.nguoi_dung_theo_id(uid)
     if ban_ghi is None:
         raise KhongTimThay('Không tìm thấy tài khoản số %d.' % uid)

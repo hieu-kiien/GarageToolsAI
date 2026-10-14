@@ -44,7 +44,10 @@ def chi_tiet(request: Request, qid: int):
         'co_gui': bg['status'] == 'DRAFT',
         'co_duyet': bg['status'] == 'SENT' and co_the_quyen(user, 'quote.approve'),
         'co_huy': bg['status'] in ('DRAFT', 'SENT'),
+        # Chỉ ấn được "áp dụng" khi chưa từng áp dụng (applied_at IS NULL)
+        # và phiếu đích còn nhận hạng mục.
         'co_ap_dung': (bg['status'] == 'APPROVED'
+                       and not bg.get('applied_at')
                        and bg['phieu_status'] not in ('COMPLETED', 'CANCELLED')),
     })
 

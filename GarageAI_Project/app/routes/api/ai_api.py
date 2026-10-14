@@ -10,7 +10,8 @@ from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
 from ...core.errors import KhongCoQuyen, KhongXacThuc
-from ...models import AIExplainInput, AIHistoryInput, AIQuoteInput, DuyetKetQuaInput
+from ...models import (AIExplainInput, AIHistoryInput, AIQuoteInput, ChayAiInput,
+                       DuyetKetQuaInput)
 from ...services import ai as ai_svc
 from ...services.ai import TEN_KINH
 from ...services.auth import co_the_quyen, nguoi_dung_hien_tai
@@ -55,14 +56,20 @@ def ket_qua_gan_nhat(request: Request):
 
 
 @router.post('/run')
-async def chay(request: Request):
-    """Chạy một trong ba chức năng AI, kiểm quyền theo từng chức năng."""
-    raw = await _doc_raw(request)
-    kind = str(raw.pop('kind', '') or '').strip()
+def chay(request: Request, yeu_cau: ChayAiInput):
+    """Chạy một trong ba chức năng AI, kiểm quyền theo từng chức năng.
+
+    Route `def` (không async): thân JSON do FastAPI parse trước khi vào
+    handler, phần chạy AI nặng chạy trong threadpool của Starlette nên không
+    chặn event loop (ADR-5).
+    """
+    kind = yeu_cau.kind.strip()
     if kind not in CA_CHAY:
         raise DauVaoKhongHopLe('Chức năng AI không hợp lệ.',
                                truong={'kind': 'Phải là history, explain hoặc quote.'})
     user = quyen(request, CA_CHAY[kind][0])
+    raw = yeu_cau.model_dump()
+    raw.pop('kind', None)
     du_lieu = kiem_tra(CA_CHAY[kind][1], raw)
     rid = ai_svc.chay_ai(request, user, kind, getattr(du_lieu, CA_CHAY[kind][2]))
     return JSONResponse(
@@ -77,13 +84,3 @@ async def duyet(request: Request, rid: int):
     kq = ai_svc.duyet_ket_qua(rid, du_lieu.quyet_dinh, user)
     return JSONResponse(thanh_cong('Đã %s kết quả AI.' % (
         'duyệt' if du_lieu.quyet_dinh == 'APPROVED' else 'từ chối'), **kq))
-
-
-async def _doc_raw(request: Request) -> dict:
-    try:
-        raw = await request.json()
-    except Exception:
-        raw = None
-    if not isinstance(raw, dict):
-        raise DauVaoKhongHopLe('Thân yêu cầu phải là JSON dạng đối tượng.')
-    return raw

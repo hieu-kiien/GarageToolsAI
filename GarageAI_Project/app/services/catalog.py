@@ -78,8 +78,12 @@ def danh_sach_phu_tung(trang, *, q: str = '', dang_dung: str = '',
         dieu_kien.append('is_active = ?')
         tham_so.append(int(dang_dung))
     if het_kho in ('0', '1'):
-        dieu_kien.append('stock %s ?' % ('=' if het_kho == '0' else '>'))
-        tham_so.append(int(het_kho))
+        # het_kho=1 → lọc phụ tùng ĐÃ HẾT (stock = 0); het_kho=0 → còn hàng.
+        # (Trước đây nhánh het_kho=1 dùng `stock > 1`, loại nhầm hàng còn 1 cái.)
+        if het_kho == '1':
+            dieu_kien.append('stock = 0')
+        else:
+            dieu_kien.append('stock > 0')
     return crud.truy_van_danh_sach(
         'parts', cot=('id', 'name', 'sku', 'price', 'stock', 'min_stock',
                       'description', 'is_active'),

@@ -19,11 +19,12 @@ router = APIRouter(prefix='/orders', tags=['api-phieu-sua-chua'])
 def danh_sach(request: Request):
     quyen(request, 'order.view')
     qs = request.query_params
+    tr = trang(request)
     dong, tong = orders.danh_sach_phieu(
-        trang(request),
+        tr,
         q=qs.get('q', '').strip(),
         trang_thai=qs.get('trang_thai', qs.get('status', '')).strip())
-    return JSONResponse(trang_kq(dong, tong, trang(request)))
+    return JSONResponse(trang_kq(dong, tong, tr))
 
 
 @router.post('')
@@ -51,8 +52,11 @@ async def doi_trang_thai(request: Request, oid: int):
     user = quyen(request, 'order.progress')
     du_lieu = await doc_json(request, DoiTrangThaiInput)
     orders.doi_trang_thai(oid, du_lieu, user)
+    # Thông báo dùng đúng giá trị đã chuẩn hoá (service uppercases),
+    # không in nguyên chuỗi người dùng gõ.
+    ma = du_lieu.status.strip().upper()
     return JSONResponse(thanh_cong(
-        'Đã chuyển sang %s.' % TEN_TRANG_THAI.get(du_lieu.status, du_lieu.status),
+        'Đã chuyển sang %s.' % TEN_TRANG_THAI.get(ma, ma),
         phieu=orders.chi_tiet(oid)))
 
 
@@ -115,3 +119,11 @@ def lap_hoa_don(request: Request, oid: int):
     user = quyen(request, 'invoice.manage')
     hd_id = billing.lap_hoa_don(oid, user)
     return JSONResponse(thanh_cong('Đã lập hoá đơn.', id=hd_id), status_code=201)
+
+
+@router.delete('/{oid:int}')
+def xoa(request: Request, oid: int):
+    """Xoá phiếu trống (chưa phát sinh hoạt động). Quyền: `order.create`."""
+    user = quyen(request, 'order.create')
+    orders.xoa_phieu(oid, user)
+    return JSONResponse(thanh_cong('Đã xoá phiếu sửa chữa.', id=oid))

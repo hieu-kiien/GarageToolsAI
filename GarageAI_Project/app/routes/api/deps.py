@@ -67,6 +67,20 @@ def quyen(request: Request, ten: str):
     return user
 
 
+def quyen_mot_trong(request: Request, *ten: str):
+    """Đăng nhập và có ít nhất một trong các quyền `ten` (OR).
+
+    Dùng cho những màn hình vừa là "xem báo cáo" vừa là "thao tác tiền"
+    (vd. thu ngân cần xem hoá đơn để ghi thu).
+    """
+    user = nguoi_dung(request)
+    if not any(co_quyen(user['role'], t) for t in ten):
+        raise KhongCoQuyen(
+            'Vai trò %s không được phép thực hiện chức năng này.'
+            % VAI_TRO.get(user['role'], user['role']))
+    return user
+
+
 def trang(request: Request) -> Trang:
     return doc_trang(request)
 

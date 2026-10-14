@@ -18,6 +18,7 @@ import time
 import uuid
 
 from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -44,7 +45,44 @@ def _can_bypass(url: str) -> bool:
     return any(url == p or url.startswith(p + '/') for p in KHONG_CAN_CSRF)
 
 
+def _chay_migration() -> None:
+    """OP-3/ADR-7: áp migrations idempotent trước khi nhận request.
+
+    `database/migrations/run_missing.py` bỏ qua ALTER đã có, tự sao lưu
+    `*.bak-pre-migrate`, nên chạy lại bao nhiêu lần cũng an toàn. Lỗi
+    migration phải chặn khởi động (fail fast) thay vì chạy với schema lệch.
+    Chạy tối đa một lần cho mỗi file CSDL trong process (tests tạo app
+    nhiều lần). Bỏ qua khi `APP_ENV=test`: test tự dựng DB tạm từ
+    schema.sql đã đầy đủ, và backup `.bak-pre-migrate` sẽ làm vỡ `rmdir`
+    thư mục tạm của test.
+    """
+    if not settings.AUTO_MIGRATE or settings.ENV == 'test':
+        return
+    from pathlib import Path
+    key = str(Path(settings.DATABASE_PATH).resolve())
+    if key in _DA_CHAY_MIGRATION:
+        return
+    script = settings.BASE_DIR / 'database' / 'migrations' / 'run_missing.py'
+    if not script.exists():
+        log.warning('khong_thay_run_missing: %s', script)
+        return
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('_garage_run_missing', script)
+    if spec is None or spec.loader is None:
+        log.warning('khong_nap_duoc_migration: %s', script)
+        return
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    mod.chay(Path(settings.DATABASE_PATH))
+    _DA_CHAY_MIGRATION.add(key)
+
+
+#: Các CSDL đã áp migrations trong process hiện tại (xem `_chay_migration`).
+_DA_CHAY_MIGRATION: set[str] = set()
+
+
 def create_app() -> FastAPI:
+    _chay_migration()
     app = FastAPI(
         title=settings.APP_NAME,
         docs_url=None, redoc_url=None, openapi_url=None,
@@ -235,6 +273,23 @@ def _dang_ky_bat_loi(app: FastAPI) -> None:
         """Dữ liệu gửi lên sai kiểu — báo lỗi thân thiện, không lộ stack trace."""
         log.info('Dữ liệu đầu vào không hợp lệ: %s', e)
         return _tra_loi(AppError('Dữ liệu gửi lên không hợp lệ: %s' % e), request)
+
+    @app.exception_handler(RequestValidationError)
+    async def _loi_dau_vao(request: Request, e: RequestValidationError):
+        """Lỗi schema của FastAPI (JSON sai kiểu, thiếu trường bắt buộc).
+
+        Trước đây không có handler nên trả về 422 kèm chi tiết kỹ thuật.
+        Giờ dịch thành 400 + bản đồ lỗi từng trường như các lỗi nhập liệu
+        khác của ứng dụng.
+        """
+        truong: dict = {}
+        for err in e.errors():
+            ten = '.'.join(str(x) for x in err.get('loc', ()) if x != 'body') or '_'
+            truong[ten] = err.get('msg', 'Giá trị không hợp lệ.')
+        from .routes.api.deps import DauVaoKhongHopLe
+        return _tra_loi(
+            DauVaoKhongHopLe('Dữ liệu gửi lên chưa đúng định dạng.',
+                             truong=truong), request)
 
     @app.exception_handler(Exception)
     async def _loi_khong_do(request: Request, e: Exception):

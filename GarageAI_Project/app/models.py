@@ -443,8 +443,10 @@ class ThemHangMucInput(BaseModel):
 
 
 class DoiTrangThaiInput(BaseModel):
+    """Trạng thái phiếu sửa chữa — chỉ nhận mã hợp lệ của máy trạng thái."""
     model_config = CoBan
-    status: str = Field(max_length=30)
+    status: Literal['RECEIVED', 'INSPECTING', 'ESTIMATING', 'REPAIRING',
+                    'COMPLETED', 'CANCELLED']
 
 
 class PhanCongInput(BaseModel):
@@ -513,6 +515,17 @@ class AIExplainInput(BaseModel):
 class AIQuoteInput(BaseModel):
     model_config = CoBan
     repair_order_id: int = Field(ge=1)
+
+
+class ChayAiInput(BaseModel):
+    """Thân POST /api/ai/run: trường `kind` + đúng tham số của chức năng đó.
+
+    Khác CoBan ở chỗ `extra='allow'`: các trường riêng (vehicle_id,
+    service_id, repair_order_id) do model tương ứng kiểm tra sau khi đã
+    biết `kind`.
+    """
+    model_config = ConfigDict(str_strip_whitespace=True, extra='allow')
+    kind: str = Field(max_length=30)
 
 
 class DuyetKetQuaInput(BaseModel):

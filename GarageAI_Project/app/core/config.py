@@ -150,6 +150,9 @@ class Settings:
         self.DATABASE_PATH: str = str(val('DATABASE_PATH', str(BASE_DIR / 'garage.db')))
         self.SCHEMA_FILE: Path = BASE_DIR / 'database' / 'schema.sql'
         self.SEED_FILE: Path = BASE_DIR / 'database' / 'seed_data.sql'
+        # ADR-7: áp migrations lúc khởi động — run_missing.idempotent, không
+        # xoá gì, tự sao lưu *.bak-pre-migrate. Tắt bằng AUTO_MIGRATE=false.
+        self.AUTO_MIGRATE: bool = self._bool(val('AUTO_MIGRATE'), default=True)
 
         # --- AI ---
         # Nhà cung cấp. Mọi provider đều đi qua giao thức OpenAI-compatible

@@ -37,6 +37,9 @@ def _chay(ham, *args, **kwargs) -> dict:
         r = ham(*args, **kwargs)
     except AiError as e:
         raise LoiDichVu(str(e))
+    except KhongTimThay:
+        # Bản ghi không tồn tại là lỗi 404 của nghiệp vụ — giữ nguyên mã HTTP.
+        raise
     except Exception as e:                       # lỗi không lường trước
         from ..core.logging import log_thong_tap
         log_thong_tap(e, 'goi_ai')

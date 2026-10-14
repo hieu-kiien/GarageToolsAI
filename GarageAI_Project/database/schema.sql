@@ -263,10 +263,14 @@ CREATE TABLE quotations (
     approved_by      INTEGER          REFERENCES users(id)    ON DELETE RESTRICT,
     approved_at      TEXT,
     created_at       TEXT    NOT NULL DEFAULT (datetime('now')),
+    -- Đã áp dụng vào phiếu sửa chữa chưa: áp dụng phải CHỈ MỘT LẦN (idempotent).
+    applied_at       TEXT,
+    applied_by       INTEGER          REFERENCES users(id)    ON DELETE RESTRICT,
     CHECK (status <> 'APPROVED' OR (approved_by IS NOT NULL AND approved_at IS NOT NULL))
 );
 CREATE INDEX idx_quotations_order  ON quotations(repair_order_id);
 CREATE INDEX idx_quotations_status ON quotations(status);
+CREATE INDEX idx_quotations_open   ON quotations(repair_order_id) WHERE applied_at IS NULL;
 
 -- =============================================================================
 -- 9d. quotation_items - hạng mục của báo giá
