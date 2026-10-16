@@ -1,0 +1,28 @@
+\resizebox{0.98\textwidth}{!}{%
+\begin{tikzpicture}[
+  font=\sffamily,
+  part/.style={rectangle, rounded corners=2pt, draw=black, line width=0.7pt, fill=black!10, text width=2.6cm, minimum height=0.75cm, align=center, font=\sffamily\scriptsize\bfseries, inner sep=3pt},
+  msg/.style={-{Latex[length=2mm,width=1.5mm]}, line width=0.6pt, draw=black},
+  ret/.style={-{Latex[length=2mm,width=1.5mm]}, line width=0.6pt, draw=black, dashed},
+  lbl/.style={font=\sffamily\scriptsize, fill=white, inner sep=1.5pt}
+]
+  \node[part] (user) at (0, 0) {Cố vấn / KTV};
+  \node[part] (api) at (4.4, 0) {FastAPI + RBAC};
+  \node[part] (rag) at (8.8, 0) {RAG + AI Router};
+  \node[part] (db) at (13.2, 0) {SQLite WAL DB};
+
+  \foreach \x in {0, 4.4, 8.8, 13.2} {
+    \draw[line width=0.5pt, dashed, draw=black!60] (\x, -0.4) -- (\x, -5.8);
+  }
+
+  \draw[msg] (0, -0.9) -- node[lbl, above]{1. POST /api/ai/ro-copilot (JWT, ro\_id)} (4.4, -0.9);
+  \draw[msg] (4.4, -1.55) -- node[lbl, above]{2. Kiểm tra RBAC \& Quyền sở hữu RO (NFR01)} (13.2, -1.55);
+  \draw[ret] (13.2, -2.2) -- node[lbl, above]{3. Trả về ngữ cảnh RO + Tồn kho khả dụng} (8.8, -2.2);
+  \draw[msg] (8.8, -2.75) -- (9.6, -2.75) -- (9.6, -3.2) -- (8.8, -3.2);
+  \node[lbl, anchor=west] at (9.65, -2.97) {4. Gọi LLM (Prompt v3.2) / Smart Fallback};
+  \draw[msg] (8.8, -3.75) -- node[lbl, above]{5. Lưu đề xuất trạng thái PENDING + Audit Log} (13.2, -3.75);
+  \draw[ret] (4.4, -4.35) -- node[lbl, above]{6. Hiển thị gợi ý kèm nhãn [Đề xuất bởi AI]} (0, -4.35);
+  \draw[msg] (0, -4.95) -- node[lbl, above]{7. Cố vấn nhấn Duyệt: POST /approve-suggestion} (4.4, -4.95);
+  \draw[msg] (4.4, -5.55) -- node[lbl, above]{8. BEGIN IMMEDIATE: Giữ kho \& Thêm dòng RO} (13.2, -5.55);
+\end{tikzpicture}%
+}

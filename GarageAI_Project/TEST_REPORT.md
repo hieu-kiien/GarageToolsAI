@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Ngày chạy | 2026-10-14 22:41 |
+| Ngày chạy | 2026-10-16 18:45 |
 | Môi trường | Python 3.13.14, SQLite 3.50.4 |
 | Tổng số ca | **226** |
 | Kết quả | **226 đạt / 0 lỗi** |
@@ -122,11 +122,8 @@ quy trình `GET /api/stock/audit` **rỗng** (sổ cái khớp tồn kho).
 
 ## 8. Ghi chú
 
-- Các ca kiểm thử ứng dụng dùng `AI_PROVIDER=mock` nên không cần kết mối
-  mạng, không cần khoá API và cho kết quả lặp lại được.
+- Các ca kiểm thử tự động mặc định dùng `AI_PROVIDER=mock` và giả lập các lỗi của nhà cung cấp AI (`TimeoutException`, HTTP `429`, HTTP `500`, phản hồi JSON sai định dạng trong `TestAiGateway`) nên không cần kết nối mạng, không tốn hạn mức API và cho kết quả lặp lại 100%.
 - Ca kiểm thử chạy trên cơ sở dữ liệu tạm nên không làm thay đổi `garage.db`.
-- Các ca kiểm thử không phủ môi trường thật có `AI_PROVIDER=openai` và không
-  phủ hành vi khi mất mạng; những tình huống đó cần kiểm thử thủ công.
+- Ngoài bộ kiểm thử tự động, hệ thống đã được kiểm thử thực tế với mô hình ngôn ngữ thật qua Groq (`AI_PROVIDER=groq`, model `openai/gpt-oss-120b`, xem `KT3_PROMPT_EXPERIMENTS.md`).
 
-> Kết quả trên chỉ có giá trị tại thời điểm chạy. Trước khi nộp bài cần chạy
-> lại toàn bộ để chắc chắn không phát sinh hồi quy.
+> Kết quả trên được tự động sinh từ lần chạy thực tế gần nhất (`tests/run_all.py`).

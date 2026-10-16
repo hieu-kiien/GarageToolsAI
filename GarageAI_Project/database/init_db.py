@@ -10,8 +10,9 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='repla
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DB = os.path.join(BASE, 'garage.db')
 
-if os.path.exists(DB):
-    os.remove(DB)
+for _f in (DB, DB + '-wal', DB + '-shm'):
+    if os.path.exists(_f):
+        os.remove(_f)
 
 conn = sqlite3.connect(DB)
 conn.execute('PRAGMA foreign_keys = ON')

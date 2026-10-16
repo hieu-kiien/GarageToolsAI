@@ -1,0 +1,35 @@
+\resizebox{0.98\textwidth}{!}{%
+\begin{tikzpicture}[
+  font=\sffamily,
+  st/.style={rectangle, rounded corners=3pt, draw=black, line width=0.65pt, fill=white, text width=2.8cm, minimum height=0.85cm, align=center, font=\sffamily\scriptsize\bfseries, inner sep=3pt},
+  sthead/.style={rectangle, rounded corners=3pt, draw=black, line width=0.75pt, fill=black!12, text width=2.8cm, minimum height=0.85cm, align=center, font=\sffamily\scriptsize\bfseries, inner sep=3pt},
+  aist/.style={rectangle, rounded corners=3pt, draw=black, line width=0.7pt, fill=black!6, text width=4.8cm, minimum height=0.85cm, align=center, font=\sffamily\scriptsize\bfseries, inner sep=3pt},
+  arr/.style={-{Latex[length=2mm,width=1.4mm]}, line width=0.6pt, draw=black},
+  lbl/.style={font=\sffamily\scriptsize, fill=white, inner sep=1.5pt, align=center}
+]
+  \node[sthead] (s1) at (0, 2.2) {1. DRAFT / INTAKE\\{\normalfont\scriptsize Mới tiếp nhận}};
+  \node[st] (s2) at (4.5, 2.2) {2. DIAGNOSING\\{\normalfont\scriptsize Đang chẩn đoán}};
+  \node[st] (s3) at (9.0, 2.2) {3. QUOTED\\{\normalfont\scriptsize Đã lập báo giá}};
+  \node[sthead] (s4) at (13.5, 2.2) {4. APPROVED\\{\normalfont\scriptsize Khách đồng ý}};
+
+  \node[st] (s5) at (13.5, 0.0) {5. WAITING\_PARTS\\{\normalfont\scriptsize Chờ đặt giữ kho}};
+  \node[st] (s6) at (9.0, 0.0) {6. IN\_PROGRESS\\{\normalfont\scriptsize Đang sửa chữa}};
+  \node[st] (s7) at (4.5, 0.0) {7. QC\_PASSED\\{\normalfont\scriptsize Nghiệm thu kỹ thuật}};
+  \node[sthead] (s8) at (0, 0.0) {8. INVOICED / CLOSED\\{\normalfont\scriptsize Thanh toán \& Đóng}};
+
+  \node[aist] (ai_pend) at (3.2, -1.9) {AI\_SUGGESTION: PENDING\\{\normalfont\scriptsize Chờ cố vấn thẩm định}};
+  \node[aist] (ai_acc) at (10.8, -1.9) {AI\_SUGGESTION: ACCEPTED / REJECTED\\{\normalfont\scriptsize Ghi Audit \& Chuyển vào báo giá RO}};
+
+  \draw[arr] (s1) -- node[lbl, above]{Giao KTV} (s2);
+  \draw[arr] (s2) -- node[lbl, above]{Lên báo giá} (s3);
+  \draw[arr] (s3) -- node[lbl, above]{Duyệt giá} (s4);
+  \draw[arr] (s4) -- node[lbl, right]{Kiểm kho} (s5);
+  \draw[arr] (s5) -- node[lbl, above]{Xuất kho} (s6);
+  \draw[arr] (s6) -- node[lbl, above]{Hoàn tất} (s7);
+  \draw[arr] (s7) -- node[lbl, above]{Thu phí} (s8);
+
+  \draw[arr, dashed] (s2.north) -- ++(0, 0.45) -| (-1.95, -1.9) -- node[lbl, above=2pt]{Gọi AI01/AI02} (ai_pend.west);
+  \draw[arr] (ai_pend.east) -- node[lbl, above]{Duyệt HITL} (ai_acc.west);
+  \draw[arr, dashed] (ai_acc.east) -- (15.4, -1.9) |- (s3.north);
+\end{tikzpicture}%
+}

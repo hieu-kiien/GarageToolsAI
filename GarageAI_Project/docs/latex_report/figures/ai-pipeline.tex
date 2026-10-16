@@ -1,0 +1,28 @@
+\resizebox{0.98\textwidth}{!}{%
+\begin{tikzpicture}[
+  font=\sffamily,
+  stepbox/.style={rectangle, rounded corners=3pt, draw=black, line width=0.65pt, fill=white, text width=2.9cm, minimum height=1.15cm, align=center, font=\sffamily\scriptsize, inner sep=4pt},
+  headstep/.style={rectangle, rounded corners=3pt, draw=black, line width=0.75pt, fill=black!10, text width=2.9cm, minimum height=1.15cm, align=center, font=\sffamily\scriptsize\bfseries, inner sep=4pt},
+  arr/.style={-{Latex[length=2mm,width=1.4mm]}, line width=0.6pt, draw=black},
+  lbl/.style={font=\sffamily\scriptsize, fill=white, inner sep=1.5pt}
+]
+  \node[headstep] (s1) at (0, 1.8) {1. Cổng An ninh\\{\normalfont\scriptsize JWT + RBAC + IDOR}\\{\normalfont\scriptsize Sanitize Prompt}};
+  \node[stepbox] (s2) at (4.5, 1.8) {\textbf{2. RAG Context}\\Truy vấn lịch sử RO,\\Tồn kho thực tế \& Giá};
+  \node[stepbox] (s3) at (9.0, 1.8) {\textbf{3. Prompt Engine}\\Nạp Template v3.2\\(System + User Prompt)};
+  \node[headstep] (s4) at (13.6, 1.8) {4. Multi-Provider\\{\normalfont\scriptsize Groq / Gemini / OpenAI}\\{\normalfont\scriptsize (BYOK AES-256 Vault)}};
+
+  \node[stepbox, dashed] (fb) at (13.6, -1.2) {\textbf{Smart Fallback}\\Rule-based Engine\\(Khi Timeout / Lỗi API)};
+  \node[stepbox] (s5) at (9.0, -1.2) {\textbf{5. Kiểm định Đầu ra}\\Pydantic v2 Schema\\\& Đối chiếu SKU Kho};
+  \node[stepbox] (s6) at (4.5, -1.2) {\textbf{6. Nhật ký Kiểm toán}\\Ghi \texttt{ai\_audit\_logs}\\(Latency, Token, Cờ)};
+  \node[headstep] (s7) at (0, -1.2) {7. Duyệt HITL\\{\normalfont\scriptsize Cố vấn Duyệt / Sửa}\\{\normalfont\scriptsize Trước khi ghi vào RO}};
+
+  \draw[arr] (s1) -- (s2);
+  \draw[arr] (s2) -- (s3);
+  \draw[arr] (s3) -- (s4);
+  \draw[arr, dashed] (s4.south) -- node[lbl, right=2pt]{Lỗi / Timeout} (fb.north);
+  \draw[arr] (s4.south west) -- node[lbl, above left=1pt]{JSON hợp lệ} (s5.north east);
+  \draw[arr] (fb.west) -- node[lbl, below=2pt]{Dự phòng} (s5.east);
+  \draw[arr] (s5.west) -- (s6.east);
+  \draw[arr] (s6.west) -- (s7.east);
+\end{tikzpicture}%
+}

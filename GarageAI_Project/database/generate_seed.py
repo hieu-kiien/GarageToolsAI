@@ -462,16 +462,19 @@ w('-- 10. Hoá đơn: %d (6 đã thu đủ, 1 chưa thu, 1 thu một phần)' % 
 w('--     total = tổng unit_price x qty của hạng mục thuộc phiếu, do backend tính')
 w('-- ---------------------------------------------------------------------------')
 inv_total = {}          # id hoá đơn -> tổng tiền
+inv_created = {}        # id hoá đơn -> thời điểm lập theo phiếu
 for i, (oid, st) in enumerate(invoices, 1):
     total = order_totals[oid]
+    created = repair_orders[oid - 1][4]
     inv_total[i] = total
+    inv_created[i] = created
     paid = 0
     if st == 'PAID':
         paid = total
     elif st == 'PARTIAL':
         paid = total // 2
-    w('INSERT INTO invoices (id, repair_order_id, total, paid, status) VALUES')
-    w('  (%d, %d, %d, %d, %s);' % (i, oid, total, paid, q(st)))
+    w('INSERT INTO invoices (id, repair_order_id, total, paid, status, created_at) VALUES')
+    w('  (%d, %d, %d, %d, %s, %s);' % (i, oid, total, paid, q(st), q(created)))
 w()
 
 w('-- ---------------------------------------------------------------------------')
@@ -480,8 +483,9 @@ w('-- --------------------------------------------------------------------------
 for i, (inv, method, mode) in enumerate(payments, 1):
     total = inv_total[inv]
     amt = total if mode == 'full' else total // 2
-    w('INSERT INTO payments (id, invoice_id, amount, method) VALUES')
-    w('  (%d, %d, %d, %s);' % (i, inv, amt, q(method)))
+    paid_at = inv_created[inv]
+    w('INSERT INTO payments (id, invoice_id, amount, method, paid_at) VALUES')
+    w('  (%d, %d, %d, %s, %s);' % (i, inv, amt, q(method), q(paid_at)))
 w()
 
 w('-- ---------------------------------------------------------------------------')
@@ -549,6 +553,63 @@ for i, (oid, scope, sid, pid, months, start, status, note) in enumerate(warranti
         i, oid, q(scope),
         str(sid) if sid else 'NULL', str(pid) if pid else 'NULL',
         months, q(start), q(end), q(status), q(note)))
+w()
+
+w('-- ---------------------------------------------------------------------------')
+w('-- 15. Biên bản tiếp nhận (intake_records): 3 bản ghi mẫu cho phiếu 1, 10, 11')
+w('-- ---------------------------------------------------------------------------')
+intake_records = [
+    (1,  48500, 'THREE_QUARTER', 'Sơn zin đều, vết xước nhẹ cản sau bên phải.',
+     'Chìa khoá thông minh, lốp dự phòng, bộ kích theo xe.',
+     'Khách yêu cầu kiểm tra kỹ mức dầu và lọc gió.', 2, '2026-02-14 09:25'),
+    (10, 62300, 'HALF', 'Cụm đèn pha trước ố vàng, thân vỏ không móp méo.',
+     'Chìa khoá cơ, thảm sàn cao su.',
+     'Tiếp nhận kiểm tra nâng cấp cụm đèn pha LED.', 2, '2026-11-12 09:20'),
+    (11, 35800, 'FULL', 'Ngoại thất nguyên vẹn, kính chắn gió sạch.',
+     'Chìa khoá thông minh, camera hành trình Vietmap.',
+     'Khách yêu cầu lập báo giá nâng cấp ánh sáng trước khi thi công.', 2, '2026-11-13 10:35'),
+]
+for i, (oid, odo, fuel, ext, acc, note, by, created) in enumerate(intake_records, 1):
+    w('INSERT INTO intake_records (id, repair_order_id, odometer_at_intake, fuel_level,'
+      ' exterior_condition, accessories, notes, created_by, created_at) VALUES')
+    w('  (%d, %d, %d, %s, %s, %s, %s, %d, %s);' % (
+        i, oid, odo, q(fuel), q(ext), q(acc), q(note), by, q(created)))
+w()
+
+w('-- ---------------------------------------------------------------------------')
+w('-- 16. Báo giá chính thức (quotations & quotation_items): 3 bản ghi mẫu')
+w('--     Phiếu 1: APPROVED & đã áp dụng; Phiếu 10: APPROVED; Phiếu 11: SENT')
+w('-- ---------------------------------------------------------------------------')
+quotations = [
+    (1,  1,  'APPROVED', 'Báo giá bảo dưỡng định kỳ 6 tháng (đã duyệt & áp dụng).',
+     '2026-03-01', 1170000, 2, 1, '2026-02-14 09:30', '2026-02-14 09:22', '2026-02-14 09:35', 1),
+    (2,  10, 'APPROVED', 'Báo giá nâng cấp đèn pha LED H7 cho xe 30C-3334.',
+     '2026-11-30', 6100000, 2, 1, '2026-11-12 09:40', '2026-11-12 09:25', '2026-11-12 09:45', 1),
+    (3,  11, 'SENT',     'Báo giá gói nâng cấp ánh sáng & vệ sinh khoang máy xe 30E-5556.',
+     '2026-11-30', 6600000, 2, None, None, '2026-11-13 10:40', None, None),
+]
+for (qid, oid, st, note, valid, tot, cby, aby, aat, cat, app_at, app_by) in quotations:
+    w('INSERT INTO quotations (id, repair_order_id, status, note, valid_until, total,'
+      ' created_by, approved_by, approved_at, created_at, applied_at, applied_by) VALUES')
+    w('  (%d, %d, %s, %s, %s, %d, %d, %s, %s, %s, %s, %s);' % (
+        qid, oid, q(st), q(note), q(valid), tot, cby,
+        str(aby) if aby else 'NULL', q(aat), q(cat), q(app_at),
+        str(app_by) if app_by else 'NULL'))
+w()
+
+quotation_items = [
+    (1, 1,  1,    None, 1, 450000),
+    (2, 1,  None, 1,    4, 180000),
+    (3, 2,  7,    None, 2, 2400000),
+    (4, 2,  None, 12,   2, 650000),
+    (5, 3,  7,    None, 1, 2400000),
+    (6, 3,  None, 12,   6, 650000),
+    (7, 3,  8,    None, 1, 300000),
+]
+for (qi_id, qid, sid, pid, qty, up) in quotation_items:
+    w('INSERT INTO quotation_items (id, quotation_id, service_id, part_id, qty, unit_price) VALUES')
+    w('  (%d, %d, %s, %s, %d, %d);' % (
+        qi_id, qid, str(sid) if sid else 'NULL', str(pid) if pid else 'NULL', qty, up))
 w()
 
 w('COMMIT;')

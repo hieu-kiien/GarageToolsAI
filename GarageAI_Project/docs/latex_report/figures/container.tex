@@ -1,0 +1,52 @@
+\resizebox{0.96\textwidth}{!}{%
+\begin{tikzpicture}[
+  font=\sffamily,
+  box/.style={rectangle, rounded corners=3pt, draw=black, line width=0.7pt, fill=white, text width=4.6cm, minimum height=1.35cm, align=center, font=\sffamily\scriptsize, inner sep=4pt},
+  headbox/.style={rectangle, rounded corners=3pt, draw=black, line width=0.8pt, fill=black!10, text width=4.6cm, minimum height=1.35cm, align=center, font=\sffamily\scriptsize, inner sep=4pt},
+  arr/.style={-{Latex[length=2mm,width=1.5mm]}, line width=0.6pt, draw=black},
+  lbl/.style={font=\sffamily\scriptsize, fill=white, inner sep=1.5pt, align=center}
+]
+  \node[headbox] (fe) at (0, 2.7) {
+    \textbf{\footnotesize Tầng Giao diện (SPA)}\\[2pt]
+    React 19 + TanStack Start + TypeScript\\
+    Tailwind CSS v4 (Industrial Light UI)
+  };
+
+  \node[headbox] (api) at (8.2, 2.7) {
+    \textbf{\footnotesize Tầng Điều phối API}\\[2pt]
+    FastAPI (Python 3.12) + Pydantic v2\\
+    JWT Auth + RBAC + IDOR Scope Guard
+  };
+
+  \node[box] (svc) at (8.2, 0.0) {
+    \textbf{\footnotesize Tầng Dịch vụ Nghiệp vụ}\\[2pt]
+    RO Engine, Inventory Reservation\\
+    Invoice Tax/Discount, Backup Service
+  };
+
+  \node[box] (ai) at (0, 0.0) {
+    \textbf{\footnotesize Tầng Điều phối AI \& RAG}\\[2pt]
+    Prompt Registry v3.2 + Context Gate\\
+    BYOK AES Vault + Smart Fallback
+  };
+
+  \node[headbox] (db) at (8.2, -2.7) {
+    \textbf{\footnotesize Tầng Lưu trữ Quan hệ}\\[2pt]
+    SQLite 3 (WAL Mode, Foreign Keys ON)\\
+    21 Bảng chuẩn hóa 3NF + BEGIN IMMEDIATE
+  };
+
+  \node[box, dashed] (cloud) at (0, -2.7) {
+    \textbf{\footnotesize Nhà cung cấp LLM Ngoài}\\[2pt]
+    Groq (gpt-oss-120b), Google Gemini,\\
+    OpenAI API, Custom OpenAI-Compatible
+  };
+
+  \draw[arr, <->] (fe.east) -- node[lbl, above]{REST JSON / JWT} (api.west);
+  \draw[arr, <->] (api.south) -- node[lbl, right=2pt]{Điều phối} (svc.north);
+  \draw[arr, <->] (svc.west) -- node[lbl, above]{Ngữ cảnh nội bộ} (ai.east);
+  \draw[arr, <->] (svc.south) -- node[lbl, right=2pt]{SQL Giao dịch} (db.north);
+  \draw[arr, <->] (ai.south east) -- node[lbl, above, sloped]{Đọc RAG / Ghi Audit} (db.north west);
+  \draw[arr, <->] (ai.south) -- node[lbl, left=2pt]{HTTPS (Timeout 12s)} (cloud.north);
+\end{tikzpicture}%
+}

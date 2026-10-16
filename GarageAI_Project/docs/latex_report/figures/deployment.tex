@@ -1,0 +1,37 @@
+\resizebox{0.96\textwidth}{!}{%
+\begin{tikzpicture}[
+  font=\sffamily,
+  nodebox/.style={rectangle, rounded corners=3pt, draw=black, line width=0.7pt, fill=white, text width=3.9cm, minimum height=1.35cm, align=center, font=\sffamily\scriptsize, inner sep=4pt},
+  headnode/.style={rectangle, rounded corners=3pt, draw=black, line width=0.8pt, fill=black!10, text width=3.9cm, minimum height=1.35cm, align=center, font=\sffamily\scriptsize, inner sep=4pt},
+  arr/.style={-{Latex[length=2mm,width=1.4mm]}, line width=0.6pt, draw=black},
+  lbl/.style={font=\sffamily\scriptsize, fill=white, inner sep=1.5pt}
+]
+  \node[headnode] (client) at (0, 0) {
+    \textbf{\footnotesize Máy trạm Xưởng / Cố vấn}\\[2pt]
+    Trình duyệt Web (Chrome / Edge)\\
+    Cổng dịch vụ Frontend :3000
+  };
+
+  \node[headnode] (docker) at (6.2, 0) {
+    \textbf{\footnotesize Máy chủ Ứng dụng (Docker)}\\[2pt]
+    Uvicorn + FastAPI (:8000)\\
+    Healthcheck \& Backup Scheduler
+  };
+
+  \node[nodebox] (vol) at (12.0, 1.0) {
+    \textbf{\footnotesize Persistent Volume}\\[2pt]
+    SQLite WAL (\texttt{garage\_v2.db})\\
+    Snapshots (\texttt{backups/*.sqlite})
+  };
+
+  \node[nodebox, dashed] (ext) at (12.0, -1.0) {
+    \textbf{\footnotesize Cloud LLM Gateway}\\[2pt]
+    Groq / Gemini / OpenAI\\
+    (Kết nối TLS 1.3 có kiểm soát)
+  };
+
+  \draw[arr, <->] (client.east) -- node[lbl, above]{HTTP / REST} (docker.west);
+  \draw[arr, <->] (docker.east) -- (vol.west);
+  \draw[arr, <->] (docker.east) -- (ext.west);
+\end{tikzpicture}%
+}

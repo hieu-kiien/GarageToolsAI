@@ -1,0 +1,184 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{ictu_v8_style}[2026/04/16 ICTU V9 Print-Ready Academic Style]
+
+\RequirePackage{geometry}
+\geometry{a4paper, top=2.5cm, bottom=2.5cm, left=3.0cm, right=2.0cm}
+
+\RequirePackage{fontspec}
+\setmainfont{Times New Roman}
+\setsansfont{Arial}
+\setmonofont{Consolas}[Scale=0.90]
+
+\RequirePackage{setspace}
+\setstretch{1.20}
+\setlength{\parindent}{1.0cm}
+\setlength{\parskip}{2.5pt}
+\raggedbottom
+\RequirePackage{float}
+\setlength{\textfloatsep}{8pt plus 2pt minus 2pt}
+\setlength{\floatsep}{6pt plus 2pt minus 2pt}
+\setlength{\intextsep}{8pt plus 2pt minus 2pt}
+\emergencystretch=3em
+\hfuzz=2pt
+\vfuzz=2pt
+\hbadness=10000
+\vbadness=10000
+
+\RequirePackage{graphicx}
+\RequirePackage{xcolor}
+\RequirePackage{tikz}
+\RequirePackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,shapes.multipart,calc,fit,backgrounds,matrix}
+
+% Print-ready monochrome palette (100% crisp black for physical book printing)
+\definecolor{ictunavy}{RGB}{0,0,0}
+\definecolor{ictublue}{RGB}{0,0,0}
+\definecolor{ictulight}{RGB}{245,245,245}
+\definecolor{ictugray}{RGB}{235,235,235}
+\definecolor{ictugreen}{RGB}{0,0,0}
+\definecolor{ictuorange}{RGB}{0,0,0}
+\definecolor{ictureddark}{RGB}{0,0,0}
+\definecolor{codebg}{RGB}{248,248,248}
+\definecolor{codeframe}{RGB}{180,180,180}
+
+\RequirePackage{titlesec}
+\titleformat{\chapter}[display]
+  {\normalfont\bfseries\fontsize{16pt}{20pt}\selectfont\color{ictunavy}}
+  {\MakeUppercase{\chaptertitlename}\ \thechapter}
+  {4pt}
+  {\fontsize{15pt}{19pt}\selectfont\MakeUppercase}
+\titlespacing*{\chapter}{0pt}{-10pt}{12pt}
+
+\titleformat{\section}
+  {\normalfont\bfseries\fontsize{14pt}{17pt}\selectfont\color{ictunavy}}
+  {\thesection}{0.6em}{}
+\titlespacing*{\section}{0pt}{10pt}{4pt}
+
+\titleformat{\subsection}
+  {\normalfont\bfseries\fontsize{13pt}{16pt}\selectfont\color{ictublue}}
+  {\thesubsection}{0.6em}{}
+\titlespacing*{\subsection}{0pt}{8pt}{3pt}
+
+\titleformat{\subsubsection}
+  {\normalfont\bfseries\itshape\fontsize{12pt}{15pt}\selectfont}
+  {\thesubsubsection}{0.6em}{}
+\titlespacing*{\subsubsection}{0pt}{6pt}{2pt}
+
+\RequirePackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\itshape Báo cáo Đồ án Học phần Ứng dụng AI (AIA331) -- Đề tài 80277}
+\fancyhead[R]{\small\itshape Hệ thống GarageTools AI}
+\fancyfoot[C]{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+\setlength{\headheight}{15pt}
+
+\fancypagestyle{plain}{
+  \fancyhf{}
+  \fancyfoot[C]{\small\thepage}
+  \renewcommand{\headrulewidth}{0pt}
+  \renewcommand{\footrulewidth}{0pt}
+}
+
+\RequirePackage{array}
+\RequirePackage{tabularx}
+\RequirePackage{longtable}
+\RequirePackage{booktabs}
+\RequirePackage{multirow}
+\RequirePackage{colortbl}
+\RequirePackage{enumitem}
+\RequirePackage{amsmath,amssymb}
+\RequirePackage{caption}
+\RequirePackage{listings}
+\RequirePackage{hyperref}
+\RequirePackage{url}
+
+\captionsetup{
+  font=small,
+  labelfont=bf,
+  labelsep=colon,
+  skip=5pt
+}
+
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+\newcolumntype{R}[1]{>{\raggedleft\arraybackslash}p{#1}}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+
+\setlength{\LTpre}{4pt}
+\setlength{\LTpost}{4pt}
+\renewcommand{\arraystretch}{1.16}
+\setlist[itemize]{itemsep=1.5pt, topsep=2.5pt, parsep=0pt}
+\setlist[enumerate]{itemsep=1.5pt, topsep=2.5pt, parsep=0pt}
+\AtBeginDocument{%
+  \setlength{\abovedisplayskip}{5pt plus 2pt minus 2pt}%
+  \setlength{\belowdisplayskip}{5pt plus 2pt minus 2pt}%
+}
+
+\lstset{
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\footnotesize,
+  breakatwhitespace=false,
+  breaklines=true,
+  captionpos=b,
+  commentstyle=\itshape\color{black!65},
+  frame=single,
+  rulecolor=\color{codeframe},
+  keepspaces=true,
+  keywordstyle=\bfseries\color{black},
+  numbers=none,
+  showspaces=false,
+  showstringspaces=false,
+  showtabs=false,
+  stringstyle=\color{black},
+  tabsize=2,
+  xleftmargin=4pt,
+  xrightmargin=4pt,
+  aboveskip=6pt,
+  belowskip=6pt
+}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  citecolor=black,
+  urlcolor=black,
+  pdftitle={Bao cao Do an Ung dung AI AIA331 - De tai 80277 - GarageTools AI},
+  pdfauthor={Nhom 23 - Nguyen Duc Dung, Dong Quoc Khanh}
+}
+
+\renewcommand{\contentsname}{MỤC LỤC}
+\renewcommand{\listtablename}{DANH MỤC BẢNG BIỂU}
+\renewcommand{\listfigurename}{DANH MỤC HÌNH VẼ}
+\renewcommand{\chaptername}{CHƯƠNG}
+\renewcommand{\appendixname}{PHỤ LỤC}
+\renewcommand{\tablename}{Bảng}
+\renewcommand{\figurename}{Hình}
+\renewcommand{\bibname}{TÀI LIỆU THAM KHẢO}
+
+% Prefix CHƯƠNG X. and PHỤ LỤC X. in Table of Contents
+\makeatletter
+\def\@chapter[#1]#2{\ifnum \c@secnumdepth >\m@ne
+                         \refstepcounter{chapter}%
+                         \typeout{\@chapapp\space\thechapter.}%
+                         \addcontentsline{toc}{chapter}%
+                                   {\MakeUppercase{\@chapapp}\ \thechapter.\ #1}%
+                    \else
+                      \addcontentsline{toc}{chapter}{#1}%
+                    \fi
+                    \chaptermark{#1}%
+                    \addtocontents{lof}{\protect\addvspace{4\p@}}%
+                    \addtocontents{lot}{\protect\addvspace{4\p@}}%
+                    \if@twocolumn
+                      \@topnewpage[\@makechapterhead{#2}]%
+                    \else
+                      \@makechapterhead{#2}%
+                      \@afterheading
+                    \fi}
+\makeatother
+
+\newcommand{\thead}[1]{\textbf{#1}}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\badge}[1]{\textbf{[#1]}}

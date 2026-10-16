@@ -1,0 +1,92 @@
+\resizebox{0.98\textwidth}{!}{%
+\begin{tikzpicture}[
+  font=\sffamily\scriptsize,
+  >=Latex,
+  frame/.style={draw=black!80,fill=white,rounded corners=3pt,line width=0.8pt},
+  panel/.style={draw=black!65,fill=white,rounded corners=2pt},
+  card/.style={draw=black!60,fill=black!3,rounded corners=2pt},
+  btn/.style={draw=black!85,fill=black!6,rounded corners=2pt,inner sep=3pt,font=\sffamily\bfseries\scriptsize},
+  btn_dark/.style={draw=black,fill=black!16,text=black,rounded corners=2pt,inner sep=3pt,font=\sffamily\bfseries\scriptsize}
+]
+
+\draw[draw=black!85,fill=white,rounded corners=4pt,line width=0.9pt] (0, 0) rectangle (15.6, 8.4);
+
+\draw[draw=black!85,fill=black!12,rounded corners=3pt] (0, 7.65) rectangle (15.6, 8.4);
+\node[font=\sffamily\bfseries\footnotesize,text=black,anchor=west] at (0.35, 8.02) {KHÔNG GIAN LÀM VIỆC GARAGETOOLS AI};
+\node[font=\sffamily\scriptsize,text=black,anchor=east] at (15.25, 8.02) {Tài khoản: Cố vấn dịch vụ (advisor01)};
+
+\draw[frame] (0.25, 0.25) rectangle (3.50, 7.45);
+\node[font=\sffamily\bfseries\scriptsize,text=black,anchor=west] at (0.45, 7.05) {ĐIỀU HƯỚNG};
+\node[anchor=west,font=\sffamily\scriptsize] at (0.45, 6.50) {1. Bảng điều khiển};
+\node[anchor=west,font=\sffamily\scriptsize] at (0.45, 5.95) {2. Lịch hẹn xưởng};
+\node[anchor=west,font=\sffamily\bfseries\scriptsize] at (0.45, 5.40) {3. Phiếu RO};
+\node[anchor=west,font=\sffamily\scriptsize] at (0.45, 4.85) {4. Kho phụ tùng};
+\node[anchor=west,font=\sffamily\scriptsize] at (0.45, 4.30) {5. Hóa đơn \& Thu};
+\node[anchor=west,font=\sffamily\scriptsize] at (0.45, 3.75) {6. Trợ lý AI};
+\node[anchor=west,font=\sffamily\scriptsize] at (0.45, 3.20) {7. Khóa BYOK};
+\draw[draw=black!35,line width=0.5pt] (0.45, 2.75) -- (3.30, 2.75);
+\node[anchor=west,font=\sffamily\scriptsize] at (0.45, 2.25) {Đề tài: 80277};
+\node[anchor=west,font=\sffamily\scriptsize] at (0.45, 1.75) {CSDL: SQLite 3NF};
+\node[anchor=west,font=\sffamily\scriptsize] at (0.45, 1.25) {AI: Đa nhà cung cấp};
+
+\node[font=\sffamily\bfseries\footnotesize,text=black,anchor=west] at (3.75, 7.15) {Phiếu RO: \#RO-2026-0104 (Xe: 30H-889.25)};
+\node[btn_dark,anchor=east] at (15.35, 7.15) {Trạng thái: DIAGNOSING};
+
+\node[card, minimum width=2.7cm, minimum height=1.15cm, align=left, inner sep=4pt] at (5.10, 6.15) {
+  {\scriptsize Tạm tính RO}\\[3pt]
+  \textbf{\footnotesize 4.850.000đ}
+};
+
+\node[card, minimum width=2.7cm, minimum height=1.15cm, align=left, inner sep=4pt] at (8.00, 6.15) {
+  {\scriptsize Giữ kho (Reserved)}\\[3pt]
+  \textbf{\footnotesize 03 Phụ tùng}
+};
+
+\node[card, minimum width=2.7cm, minimum height=1.15cm, align=left, inner sep=4pt] at (10.95, 6.15) {
+  {\scriptsize Đề xuất AI (HITL)}\\[3pt]
+  \textbf{\footnotesize 02 Chờ duyệt}
+};
+
+\node[card, minimum width=2.7cm, minimum height=1.15cm, align=left, inner sep=4pt] at (13.95, 6.15) {
+  {\scriptsize Mức ODO hiện tại}\\[3pt]
+  \textbf{\footnotesize 62.400 km}
+};
+
+\draw[panel] (3.75, 0.25) rectangle (9.35, 5.35);
+\node[font=\sffamily\bfseries\scriptsize,text=black,anchor=west] at (3.95, 5.02) {DANH MỤC CÔNG VIỆC \& PHỤ TÙNG};
+\draw[draw=black!35,line width=0.5pt] (3.75, 4.75) -- (9.35, 4.75);
+
+\node[font=\sffamily\scriptsize,anchor=west] at (3.95, 4.38) {\textbf{1. Má phanh trước (BP-TOY-01)}};
+\node[font=\sffamily\scriptsize,anchor=west] at (3.95, 3.98) {SL: 01 bộ | Tồn: 14 | 1.850.000đ};
+\draw[draw=black!20,line width=0.4pt] (3.95, 3.68) -- (9.15, 3.68);
+
+\node[font=\sffamily\scriptsize,anchor=west] at (3.95, 3.30) {\textbf{2. Dầu phanh DOT4 (BF-DOT4)}};
+\node[font=\sffamily\scriptsize,anchor=west] at (3.95, 2.90) {SL: 02 bình | Tồn: 28 | 450.000đ};
+\draw[draw=black!20,line width=0.4pt] (3.95, 2.60) -- (9.15, 2.60);
+
+\node[font=\sffamily\scriptsize,anchor=west] at (3.95, 2.22) {\textbf{3. Công bảo dưỡng cụm phanh}};
+\node[font=\sffamily\scriptsize,anchor=west] at (3.95, 1.82) {Định mức: 1.5h | KTV: tech01};
+\draw[draw=black!20,line width=0.4pt] (3.95, 1.52) -- (9.15, 1.52);
+
+\node[font=\sffamily\scriptsize,anchor=west] at (3.95, 1.12) {\textbf{4. Kiểm tra cảm biến tốc độ ABS}};
+\node[font=\sffamily\scriptsize,anchor=west] at (3.95, 0.72) {Trạng thái: Đã khóa giữ kho nguyên tử};
+
+\draw[panel,fill=black!2] (9.60, 0.25) rectangle (15.35, 5.35);
+\node[font=\sffamily\bfseries\scriptsize,text=black,anchor=west] at (9.80, 5.02) {TRỢ LÝ AI COPILOT \& DUYỆT HITL};
+\draw[draw=black!35,line width=0.5pt] (9.60, 4.75) -- (15.35, 4.75);
+
+\node[font=\sffamily\scriptsize,anchor=west] at (9.80, 4.38) {Tác vụ: AI01 + AI02 | Tin cậy: 0.89};
+\node[font=\sffamily\scriptsize,anchor=west] at (9.80, 3.98) {Đối chiếu RAG SKU: Đạt (0 ảo giác)};
+
+\draw[draw=black!50,fill=white,rounded corners=2pt] (9.80, 1.30) rectangle (15.15, 3.68);
+\node[font=\sffamily\scriptsize,anchor=north west] at (9.95, 3.55) {\textbf{Đề xuất AI (Prompt v3.2):}};
+\node[font=\sffamily\scriptsize,anchor=north west] at (9.95, 3.00) {- Mòn má phanh trước vượt giới hạn};
+\node[font=\sffamily\scriptsize,anchor=north west] at (9.95, 2.48) {- Gợi ý SKU: BP-TOY-01 (Tồn: 14)};
+\node[font=\sffamily\scriptsize,anchor=south west] at (9.95, 1.42) {Độ trễ: 0.84s | Chờ Cố vấn duyệt};
+
+\node[btn_dark,anchor=west] at (9.80, 0.72) {Phê duyệt};
+\node[btn,anchor=west] at (11.75, 0.72) {Chỉnh sửa};
+\node[btn,anchor=east] at (15.15, 0.72) {Từ chối};
+
+\end{tikzpicture}%
+}

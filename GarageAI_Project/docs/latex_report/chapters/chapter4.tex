@@ -1,0 +1,211 @@
+\chapter{THIẾT KẾ KIẾN TRÚC, DỮ LIỆU VÀ TÍCH HỢP AI}
+
+\section{Kiến trúc tổng thể đa tầng (C4 Container)}
+
+Hệ thống GarageTools AI được thiết kế theo kiến trúc phân tầng rõ ràng (Layered Architecture), tách biệt độc lập giữa giao diện trình diễn, tầng điều phối API và bảo mật, tầng dịch vụ nghiệp vụ xưởng, tầng điều phối trí tuệ nhân tạo và tầng lưu trữ dữ liệu quan hệ. Hình~\ref{fig:g-container} minh họa sơ đồ C4 Container của hệ thống.
+
+\begin{figure}[H]
+\centering
+\vspace{2pt}
+\input{figures/container.tex}
+\vspace{2pt}
+\caption{Sơ đồ kiến trúc thành phần chứa (C4 Container) của hệ thống GarageTools AI}
+\label{fig:g-container}
+\end{figure}
+
+Mọi yêu cầu từ trình duyệt đều đi qua bộ lọc xác thực JWT và kiểm soát phân quyền trước khi chạm tới dịch vụ nghiệp vụ. Đối với các yêu cầu trợ lý AI, tầng \textbf{AI \& RAG Orchestrator} chỉ trích xuất ngữ cảnh dữ liệu đã được phép truy cập từ SQLite, kết hợp với mẫu Prompt từ \textbf{Prompt Registry} để gọi tới nhà cung cấp LLM thông qua khóa giải mã tạm thời trong bộ nhớ từ \textbf{BYOK Vault}.
+
+\section{Thiết kế cơ sở dữ liệu quan hệ (ERD 21 bảng chuẩn hóa 3NF)}
+
+Cơ sở dữ liệu của hệ thống bao gồm \textbf{21 bảng quan hệ} đạt chuẩn 3NF, được chia thành hai phân vùng: Phân hệ Lõi Nghiệp vụ Xưởng \& Kho (Hình~\ref{fig:g-erd-core}) và Phân hệ Tài chính, Kiểm toán \& Quản trị AI (Hình~\ref{fig:g-erd-ops}).
+
+\begin{figure}[H]
+\centering
+\vspace{2pt}
+\input{figures/erd-core.tex}
+\vspace{2pt}
+\caption{Sơ đồ thực thể liên kết (ERD) phân hệ Tiếp nhận, Phiếu sửa chữa và Kho phụ tùng}
+\label{fig:g-erd-core}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\vspace{2pt}
+\input{figures/erd-ops.tex}
+\vspace{2pt}
+\caption{Sơ đồ thực thể liên kết (ERD) phân hệ Tài chính, Kiểm toán và Quản trị AI}
+\label{fig:g-erd-ops}
+\end{figure}
+
+Bảng~\ref{tab:g-db-schema} đặc tả vai trò, khóa chính/khóa ngoại và các ràng buộc toàn vẹn của toàn bộ 21 bảng dữ liệu trong hệ thống.
+
+\begin{small}
+\renewcommand{\arraystretch}{1.05}
+\begin{longtable}{|L{4.4cm}|L{3.0cm}|L{6.3cm}|}
+\caption{Đặc tả cấu trúc 21 bảng dữ liệu quan hệ và ràng buộc toàn vẹn}\label{tab:g-db-schema}\\
+\hline
+\thead{Tên bảng} & \thead{Khóa chính \& Khóa ngoại} & \thead{Vai trò nghiệp vụ và Ràng buộc toàn vẹn (Constraints)}\\
+\hline
+\endfirsthead
+
+\hline
+\thead{Tên bảng} & \thead{Khóa chính \& Khóa ngoại} & \thead{Vai trò nghiệp vụ và Ràng buộc toàn vẹn (Constraints)}\\
+\hline
+\endhead
+
+\hline
+\endfoot
+
+\hline
+\endlastfoot
+
+\texttt{users} & PK: \texttt{id} & Lưu tài khoản nhân sự; ràng buộc \texttt{username}, \texttt{email} duy nhất; \texttt{role} thuộc 4 vai trò chuẩn; cờ \texttt{is\_active}. \\
+\hline
+\texttt{customers} & PK: \texttt{id} & Hồ sơ chủ phương tiện; kiểm tra định dạng số điện thoại, phân hạng khách hàng và tổng chi tiêu tích lũy. \\
+\hline
+\texttt{vehicles} & PK: \texttt{id}; FK: \texttt{customer\_id} & Hồ sơ xe ô tô; ràng buộc duy nhất (\texttt{UNIQUE}) trên biển số \texttt{license\_plate} và số khung \texttt{vin}; \texttt{mileage} $\ge 0$. \\
+\hline
+\texttt{appointments} & PK: \texttt{id}; FK: \texttt{customer\_id}, \texttt{vehicle\_id}, \texttt{advisor\_id} & Lịch hẹn dịch vụ theo khoang (\texttt{bay\_number}) và khung giờ; ngăn chặn đặt trùng khoang trong cùng thời điểm. \\
+\hline
+\texttt{repair\_orders} & PK: \texttt{id}; FK: \texttt{vehicle\_id}, \texttt{advisor\_id}, \texttt{technician\_id} & Bảng trung tâm quản lý Phiếu sửa chữa (RO); mã \texttt{ro\_number} duy nhất; kiểm soát 10 trạng thái vòng đời. \\
+\hline
+\texttt{ro\_line\_items} & PK: \texttt{id}; FK: \texttt{repair\_order\_id}, \texttt{part\_id}, \texttt{service\_id} & Chi tiết từng dòng hạng mục vật tư (\texttt{PART}) hoặc nhân công (\texttt{LABOR}) trong RO; ràng buộc số lượng và đơn giá $\ge 0$. \\
+\hline
+\texttt{ro\_status\_history} & PK: \texttt{id}; FK: \texttt{repair\_order\_id}, \texttt{changed\_by} & Lưu vết bất biến mọi lần chuyển trạng thái của phiếu RO kèm mốc thời gian và lý do thay đổi. \\
+\hline
+\texttt{qc\_inspections} & PK: \texttt{id}; FK: \texttt{repair\_order\_id}, \texttt{inspector\_id} & Biên bản nghiệm thu chất lượng kỹ thuật (QC Checklist) trước khi cho phép xuất xưởng và lập hóa đơn. \\
+\hline
+\texttt{service\_catalog} & PK: \texttt{id} & Danh mục định mức giờ công và đơn giá chuẩn cho các dịch vụ bảo dưỡng, đồng sơn, máy gầm, điện lạnh. \\
+\hline
+\texttt{suppliers} & PK: \texttt{id} & Thông tin nhà cung cấp phụ tùng chính hãng và OEM, điều khoản thanh toán và liên hệ. \\
+\hline
+\texttt{parts} & PK: \texttt{id}; FK: \texttt{supplier\_id} & Danh mục phụ tùng tồn kho; mã \texttt{sku} duy nhất; ràng buộc $\texttt{quantity\_on\_hand} \ge \texttt{reserved\_qty} \ge 0$. \\
+\hline
+\texttt{purchase\_orders} & PK: \texttt{id}; FK: \texttt{supplier\_id}, \texttt{created\_by} & Đơn đặt hàng nhập kho phụ tùng từ nhà cung cấp kèm trạng thái giao nhận. \\
+\hline
+\texttt{inventory\_txns} & PK: \texttt{id}; FK: \texttt{part\_id}, \texttt{repair\_order\_id} & Sổ cái giao dịch nhập/xuất/điều chỉnh tồn kho (\texttt{IN}, \texttt{OUT}, \texttt{RESERVE}, \texttt{RELEASE}) phục vụ đối soát. \\
+\hline
+\texttt{inventory\_reservations} & PK: \texttt{id}; FK: \texttt{repair\_order\_id}, \texttt{part\_id} & Quản lý lượng phụ tùng đang đặt giữ cho từng phiếu RO; bảo vệ an toàn giao dịch đồng thời. \\
+\hline
+\texttt{invoices} & PK: \texttt{id}; FK: \texttt{repair\_order\_id}, \texttt{issued\_by} & Hóa đơn tài chính gắn với RO; lưu tổng tiền hàng, chiết khấu, thuế VAT và số dư còn phải thu. \\
+\hline
+\texttt{payments} & PK: \texttt{id}; FK: \texttt{invoice\_id}, \texttt{received\_by} & Giao dịch thu tiền thực tế (Tiền mặt, Chuyển khoản, Thẻ) hỗ trợ thanh toán một lần hoặc trả góp nhiều đợt. \\
+\hline
+\texttt{warranty\_claims} & PK: \texttt{id}; FK: \texttt{repair\_order\_id}, \texttt{part\_id} & Quản lý hồ sơ yêu cầu bảo hành đối với phụ tùng và hạng mục công việc sau sửa chữa. \\
+\hline
+\texttt{maintenance\_reminders} & PK: \texttt{id}; FK: \texttt{vehicle\_id}, \texttt{customer\_id} & Lịch nhắc bảo dưỡng định kỳ theo mốc ODO dự kiến hoặc mốc thời gian (kết nối với tác vụ AI04). \\
+\hline
+\texttt{ai\_suggestions} & PK: \texttt{id}; FK: \texttt{repair\_order\_id}, \texttt{reviewed\_by} & Lưu toàn bộ gợi ý do AI01--AI04 sinh ra cùng trạng thái duyệt HITL (\texttt{PENDING}, \texttt{ACCEPTED}, \texttt{REJECTED}). \\
+\hline
+\texttt{ai\_audit\_logs} \& \newline \texttt{prompts} & PK: \texttt{id}; FK: \texttt{user\_id} & Lưu phiên bản Prompt ngoại hóa (\texttt{v1.0}--\texttt{v3.2}) và nhật ký kiểm toán từng lần gọi LLM (độ trễ, token, cờ fallback). \\
+\hline
+\texttt{ai\_provider\_credentials}\newline \& \texttt{audit\_logs} & PK: \texttt{id}; FK: \texttt{owner\_user\_id} & Kho lưu trữ khóa API mã hóa BYOK của từng nhà cung cấp và nhật ký bảo mật toàn hệ thống. \\
+\hline
+\end{longtable}
+\end{small}
+
+\section{Thiết kế kiến trúc Điều phối AI, RAG Context Gate và Kho khóa BYOK}
+
+Để mô hình ngôn ngữ lớn đưa ra gợi ý chính xác với thực tế xưởng dịch vụ mà không làm lộ dữ liệu nhạy cảm, hệ thống thiết kế đường ống xử lý AI 7 bước (Hình~\ref{fig:g-ai-pipeline}) cùng ma trận kiểm soát ngữ cảnh (Bảng~\ref{tab:g-context-gate}).
+
+\begin{figure}[H]
+\centering
+\vspace{2pt}
+\input{figures/ai-pipeline.tex}
+\vspace{2pt}
+\caption{Kiến trúc đường ống xử lý AI (AI Pipeline), RAG Context Gate và Smart Fallback}
+\label{fig:g-ai-pipeline}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\small
+\caption{Ma trận kiểm soát ranh giới dữ liệu nạp vào ngữ cảnh AI (RAG Context Gate)}
+\label{tab:g-context-gate}
+\begin{tabularx}{\textwidth}{|L{2.8cm}|Y|Y|}
+\hline
+\thead{Tác vụ AI} & \thead{Dữ liệu được phép nạp vào Prompt (Allowlist)} & \thead{Dữ liệu bị cấm tuyệt đối (Blocklist -- Bảo vệ PII \& Bí mật)}\\
+\hline
+AI01: Chẩn đoán triệu chứng & Hãng xe, dòng xe, đời sản xuất, số ODO hiện tại, mô tả triệu chứng kỹ thuật, lịch sử các hạng mục sửa chữa trước đây của cùng mã VIN. & Họ tên chủ xe, số điện thoại, địa chỉ email, căn cước công dân, thông tin thẻ thanh toán. \\
+\hline
+AI02: Đề xuất báo giá \& phụ tùng & Kết quả chẩn đoán kỹ thuật, danh mục dịch vụ chuẩn (\texttt{service\_catalog}) và danh sách mã SKU, tên phụ tùng, đơn giá bán, số lượng khả dụng ($\text{OnHand} - \text{Reserved}$). & Giá vốn nhập kho (\texttt{cost\_price}), chiết khấu nhà cung cấp, biên lợi nhuận nội bộ của xưởng. \\
+\hline
+AI03: Tóm tắt tiến độ RO & Trạng thái hiện tại của RO, danh sách hạng mục đã hoàn thành, kết quả kiểm tra QC và tổng chi phí tạm tính. & Ghi chú nội bộ giữa quản lý và kỹ thuật viên, lương thưởng nhân sự. \\
+\hline
+AI04: Cảnh báo bảo dưỡng & Dòng xe, số ODO hiện tại, ngày bảo dưỡng gần nhất và các mốc ODO đã thay dầu/lọc/má phanh trong quá khứ. & Dữ liệu định vị hành trình cá nhân hoặc thông tin tài chính của khách hàng. \\
+\hline
+\end{tabularx}
+\end{table}
+
+\section{Tiến hóa và tối ưu hóa Prompt qua 3 vòng lặp thực nghiệm}
+
+Toàn bộ cấu hình System Prompt và User Prompt Template của 4 tác vụ AI01--AI04 được tách biệt hoàn toàn khỏi mã nguồn Python, quản lý tập trung theo phiên bản để dễ dàng kiểm toán và tối ưu hóa. Nhóm đã thực hiện 3 vòng lặp cải tiến kỹ thuật Prompt (Prompt Engineering Iterations):
+
+\begin{itemize}
+  \item \textbf{Vòng 1 -- Phiên bản \texttt{v1.0} (Zero-shot Naïve Prompt)}: Chỉ truyền câu lệnh đơn giản (\textit{“Hãy chẩn đoán lỗi xe và gợi ý phụ tùng thay thế cho triệu chứng sau...”}).
+  \textbf{Nhược điểm phát hiện}: Mô hình trả về văn bản tự do kèm các khối đánh dấu \texttt{```json} không đồng nhất khiến bộ phân tích cú pháp thất bại 65\%; nghiêm trọng hơn, mô hình tự bịa ra các mã phụ tùng không tồn tại trong kho xưởng và ước lượng giá bằng đồng USD.
+  \item \textbf{Vòng 2 -- Phiên bản \texttt{v2.0} (Role-based + Explicit JSON Schema)}: Thiết lập vai trò Kỹ sư trưởng chẩn đoán ô tô, định nghĩa rõ cấu trúc các khóa JSON bắt buộc (\texttt{possible\_causes}, \texttt{recommended\_parts}, \texttt{confidence\_score}) và đơn vị tiền tệ VNĐ.
+  \textbf{Kết quả \& Hạn chế}: Tỷ lệ hợp lệ cú pháp tăng lên 88.5\%, nhưng khi gặp các triệu chứng phức tạp, mô hình vẫn đôi lúc gợi ý tên phụ tùng chung chung không khớp với mã \texttt{sku} trong bảng \texttt{parts} hoặc đề xuất xuất kho vượt quá số lượng khả dụng.
+  \item \textbf{Vòng 3 -- Phiên bản \texttt{v3.2} (RAG Inventory Grounding + Anti-Hallucination Guardrails)}: Bơm trực tiếp danh sách phụ tùng khả dụng từ CSDL vào vùng ngữ cảnh \texttt{[AVAILABLE\_INVENTORY\_CONTEXT]}, kết hợp 4 mệnh đề rào chắn âm (Negative Constraints): (1) Chỉ được chọn mã \texttt{sku} nằm trong danh sách kho cung cấp; (2) Nếu phụ tùng cần thiết có $\text{available\_qty} == 0$, bắt buộc gắn cờ \texttt{stock\_warning = true}; (3) Không bao giờ tự khẳng định 100\% nguyên nhân khi chưa tháo kiểm tra thực tế; (4) Chỉ xuất duy nhất đối tượng JSON hợp lệ khớp với Pydantic v2 Schema.
+\end{itemize}
+
+\begin{lstlisting}[caption={Cấu trúc System Prompt và User Template phiên bản v3.2 cho AI01 \& AI02}]
+SYSTEM_PROMPT_V3_2:
+  "Ban la Tro ly Ky thuat & Co van Dich vu O to (GarageTools AI Copilot).
+   1. Chi su dung thong tin trieu chung, lich su xe va danh muc ton kho trong [CONTEXT].
+   2. Doi voi de xuat phu tung (AI02), BAT BUOC chon dung ma SKU co trong [AVAILABLE_PARTS].
+   3. Neu so luong kha dung (available_qty) < so luong can thay, phai bat co stock_warning=true.
+   4. Tra ve DUY NHAT mot JSON object tuan thu nghiem ngat Schema, khong boc markdown."
+USER_TEMPLATE_V3_2:
+  "[VEHICLE_CONTEXT]: Hang={brand}, Dong={model}, Nam={year}, ODO={mileage}km.
+   [SYMPTOMS]: {customer_symptoms} | [HISTORY]: {recent_ro_summary}
+   [AVAILABLE_PARTS]: {rag_inventory_sku_list_json}
+   Hay phan tich va xuat JSON theo hop dong du lieu."
+\end{lstlisting}
+
+\section{Thiết kế kiến trúc triển khai và Giao diện lập trình (API)}
+
+Hệ thống được đóng gói triển khai linh hoạt trên máy chủ cục bộ tại xưởng hoặc môi trường Docker Container (Hình~\ref{fig:g-deployment}), cung cấp 16 nhóm RESTful API chuẩn hóa (Bảng~\ref{tab:g-api-catalog}).
+
+\begin{figure}[H]
+\centering
+\vspace{2pt}
+\input{figures/deployment.tex}
+\vspace{2pt}
+\caption{Kiến trúc triển khai vật lý và đóng gói dịch vụ của GarageTools AI}
+\label{fig:g-deployment}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\small
+\caption{Danh mục các nhóm API RESTful chính của hệ thống GarageTools AI}
+\label{tab:g-api-catalog}
+\begin{tabularx}{\textwidth}{|L{3.8cm}|C{1.9cm}|L{3.1cm}|Y|}
+\hline
+\thead{Đường dẫn Endpoint} & \thead{Phương thức} & \thead{Phân quyền RBAC} & \thead{Chức năng nghiệp vụ chính}\\
+\hline
+\texttt{/api/auth/login}, \texttt{/me} & POST, GET & Công khai / Đã xác thực & Xác thực tài khoản, cấp phát JWT Bearer Token và truy xuất hồ sơ phiên làm việc. \\
+\hline
+\texttt{/api/customers}, \texttt{/vehicles} & GET, POST, PUT, DELETE & Admin, Advisor (KTV chỉ đọc xe gán) & Quản lý hồ sơ chủ xe, phương tiện theo biển số/VIN, tìm kiếm và phân trang. \\
+\hline
+\texttt{/api/appointments} & GET, POST, PUT & Admin, Advisor & Quản lý lịch hẹn dịch vụ, kiểm tra xung đột khoang sửa chữa và chuyển thành RO. \\
+\hline
+\texttt{/api/repair-orders} & GET, POST, PUT & Tất cả (KTV lọc theo \texttt{technician\_id}) & Quản lý vòng đời 10 trạng thái Phiếu sửa chữa, thêm hạng mục công việc/vật tư và nghiệm thu QC. \\
+\hline
+\texttt{/api/parts}, \texttt{/inventory/*} & GET, POST, PUT & Admin, Advisor, KTV (chỉ đọc/yêu cầu) & Quản lý danh mục SKU, nhập kho, đặt giữ nguyên tử (\texttt{BEGIN IMMEDIATE}) và giải phóng tồn kho. \\
+\hline
+\texttt{/api/invoices}, \texttt{/payments} & GET, POST & Admin, Accountant, Advisor & Phát hành hóa đơn từ RO, tính thuế VAT/chiết khấu, thu tiền nhiều đợt và theo dõi công nợ. \\
+\hline
+\texttt{/api/ai/diagnose}, \texttt{/ro-copilot}, \texttt{/summarize}, \texttt{/maintenance} & POST & Admin, Advisor, Technician (trên RO gán) & Kích hoạt 4 tác vụ AI01--AI04 qua RAG Context Gate, lưu đề xuất trạng thái \texttt{PENDING} và ghi Audit Log. \\
+\hline
+\texttt{/api/ai/suggestions/}\newline\texttt{\{id\}/*} & POST & Admin, Advisor & Phê duyệt (\texttt{/approve}) hoặc từ chối (\texttt{/reject}) gợi ý của AI theo cơ chế Human-in-the-loop. \\
+\hline
+\texttt{/api/ai-providers/*}, \texttt{/system/backups/*} & GET, POST, PUT & Admin & Cấu hình khóa BYOK mã hóa (chống SSRF), kiểm tra kết nối LLM, sao lưu và phục hồi CSDL SQLite. \\
+\hline
+\end{tabularx}
+\end{table}
+
+\section{Kết luận chương}
+
+Chương 4 đã trình bày toàn diện thiết kế kiến trúc C4 Container, mô hình dữ liệu quan hệ 21 bảng chuẩn 3NF, kiến trúc đường ống RAG + BYOK và sự tiến hóa của Prompt từ \texttt{v1.0} lên \texttt{v3.2}. Toàn bộ các bản thiết kế này được chuyển hóa trực tiếp thành mã nguồn thực tế trình bày tại Chương 5.

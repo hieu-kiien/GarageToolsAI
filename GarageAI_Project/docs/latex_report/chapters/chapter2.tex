@@ -1,0 +1,79 @@
+\chapter{CƠ SỞ KỸ THUẬT VÀ LỰA CHỌN CÔNG NGHỆ}
+
+\section{Tiêu chuẩn kỹ thuật và khung quy chiếu học thuật}
+
+Quá trình thiết kế và hiện thực hóa hệ thống GarageTools AI tuân thủ năm bộ tiêu chuẩn kỹ nghệ phần mềm và an toàn thông tin quốc tế:
+\begin{enumerate}
+  \item \textbf{IEEE Std 830-1998}: Quy chuẩn đặc tả yêu cầu phần mềm, bảo đảm mọi yêu cầu chức năng (FR) và phi chức năng (NFR) đều rõ ràng, không mâu thuẫn và có thể kiểm chứng độc lập.
+  \item \textbf{Mô hình kiến trúc C4 (Simon Brown)}: Phân rã kiến trúc phần mềm theo các mức độ trừu tượng từ Sơ đồ ngữ cảnh (Context) đến Sơ đồ thành phần chứa (Container) và Luồng xử lý.
+  \item \textbf{NIST INCITS 359-2012 (RBAC)}: Tiêu chuẩn kiểm soát truy cập dựa trên vai trò, được mở rộng với tầng kiểm soát phạm vi bản ghi (Record-level Authorization).
+  \item \textbf{OWASP API Security Top 10 (2023) \& OWASP Top 10 for LLM Applications (2025)}: Khung phòng thủ chống lại các lỗ hổng leo quyền mức đối tượng (BOLA/IDOR), giả mạo yêu cầu máy chủ (SSRF -- API7:2023), tiêm lệnh Prompt (LLM01:2025) và xử lý đầu ra mô hình thiếu an toàn (LLM05:2025).
+  \item \textbf{IEEE Std 829-2008}: Tiêu chuẩn tài liệu hóa và thiết kế các ca kiểm thử khẳng định, phủ định, kiểm thử biên và kiểm thử đối kháng.
+\end{enumerate}
+
+\section{Kiến trúc Backend với FastAPI, SQLite WAL và Giao dịch nguyên tử}
+
+Tầng xử lý trung tâm của GarageTools AI được xây dựng bằng ngôn ngữ \textbf{Python 3.12} trên nền tảng \textbf{FastAPI} kết hợp \textbf{Pydantic v2}. Mọi dữ liệu đầu vào và đầu ra (đặc biệt là phản hồi JSON từ mô hình ngôn ngữ lớn) đều bắt buộc đi qua bộ kiểm định kiểu dữ liệu nghiêm ngặt của Pydantic v2 trước khi xử lý nghiệp vụ.
+
+Về cơ sở dữ liệu, hệ thống sử dụng \textbf{SQLite 3} được cấu hình chuyên biệt cho môi trường giao dịch xưởng dịch vụ:
+\begin{itemize}
+  \item \textbf{Cơ chế Write-Ahead Logging (\texttt{PRAGMA journal\_mode = WAL})}: Cho phép các truy vấn đọc (như tra cứu tồn kho, xem bảng điều khiển KPI) diễn ra đồng thời với giao dịch ghi mà không gây khóa toàn cục.
+  \item \textbf{Ràng buộc toàn vẹn tham chiếu (\texttt{PRAGMA foreign\_keys = ON})}: Bảo đảm không thể xóa khách hàng, phương tiện hoặc phụ tùng khi đã phát sinh phiếu sửa chữa hoặc hóa đơn liên kết.
+  \item \textbf{Khóa giao dịch tức thời (\texttt{BEGIN IMMEDIATE})}: Trong nghiệp vụ xuất kho và đặt giữ phụ tùng, hệ thống chủ động khởi tạo giao dịch với mệnh đề \texttt{BEGIN IMMEDIATE} để khóa quyền ghi ngay tại thời điểm kiểm tra số lượng khả dụng ($\text{Available} = \text{Quantity} - \text{Reserved}$), loại bỏ hoàn toàn lỗi tranh chấp dữ liệu (Race Condition) khi nhiều cố vấn dịch vụ cùng đặt giữ một mã phụ tùng cuối cùng trong kho.
+\end{itemize}
+
+\section{Kiến trúc Frontend với React 19, TanStack Start và Tailwind CSS v4}
+
+Giao diện người dùng được phát triển theo kiến trúc ứng dụng trang đơn (SPA) kết hợp định tuyến hiện đại dựa trên \textbf{React 19}, \textbf{TanStack Start / Router}, \textbf{TypeScript} và \textbf{Tailwind CSS v4}.
+
+Hướng tới môi trường làm việc thực tế tại xưởng dịch vụ ô tô (nơi có ánh sáng mạnh và yêu cầu độ tương phản chữ cao để đọc bảng kê mã phụ tùng cũng như in ấn phiếu sửa chữa), giao diện áp dụng ngôn ngữ thiết kế \textbf{Precision Industrial Light Mode}:
+\begin{itemize}
+  \item Sử dụng nền sáng độ tương phản cao, phông chữ kỹ thuật rõ nét cho các trường mã số khung (VIN), biển số xe, mã phụ tùng (SKU) và đơn giá tài chính.
+  \item Tích hợp ngăn kéo trợ lý thông minh (\textbf{AI Copilot Drawer}) ngay bên cạnh màn hình chi tiết Phiếu sửa chữa (RO), cho phép Cố vấn dịch vụ vừa quan sát tình trạng xe và tồn kho thực tế, vừa thẩm định từng đề xuất của AI mà không phải chuyển trang.
+\end{itemize}
+
+\section{Kiến trúc Đa nhà cung cấp AI (Multi-Provider LLM) và Kho khóa BYOK}
+
+Nhằm tránh sự phụ thuộc cứng vào một nhà cung cấp duy nhất (Vendor Lock-in) và đáp ứng trọn vẹn tiêu chí tích hợp AI linh hoạt của học phần AIA331, tầng điều phối AI trong \texttt{backend/services/ai\_service.py} và \texttt{ai\_provider\_service.py} được thiết kế theo mẫu chiến lược (Strategy Pattern), hỗ trợ bốn chế độ kết nối:
+\begin{enumerate}
+  \item \textbf{Groq Cloud API}: Kết nối tốc độ cao tới các mô hình mã nguồn mở (mặc định sử dụng \texttt{openai/gpt-oss-120b} hoặc \texttt{llama-3.3-70b-versatile}) với độ trễ suy luận thấp.
+  \item \textbf{Google Gemini API}: Kết nối tới dòng mô hình \texttt{gemini-2.5-flash} hỗ trợ cửa sổ ngữ cảnh rộng và ép kiểu đầu ra JSON Schema ổn định.
+  \item \textbf{OpenAI \& OpenAI-Compatible API}: Hỗ trợ chuẩn giao thức \texttt{/v1/chat/completions} cho \texttt{gpt-4o-mini} hoặc các cổng kết nối tương thích.
+  \item \textbf{Deterministic Smart Fallback (Mock / Rule-based Engine)}: Động cơ suy diễn quy tắc nội bộ tự động kích hoạt khi không có kết nối mạng, hết hạn mức (Quota 429) hoặc quá thời gian chờ (Timeout), bảo đảm 100\% yêu cầu nghiệp vụ tại xưởng không bao giờ bị gián đoạn.
+\end{enumerate}
+
+Để bảo vệ khóa bí mật khi người dùng cấu hình khóa cá nhân (\textbf{Bring Your Own Key -- BYOK}), hệ thống triển khai kho lưu trữ mã hóa đối xứng:
+\begin{itemize}
+  \item Khóa API được mã hóa trước khi lưu vào bảng \texttt{ai\_provider\_credentials}; giao diện quản trị chỉ nhận về chuỗi che mặt nạ (ví dụ: \texttt{gsk\_****...9a2f}) và tuyệt đối không ghi khóa rõ vào nhật ký hệ thống.
+  \item Khi cấu hình đường dẫn máy chủ tùy chỉnh (\texttt{base\_url}), bộ kiểm định an ninh tự động phân giải DNS và chặn toàn bộ dải địa chỉ IP nội bộ (\texttt{127.0.0.0/8}, \texttt{10.0.0.0/8}, \texttt{172.16.0.0/12}, \texttt{192.168.0.0/16}, \texttt{169.254.169.254}), ngăn chặn triệt để lỗ hổng giả mạo yêu cầu phía máy chủ (\textbf{SSRF}).
+\end{itemize}
+
+\section{Phân tích đối sánh và quyết định lựa chọn công nghệ}
+
+Bảng~\ref{tab:g-tech-stack} tổng hợp lý do lựa chọn từng thành phần công nghệ so với các phương án thay thế trong bối cảnh đề tài 80277.
+
+\begin{table}[H]
+\centering
+\small
+\caption{Đối sánh và lý giải quyết định lựa chọn công nghệ trong GarageTools AI}
+\label{tab:g-tech-stack}
+\begin{tabularx}{\textwidth}{|L{2.5cm}|L{3.2cm}|L{2.8cm}|Y|}
+\hline
+\thead{Tầng hệ thống} & \thead{Công nghệ lựa chọn} & \thead{Phương án thay thế} & \thead{Lý do kỹ thuật và lợi thế thực tiễn}\\
+\hline
+Backend API & FastAPI + Pydantic v2 (Python 3.12) & Django REST / Express.js & Hiệu năng bất đồng bộ cao; tích hợp sẵn bộ kiểm định JSON Schema nghiêm ngặt giúp chặn đầu ra AI sai cấu trúc ngay tại tầng dịch vụ. \\
+\hline
+Cơ sở dữ liệu & SQLite 3 (WAL + \texttt{BEGIN IMMEDIATE}) & PostgreSQL / MySQL & Đóng gói gọn nhẹ trong một tệp duy nhất, dễ dàng sao lưu/phục hồi tức thời (\texttt{backup\_service.py}); chế độ WAL và khóa tức thời bảo đảm tính nguyên tử ACID cho tồn kho xưởng. \\
+\hline
+Frontend UI & React 19 + TanStack Start + Tailwind v4 & Vue 3 / Angular & Quản lý trạng thái bất đồng bộ mạch lạc; định tuyến an toàn kiểu dữ liệu (Type-safe Routing); hỗ trợ giao diện sáng công nghiệp dễ đọc và tối ưu cho in ấn phiếu RO. \\
+\hline
+Tích hợp AI & Đa nhà cung cấp + RAG Nội bộ + Fallback & Gọi trực tiếp 1 API cố định từ Frontend & Bảo vệ khóa API ở tầng Backend; đối chiếu trực tiếp dữ liệu tồn kho SKU trước khi sinh gợi ý; tự động chuyển đổi sang Smart Fallback khi đứt cáp hoặc lỗi mạng. \\
+\hline
+Kiểm thử & Pytest + HTTPX + Vitest & Kiểm thử thủ công đơn thuần & Tự động hóa 217 ca kiểm thử (202 Backend + 15 Frontend) chạy cô lập trong bộ nhớ, bảo đảm phát hiện tức thời mọi lỗi hồi quy về phân quyền và số học tài chính. \\
+\hline
+\end{tabularx}
+\end{table}
+
+\section{Kết luận chương}
+
+Chương 2 đã làm rõ các tiêu chuẩn kỹ thuật quốc tế và kiến trúc công nghệ nền tảng của GarageTools AI. Sự kết hợp giữa FastAPI, SQLite WAL với khóa giao dịch \texttt{BEGIN IMMEDIATE}, giao diện React 19 và tầng điều phối AI đa nhà cung cấp có mã hóa BYOK tạo nên nền tảng vững chắc để phân tích yêu cầu và kiểm soát phân quyền ở Chương 3.

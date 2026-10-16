@@ -1,0 +1,73 @@
+\resizebox{0.98\textwidth}{!}{%
+\begin{tikzpicture}[
+  font=\sffamily,
+  ent/.style={
+    rectangle split,
+    rectangle split parts=2,
+    rectangle split part fill={black!12,white},
+    draw=black,
+    line width=0.65pt,
+    text width=3.9cm,
+    align=left,
+    font=\sffamily\scriptsize,
+    inner sep=4pt
+  },
+  rel/.style={-{Latex[length=1.8mm,width=1.4mm]}, line width=0.6pt, draw=black},
+  lbl/.style={font=\sffamily\scriptsize, fill=white, inner sep=1.2pt}
+]
+  \node[ent] (usr) at (0, 1.85) {
+    \textbf{users (Tài khoản \& Vai trò)}
+    \nodepart{second}
+    \underline{id} (PK), username, email\\
+    password\_hash, role (4 vai trò)\\
+    is\_active, created\_at
+  };
+
+  \node[ent] (inv) at (5.6, 1.85) {
+    \textbf{invoices \& payments}
+    \nodepart{second}
+    \underline{id} (PK), repair\_order\_id (FK)\\
+    subtotal, discount, tax\_vat\\
+    total\_payable, paid\_amount, status
+  };
+
+  \node[ent] (war) at (11.2, 1.85) {
+    \textbf{warranty\_claims \& reminders}
+    \nodepart{second}
+    \underline{id} (PK), repair\_order\_id (FK)\\
+    vehicle\_id (FK), due\_mileage\\
+    due\_date, claim\_status
+  };
+
+  \node[ent] (aisug) at (0, -1.85) {
+    \textbf{ai\_suggestions (Đề xuất HITL)}
+    \nodepart{second}
+    \underline{id} (PK), repair\_order\_id (FK)\\
+    task\_code (AI01..AI04), payload\_json\\
+    confidence, review\_status (HITL)\\
+    reviewed\_by (FK), reviewed\_at
+  };
+
+  \node[ent] (ailog) at (5.6, -1.85) {
+    \textbf{ai\_audit\_logs \& prompts}
+    \nodepart{second}
+    \underline{id} (PK), user\_id (FK), task\_code\\
+    provider, model, prompt\_version\\
+    latency\_ms, is\_fallback, status
+  };
+
+  \node[ent] (cred) at (11.2, -1.85) {
+    \textbf{ai\_provider\_credentials}
+    \nodepart{second}
+    \underline{id} (PK), owner\_user\_id (FK)\\
+    provider\_name, encrypted\_api\_key\\
+    base\_url, is\_valid, updated\_at
+  };
+
+  \draw[rel] (usr.east) -- node[lbl, above]{1..n} (inv.west);
+  \draw[rel] (inv.east) -- node[lbl, above]{1..n} (war.west);
+  \draw[rel] (usr.south) -- node[lbl, right=2pt]{1..n} (aisug.north);
+  \draw[rel] (aisug.east) -- node[lbl, above]{1..1} (ailog.west);
+  \draw[rel] (ailog.east) -- node[lbl, above]{1..n} (cred.west);
+\end{tikzpicture}%
+}

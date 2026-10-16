@@ -3,12 +3,16 @@
 Hệ thống quản lý garage sửa chữa ô tô có tích hợp AI — Học phần *Ứng dụng Trí tuệ
 Nhân tạo (AIA331)*, Mã số 80277, Nhóm 23.
 
-> **Tình trạng hiện tại:** ứng dụng chạy được đầy đủ: đăng nhập, phân quyền bốn
-> vai trò, CRUD nghiệp vụ, tìm kiếm/lọc/sắp xếp, phiếu sửa chữa, hóa đơn và
-> thanh toán, báo cáo, ba chức năng AI kèm Human Review. Backend đã viết lại theo
-> cấu trúc tầng (core / services / routes), có CSRF, giới hạn tân suất, phân trang
-> và kiểm thử đầu vào. Kiểm thử tự động đạt **102/102**. Giao diện đang được
-> thiết kế lại — hợp đồng ngữ cảnh cho `templates/` nằm ở mục 7.
+> **Tình trạng hiện tại:** Ứng dụng đã hoàn thiện toàn diện cả **Backend FastAPI**
+> lẫn **Frontend React 19 + TanStack Start** (16 màn hình nghiệp vụ kết nối API
+> thật `/api/*`, kèm giao diện Jinja2 tại gốc): đăng nhập, phân quyền bốn vai trò,
+> CRUD khách hàng/xe/lịch hẹn/danh mục, phiếu sửa chữa (tiếp nhận – sửa chữa –
+> nghiệm thu), báo giá chính thức (áp dụng idempotent trừ tồn kho qua sổ cái),
+> sổ cái tồn kho (`stock_transactions`), bảo hành, hóa đơn và thanh toán chống
+> đua (`BEGIN IMMEDIATE`), báo cáo thống kê, và ba chức năng AI kèm **Human Review**
+> (hỗ trợ `mock`, `groq`, `openrouter`, `gemini`, `openai`, `9router`, `custom`).
+> Bộ kiểm thử tự động đạt **226/226 ca** (`tests/run_all.py`), kèm kiểm thử
+> Smoke (**31/31**) và E2E nghiệp vụ (**32/32**).
 
 ---
 
@@ -16,14 +20,17 @@ Nhân tạo (AIA331)*, Mã số 80277, Nhóm 23.
 
 | Thành phần | Yêu cầu |
 |---|---|
-| Python | 3.10 trở lên |
-| Cơ sở dữ liệu | SQLite (tích hợp sẵn trong Python, không cần cài thêm) |
+| Python | 3.10 trở lên (khuyến nghị 3.12+) |
+| Node.js | 20 trở lên (để chạy giao diện React `frontend/`) |
+| Cơ sở dữ liệu | SQLite (tích hợp sẵn trong Python, bật WAL + `foreign_keys=ON`) |
 | Trình duyệt | Bản mới của Chrome, Edge hoặc Firefox |
 | Mạng | Không bắt buộc nếu dùng `AI_PROVIDER=mock` |
 
-Docker là tuỳ chọn, dùng khi muốn chạy theo kiểu container.
+Docker là tuỳ chọn, dùng khi muốn đóng gói và chạy bằng container.
 
 ## 2. Cài đặt
+
+### 2.1. Backend (`GarageAI_Project/`)
 
 ```bash
 git clone <địa-chỉ-kho-mã-nguồn>
@@ -36,57 +43,100 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-## 3. Tạo cơ sở dữ liệu
+### 2.2. Frontend React (`frontend/`)
 
 ```bash
+cd ../frontend
+npm install
+```
+
+## 3. Tạo cơ sở dữ liệu và kiểm thử
+
+```bash
+cd GarageAI_Project
 python database/init_db.py
 ```
 
 Lệnh này đọc `database/schema.sql` rồi `database/seed_data.sql`, tạo ra tệp
-`garage.db` ở thư mục gốc với 16 bảng, 29 chỉ mục và 171 dòng dữ liệu mẫu.
+`garage.db` ở thư mục gốc với 21 bảng (17 bảng nghiệp vụ lõi + 4 bảng mở rộng),
+37 chỉ mục và 171 dòng dữ liệu mẫu. Khi khởi động ứng dụng với `AUTO_MIGRATE=true`
+(mặc định), các bản nâng cấp trong `database/migrations/` (`001` → `005`) sẽ tự động
+được áp một cách idempotent.
 
-Kiểm tra toàn bộ kiểm thử:
+Chạy toàn bộ bộ kiểm thử tự động Backend:
 
 ```bash
-python tests/run_all.py
+python -X utf8 tests/run_all.py
 ```
 
-Kết quả mong đợi: **102/102 đạt**, tự sinh lại `TEST_REPORT.md`.
+Kết quả mong đợi: **226/226 đạt** (37 ca ràng buộc CSDL + 6 ca sao lưu/khôi phục +
+133 ca ứng dụng web + 50 ca API JSON `/api/*`), tự sinh lại `TEST_REPORT.md`.
+
+Kiểm tra chất lượng Frontend (`frontend/`):
+
+```bash
+cd ../frontend
+npm run lint
+npm run typecheck
+npm run test
+npm run build
+```
 
 ## 4. Cấu hình biến môi trường
 
 ```bash
+cd GarageAI_Project
 cp .env.example .env        # Windows: copy .env.example .env
 ```
 
-Mở `.env` và điền giá trị thật:
+Mở `.env` và điền giá trị phù hợp:
 
-- `SECRET_KEY` — bắt buộc đổi khi triển khai thật.
+- `SECRET_KEY` — bắt buộc đổi khi triển khai thật (`APP_ENV=production`).
   Sinh bằng: `python -c "import secrets; print(secrets.token_urlsafe(48))"`
-- `OPENAI_API_KEY` — chỉ điền khi dùng nhà cung cấp AI thật.
+- `AI_PROVIDER` — chọn nhà cung cấp AI: `mock` (mặc định, không cần mạng),
+  `groq` (free tier nhanh, khuyến nghị demo), `openrouter`, `gemini`, `openai`,
+  `9router` hoặc `custom`.
+- `AI_API_KEY` (hoặc `GROQ_API_KEY` / `OPENROUTER_API_KEY` / `GOOGLE_API_KEY` /
+  `OPENAI_API_KEY`) — khoá API tương ứng khi gọi mô hình ngôn ngữ thật.
 
 > Tệp `.env` đã nằm trong `.gitignore`. **Không bao giờ** commit tệp này.
 
 ## 5. Chạy ứng dụng
 
+### Cách 1: Chạy đầy đủ Backend FastAPI + Frontend React (Khuyến nghị khi demo)
+
+Terminal 1 — Chạy Backend tại cổng `8000`:
+
 ```bash
-python -m uvicorn app.main:app --reload
+cd GarageAI_Project
+python -m uvicorn app.main:app --reload --port 8000
 ```
 
-Mở trình duyệt tại <http://127.0.0.1:8000>
+Terminal 2 — Chạy Frontend React (Vite tự proxy `/api` về `http://127.0.0.1:8000`):
+
+```bash
+cd frontend
+npm run dev
+```
+
+Mở trình duyệt tại địa chỉ Vite hiển thị (mặc định <http://localhost:3000> hoặc <http://localhost:5173>).
+
+### Cách 2: Chạy giao diện Jinja2 tích hợp sẵn trên Backend
+
+Chỉ cần chạy Terminal 1 ở trên và mở trình duyệt tại <http://127.0.0.1:8000>.
 
 ## 6. Tài khoản demo
 
 | Vai trò | Tên đăng nhập | Mật khẩu |
 |---|---|---|
-| Quản lý | `quan_ly` | `Garage@2026` |
-| Lễ tân | `le_tan` | `Garage@2026` |
-| Kỹ thuật viên | `ky_thuat_vien` | `Garage@2026` |
-| Thu ngân | `thu_ngan` | `Garage@2026` |
+| Quản lý (`MANAGER`) | `quan_ly` | `Garage@2026` |
+| Lễ tân (`RECEPTIONIST`) | `le_tan` | `Garage@2026` |
+| Kỹ thuật viên (`TECHNICIAN`) | `ky_thuat_vien` | `Garage@2026` |
+| Thu ngân (`CASHIER`) | `thu_ngan` | `Garage@2026` |
 
 Mật khẩu được lưu dạng băm **Argon2id** (thư viện `argon2-cffi`). Nếu môi trường
 không cài được thư viện này, ứng dụng tự chuyển sang PBKDF2-SHA256 với 200.000
-vòng lặp để không chết, và mỗi tài khoản vẫn có một muối khác nhau.
+vòng lặp để không dừng đột ngột, và mỗi tài khoản vẫn có muối riêng.
 
 Đổi mật khẩu hoặc khoá tài khoản sẽ làm mất hiệu lực mọi phiên đang đăng nhập
 nhờ cột `auth_version`.
@@ -97,74 +147,61 @@ nhờ cột `auth_version`.
 ## 7. Cấu trúc dự án
 
 ```
-GarageAI_Project/
-├── app/                    # mã ứng dụng FastAPI
-│   ├── main.py             # create_app(): middleware, ngoại lệ, gắn router
-│   ├── models.py           # Pydantic v2: mọi đối tượng đầu vào/ra
-│   ├── crud.py             # tầng truy cập: tham số hoá, whitelist, phân trang
-│   ├── ai_gateway.py       # AI Gateway: mock và OpenAI, có fallback
-│   ├── core/               # nền tảng chung
-│   │   ├── config.py       # đọc biến môi trường, fail-fast khi production
-│   │   ├── db.py           # kết nối, BEGIN IMMEDIATE, busy_timeout
-│   │   ├── security.py     # băm mật khẩu, phiên, CSRF, Origin
-│   │   ├── ratelimit.py    # giới hạn tân suất theo cửa sổ trượt
-│   │   ├── flash.py        # thông báo một lần qua cookie có ký
-│   │   ├── pagination.py   # trang, giới hạn LIMIT, đường dẫn trang
-│   │   ├── errors.py       # AppError và các loại con theo mã HTTP
-│   │   ├── money.py        # định dạng tiền, ngày theo giờ Việt Nam
-│   │   └── logging.py      # nhật ký có mã yêu cầu
-│   ├── services/           # nghiệp vụ (không biết HTTP)
-│   │   ├── auth.py         # đăng nhập, phiên, kiểm tra quyền
-│   │   ├── security_matrix.py  # ma trận vai trò - quyền
-│   │   ├── orders.py       # phiếu sửa chữa, hạng mục, tồn kho
-│   │   ├── billing.py      # hóa đơn, thanh toán
-│   │   ├── parties.py      # khách hàng, xe, lịch hẹn
-│   │   ├── catalog.py      # dịch vụ, phụ tùng, cửa hàng
-│   │   ├── ai.py           # gọi AI, lưu kết quả, duyệt
-│   │   └── reports.py      # dashboard và báo cáo
-│   ├── routes/             # HTTP (chỉ kiểm quyền, gọi dịch vụ, trả trang)
-│   ├── templates/          # giao diện Jinja2
-│   └── static/             # CSS
-├── config/prompts/         # system, history, explain, quote
-├── database/
-│   ├── schema.sql          # 16 bảng kèm ràng buộc và chỉ mục
-│   ├── seed_data.sql       # dữ liệu mẫu
-│   ├── generate_seed.py    # sinh lại seed_data.sql
-│   └── init_db.py          # tạo garage.db
-├── docs/
-│   ├── diagrams_final/     # 16 sơ đồ PNG
-│   ├── chup_man_hinh.py    # chụp ảnh từ ứng dụng đang chạy
-│   └── BANG_ANH.md         # bảng ảnh chụp
-├── screenshots/            # ảnh màn hình thật
-├── tests/
-│   ├── test_schema_constraints.py   # 37 ca ràng buộc CSDL
-│   ├── test_backup_restore.py        # 6 ca sao lưu/khôi phục
-│   ├── test_backend.py               # 59 ca ứng dụng web
-│   └── run_all.py                   # chạy tất cả, sinh TEST_REPORT.md
-├── garage.db
-├── Dockerfile
-├── docker-compose.yml
-├── .env.example
-└── requirements.txt
+Nhom23_GarageToolsAI/
+├── GarageAI_Project/           # Backend FastAPI + CSDL + Kiểm thử + Tài liệu
+│   ├── app/
+│   │   ├── main.py             # create_app(): auto-migrate, middleware, exception handlers, routers
+│   │   ├── models.py           # Pydantic v2: kiểm tra dữ liệu đầu vào/ra
+│   │   ├── crud.py             # Tầng truy cập: tham số hoá, whitelist, phân trang
+│   │   ├── ai_gateway.py       # AI Gateway đa provider (mock/groq/openrouter/gemini/openai/9router)
+│   │   ├── core/               # Nền tảng chung (config, db BEGIN IMMEDIATE, security, ratelimit, flash...)
+│   │   ├── services/           # Nghiệp vụ thuần (auth, security_matrix, orders, quotations, stock,
+│   │   │                       #   warranties, billing, parties, catalog, ai, reports)
+│   │   ├── routes/             # Route HTML Jinja2 + nhánh routes/api/ (JSON API cho React FE)
+│   │   ├── templates/          # Giao diện Jinja2
+│   │   └── static/             # CSS tĩnh
+│   ├── config/prompts/         # 4 tệp prompt: system.txt, history.txt, explain.txt, quote.txt
+│   ├── database/
+│   │   ├── schema.sql          # 21 bảng (17 bảng lõi + 4 bảng mở rộng) kèm CHECK/FK và 37 chỉ mục
+│   │   ├── seed_data.sql       # 171 dòng dữ liệu mẫu
+│   │   ├── migrations/         # 001 → 005 + run_missing.py (idempotent auto-migrate)
+│   │   ├── generate_seed.py    # Sinh lại seed_data.sql
+│   │   └── init_db.py          # Khởi tạo garage.db từ đầu
+│   ├── docs/                   # 16 sơ đồ thiết kế (diagrams_final/) + script chụp màn hình
+│   ├── screenshots/            # 18 ảnh màn hình thực tế (giao diện React 19 + TanStack Start)
+│   ├── tests/
+│   │   ├── test_schema_constraints.py   # 37 ca ràng buộc CSDL
+│   │   ├── test_backup_restore.py       # 6 ca sao lưu/khôi phục
+│   │   ├── test_backend.py              # 133 ca ứng dụng web & AI Gateway
+│   │   ├── test_api.py                  # 50 ca tầng JSON API (/api/*)
+│   │   └── run_all.py                   # Chạy toàn bộ 226 ca, sinh TEST_REPORT.md
+│   ├── Dockerfile
+│   ├── docker-compose.yml
+│   ├── docker-entrypoint.sh
+│   ├── .env.example
+│   └── requirements.txt
+├── frontend/                   # Giao diện React 19 + TanStack Start + Tailwind v4 + shadcn/ui
+│   ├── src/
+│   │   ├── components/         # AppShell (Sidebar, Đăng nhập, Đổi mật khẩu) + bộ UI shadcn
+│   │   ├── lib/rbac.tsx        # RoleProvider, ma trận quyền AREA_QUYEN, định dạng tiền/giờ VN
+│   │   ├── routes/             # 16 màn hình nghiệp vụ đầy đủ
+│   │   ├── services/api.ts     # Khách HTTP duy nhất kèm CSRF + TanStack Query options
+│   │   ├── test/               # Kiểm thử Vitest cho routing và RBAC/định dạng
+│   │   └── types/index.ts      # Kiểu TypeScript đồng bộ với backend
+│   ├── README.md
+│   └── README_AI_HANDOFF.md    # Hợp đồng giao tiếp Frontend ↔ Backend API
+├── scripts/                    # Kịch bản vận hành & kiểm thử thực tế (PowerShell)
+│   ├── smoke.ps1               # 31 ca kiểm thử nhanh HTTP + RBAC + CSRF
+│   ├── e2e.ps1                 # 32 ca kiểm thử E2E xuyên suốt quy trình garage
+│   ├── backup.ps1              # Sao lưu trực tuyến an toàn qua sqlite3 .backup
+│   └── restore.ps1             # Khôi phục kèm kiểm tra PRAGMA integrity_check
+└── .github/workflows/ci.yml    # GitHub Actions CI cho cả Backend (226 ca) và Frontend
 ```
 
 ### Hợp đồng ngữ cảnh cho giao diện
 
-Mọi trang đi qua `app/routes/__init__.py: render()`, tức là template luôn có sẵn:
-
-| Biến | Ý nghĩa |
-|---|---|
-| `user` | Người đang đăng nhập, `None` nếu chưa đăng nhập |
-| `csrf_token` | Bắt buộc đặt trong mọi `<form method="post">` dưới tên `csrf_token` |
-| `quyen['...']` | Bảng quyền theo vai trò, dùng ẩn/hiện nút |
-| `flash.loi` / `flash.thong_bao` | Thông báo tự xoá sau một lần hiển thị |
-| `loi` | Lỗi theo từng ô form: `{truong: [thong_diep]}` |
-| `dong` / `tong_so_ban_ghi` / `trang` / `tong_trang` | Dữ liệu + phân trang |
-| `duong_dan_trang`, `format_tien`, `format_ngay`, `ten_trang_thai`, `vai_tro_ten` | Hàm định dạng |
-
-Quy tắc: mọi thao tác ghi dữ liệu là **POST kèm mã CSRF**; không có đường dẫn
-GET nào xoá hoặc sửa dữ liệu. Danh sách đều nhận tham số `q` (tìm kiếm),
-`trang` và `moi_trang` (phân trang).
+- **Giao diện React (`frontend/`)**: Gọi trực tiếp các endpoint `/api/*`, xác thực qua cookie `garage_session` (HttpOnly) và gửi kèm header `X-CSRF-Token` đọc từ cookie `garage_csrf`. Chi tiết đầy đủ nằm tại `../frontend/README_AI_HANDOFF.md`.
+- **Giao diện Jinja2 (`app/templates/`)**: Mọi trang đi qua `app/routes/__init__.py: render()` luôn có sẵn `user`, `csrf_token`, `quyen[...]`, `flash.loi`/`flash.thong_bao`, `loi`, `dong`/`tong_so_ban_ghi`/`trang`/`tong_trang`, cùng các hàm định dạng `format_tien`, `format_ngay`, `ten_trang_thai`, `vai_tro_ten`.
 
 ## 8. Ba chức năng AI
 
@@ -176,57 +213,61 @@ GET nào xoá hoặc sửa dữ liệu. Danh sách đều nhận tham số `q` (
 
 Nguyên tắc bất di bất dịch: **AI không phải nguồn của dữ liệu nghiệp vụ.** Giá,
 số lượng và tổng tiền đều do backend đọc từ CSDL và tự tính. Kết quả AI luôn
-lưu ở trạng thái `PENDING` và phải được nhân viên duyệt trước khi sử dụng.
+lưu ở trạng thái `PENDING` và phải được nhân viên có quyền `ai.review` duyệt
+trước khi sử dụng.
 
 ## 9. Sao lưu và khôi phục
 
-```bash
-# Sao lưu
-copy garage.db backups\garage_2026-11-20.db     # Windows
-cp garage.db backups/garage_2026-11-20.db         # macOS / Linux
+Có thể sử dụng script tự động ở thư mục gốc của kho mã nguồn (sao lưu an toàn kể cả khi đang bật WAL và tự động kiểm tra `PRAGMA integrity_check`):
 
-# Khôi phục
-copy backups\garage_2026-11-20.db garage.db
+```powershell
+# Từ thư mục gốc Nhom23_GarageToolsAI:
+.\scripts\backup.ps1
+.\scripts\restore.ps1 -File backups\garage-<timestamp>.db
 ```
 
-Nên dừng ứng dụng trước khi sao lưu để tránh ghi dở dang. Sau khi khôi phục,
-chạy lại `python tests/test_schema_constraints.py` để kiểm tra dữ liệu còn hợp lệ.
+Hoặc sao lưu thủ công khi đã dừng ứng dụng:
+
+```bash
+copy garage.db ..\backups\garage_2026-10-16.db     # Windows
+cp garage.db ../backups/garage_2026-10-16.db       # macOS / Linux
+```
 
 ## 10. Trạng thái triển khai
 
 | Hạng mục | Trạng thái |
 |---|---|
-| Schema cơ sở dữ liệu (16 bảng, 29 chỉ mục, đủ ràng buộc) | Hoàn thành |
-| Dữ liệu mẫu (171 dòng) | Hoàn thành |
-| 16 sơ đồ thiết kế | Hoàn thành |
-| Prompt ba chức năng AI | Hoàn thành |
-| Đăng nhập, phiên ký, phân quyền bốn vai trò | Hoàn thành |
-| CRUD nghiệp vụ + tìm kiếm, lọc, sắp xếp | Hoàn thành |
-| Phiếu sửa chữa, hóa đơn, thanh toán | Hoàn thành |
-| Dashboard và năm báo cáo | Hoàn thành |
-| Ba chức năng AI và Human Review | Hoàn thành (chế độ `mock`) |
-| Backend viết lại theo cấu trúc tầng | Hoàn thành |
-| CSRF + kiểm tra Origin, giới hạn tân suất | Hoàn thành |
-| Thông báo một lần, phân trang, kiểm tra đầu vào | Hoàn thành |
-| Mọi thao tác ghi là POST (xoá không còn là GET) | Hoàn thành |
-| Kiểm thử tự động (102 ca) | Hoàn thành |
-| Ảnh chụp màn hình thật | Hoàn thành |
-| Dockerfile và docker-compose | Đã có tệp, **chưa** chạy thử |
-| Giao diện chính thức (đang dùng bản tối giản) | **Đang làm** |
-| Kiểm thử với `AI_PROVIDER=openai` | **Chưa làm**, cần khoá API thật |
-| Ca kiểm thử timeout / phản hồi rỗng / sai định dạng AI | **Chưa làm** |
-| Kiểm thử nghiệm thu bởi người dùng thực tế | **Chưa làm** |
+| Schema cơ sở dữ liệu (21 bảng: 17 bảng lõi + 4 bảng mở rộng, 37 chỉ mục) | Hoàn thành |
+| Dữ liệu mẫu (171 dòng) & Auto-migration (`001` → `005`) | Hoàn thành |
+| 16 sơ đồ thiết kế (`docs/diagrams_final/`) | Hoàn thành |
+| Prompt ba chức năng AI (`config/prompts/`) | Hoàn thành |
+| Đăng nhập, phiên ký, phân quyền bốn vai trò (RBAC) | Hoàn thành |
+| CRUD nghiệp vụ + tìm kiếm, lọc, sắp xếp, phân trang | Hoàn thành |
+| Tiếp nhận xe (`intake_records`), phiếu sửa chữa, nghiệm thu (`acceptance_at`) | Hoàn thành |
+| Báo giá chính thức (`quotations`) & áp dụng idempotent trừ tồn kho | Hoàn thành |
+| Sổ cái tồn kho (`stock_transactions`) & đối soát `SUM(ledger) == stock` | Hoàn thành |
+| Bảo hành (`warranties`) theo hạng mục phiếu đã hoàn thành | Hoàn thành |
+| Hóa đơn và thanh toán chống đua (`BEGIN IMMEDIATE`), huỷ khoản thu nhầm | Hoàn thành |
+| Dashboard và 5 báo cáo thống kê | Hoàn thành |
+| Ba chức năng AI và Human Review (cả `mock` lẫn model thật qua Groq/OpenAI-compat) | Hoàn thành |
+| Ca kiểm thử timeout, lỗi 429/500, phản hồi rỗng / sai định dạng AI (`TestAiGateway`) | Hoàn thành |
+| Giao diện chính thức React 19 + TanStack Start (16 màn hình kết nối API thật) | Hoàn thành |
+| Kiểm thử tự động Backend (**226/226 ca**) + Frontend (`lint`/`typecheck`/`test`/`build`) | Hoàn thành |
+| Kịch bản Smoke (**31/31**), E2E (**32/32**) và UAT (**35/35**) | Hoàn thành |
+| Dockerfile, `docker-compose.yml` (cổng `8010`) và GitHub Actions CI | Hoàn thành |
 
-Chi tiết phần còn thiếu nằm ở `FINAL_ACCEPTANCE_CHECKLIST.md`.
+Chi tiết nghiệm thu nằm ở `FINAL_ACCEPTANCE_CHECKLIST.md` và `TEST_REPORT.md`.
 
 ## 11. Chạy bằng Docker
 
 ```bash
-docker compose up --build
+cd GarageAI_Project
+docker compose up --build -d
 ```
 
-Mở trình duyệt tại <http://127.0.0.1:8000>. Lần chạy đầu dựng CSDL từ schema và
-dữ liệu mẫu. Đặt `SECRET_KEY` thật trước khi dùng ở môi trường thật.
+Mở trình duyệt tại <http://127.0.0.1:8010> (`docker-compose.yml` ánh xạ cổng
+`8010:8000` và gắn volume `du-lieu-garage:/data` để bảo toàn dữ liệu khi rebuild).
+Kiểm tra sức khoẻ container tại <http://127.0.0.1:8010/healthz>.
 
 ## 12. Chụp lại ảnh màn hình
 
@@ -235,15 +276,15 @@ python -m uvicorn app.main:app --port 8010
 python docs/chup_man_hinh.py
 ```
 
-Tệp ảnh nằm ở `screenshots/`, bảng mô tả nằm ở `docs/BANG_ANH.md`.
+Tệp ảnh nằm ở `screenshots/` và `docs/screenshots/`, bảng mô tả nằm ở `docs/BANG_ANH.md`.
 
 ## 13. Tài liệu liên quan
 
 | Tài liệu | Nội dung |
 |---|---|
-| `KT3_PROMPT_EXPERIMENTS.md` | Nhật ký thử nghiệm ba chức năng AI |
-| `KT1_KT2_AI_USAGE.md` | Nhật ký sử dụng AI trong phân tích và lập trình |
-| `KT3_AI_REVIEW.md` | Minh chứng AI review mã nguồn |
-| `TEST_REPORT.md` | Kết quả kiểm thử, sinh tự động |
-| `USER_ACCEPTANCE_TEST.md` | Kịch bản kiểm thử nghiệm thu người dùng |
-| `FINAL_ACCEPTANCE_CHECKLIST.md` | Phiếu kiểm tra hoàn thành trước khi nộp |
+| `KT3_PROMPT_EXPERIMENTS.md` | Nhật ký thử nghiệm và tối ưu prompt ba chức năng AI |
+| `KT1_KT2_AI_USAGE.md` | Nhật ký sử dụng AI trong phân tích, thiết kế và lập trình |
+| `KT3_AI_REVIEW.md` | Minh chứng sử dụng AI review mã nguồn và cải thiện bảo mật |
+| `TEST_REPORT.md` | Báo cáo kết quả 226/226 ca kiểm thử tự động + Smoke/E2E |
+| `USER_ACCEPTANCE_TEST.md` | Kết quả 35/35 ca kiểm thử chấp nhận người dùng (UAT) |
+| `FINAL_ACCEPTANCE_CHECKLIST.md` | Phiếu kiểm tra hoàn thành toàn bộ tiêu chí trước khi nộp |

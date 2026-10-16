@@ -73,30 +73,55 @@ thử đổi toàn bộ giá dịch vụ về 0 rồi xác nhận tổng hóa đ
 
 ## Nguyên văn
 
-> Phần này dành cho đoạn mã trước và sau, nhóm bổ sung sau khi thực hiện review.
+> Đoạn mã trước và sau của 6 lượt review bảo mật và toàn vẹn dữ liệu:
 >
 > ```text
 > Lượt 1 – Bảo mật khóa API
 > Mã trước:
-> Mã sau:
+>   OPENAI_API_KEY = "sk-proj-..."  # ghi cứng trong module
+> Mã sau (app/core/config.py):
+>   self.AI_API_KEY = truong('AI_API_KEY', preset.get('key_env', ''), 'OPENAI_API_KEY')
+>   # Đọc từ biến môi trường / .env; fail-fast nếu production thiếu khóa.
 >
 > Lượt 2 – Quyền truy cập route
 > Mã trước:
-> Mã sau:
+>   @router.get('/reports/{loai}')
+>   def xem_bao_cao(request: Request, loai: str):
+>       return render(request, 'bao_cao.html', reports.lay_bao_cao(loai))
+> Mã sau (app/routes/system.py & app/routes/api/reports_api.py):
+>   auth.yeu_cau_quyen(nguoi_dung, 'report.view')
+>   # Kiểm tra quyền từ ma trận security_matrix.py trước khi truy vấn dữ liệu.
 >
 > Lượt 3 – Kiểm tra dữ liệu đầu vào
 > Mã trước:
-> Mã sau:
+>   db.insert('INSERT INTO vehicles(plate, brand, model, customer_id) VALUES (?,?,?,?)', ...)
+> Mã sau (database/schema.sql & app/models.py):
+>   plate TEXT NOT NULL UNIQUE,  -- Ràng buộc UNIQUE + chuẩn hoá biển số & VIN ở Pydantic model
 >
-> Lượt 4 – Xử lý ngoại lệ
+> Lượt 4 – Xử lý ngoại lệ khi gọi AI
 > Mã trước:
-> Mã sau:
+>   r = httpx.post(url, json=payload)
+>   return r.json()['choices'][0]['message']['content']
+> Mã sau (app/ai_gateway.py):
+>   try:
+>       r = httpx.post(_chat_url(s), headers=_headers(s), json=..., timeout=s.AI_TIMEOUT)
+>   except httpx.TimeoutException:
+>       raise AiError('Nhà cung cấp AI không phản hồi trong %d giây' % s.AI_TIMEOUT)
+>   except Exception:
+>       raise AiError('Không kết nối được nhà cung cấp AI')
 >
-> Lượt 5 – Tách prompt khỏi mã
+> Lượt 5 – Tách prompt khỏi mã nguồn
 > Mã trước:
-> Mã sau:
+>   SYSTEM_PROMPT = "Bạn là trợ lý garage..."  # nằm cứng trong hàm Python
+> Mã sau (app/ai_gateway.py & config/prompts/*.txt):
+>   user = get_settings().render_prompt(get_settings().load_prompt('quote.txt'),
+>                                       items=danh_sach, backend_total=backend_total)
+>   out = goi(get_settings().load_prompt('system.txt'), user)
 >
-> Lượt 6 – Nguồn giá báo giá
+> Lượt 6 – Nguồn giá báo giá & chốt giá lịch sử
 > Mã trước:
-> Mã sau:
+>   unit_price = int(form.get('unit_price'))  # tin dữ liệu từ client gửi lên
+> Mã sau (app/services/orders.py & quotations.py):
+>   dv = db.fetch_one('SELECT id, price, is_active FROM services WHERE id = ?', (ma,))
+>   # Luôn lấy price từ CSDL tại thời điểm thêm hạng mục và lưu cứng vào unit_price.
 > ```

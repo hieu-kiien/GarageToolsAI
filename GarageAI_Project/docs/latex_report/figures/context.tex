@@ -1,0 +1,33 @@
+\resizebox{0.98\textwidth}{!}{%
+\begin{tikzpicture}[
+  font=\sffamily,
+  actor/.style={rectangle, rounded corners=3pt, draw=black, line width=0.7pt, fill=black!8, text width=3.2cm, minimum height=1.15cm, align=center, font=\sffamily\footnotesize\bfseries, inner sep=4pt},
+  ext/.style={rectangle, rounded corners=3pt, draw=black, line width=0.7pt, fill=white, dashed, text width=3.2cm, minimum height=1.15cm, align=center, font=\sffamily\footnotesize\bfseries, inner sep=4pt},
+  core/.style={rectangle, rounded corners=5pt, draw=black, line width=1.1pt, fill=white, text width=4.8cm, minimum height=3.4cm, align=center, font=\sffamily\footnotesize, inner sep=6pt},
+  arr/.style={-{Latex[length=2.2mm,width=1.6mm]}, line width=0.65pt, draw=black},
+  lbl/.style={font=\sffamily\scriptsize, fill=white, inner sep=1.5pt, align=center}
+]
+  \node[core] (sys) at (0,0) {
+    \textbf{\small HỆ THỐNG GARAGETOOLS AI}\\[4pt]
+    \scriptsize Quản trị Xưởng dịch vụ Ô tô \& Kho phụ tùng\\
+    \scriptsize Quy trình Lệnh sửa chữa RO (10 trạng thái)\\
+    \scriptsize Trợ lý AI Đa nhà cung cấp (AI01--AI04)\\
+    \scriptsize Kiểm duyệt Human-in-the-loop \& Audit Log
+  };
+
+  \node[actor] (admin) at (-6.8, 1.8) {Quản lý / Admin\\[-1pt]{\normalfont\scriptsize Giám sát KPI, Cấu hình AI}};
+  \node[actor] (advisor) at (-6.8, 0.0) {Cố vấn dịch vụ\\[-1pt]{\normalfont\scriptsize Tiếp nhận, Báo giá, Duyệt AI}};
+  \node[actor] (tech) at (-6.8, -1.8) {Kỹ thuật viên\\[-1pt]{\normalfont\scriptsize Chẩn đoán, Sửa chữa RO gán}};
+  \node[actor] (acc) at (6.8, 1.8) {Kế toán / Thu ngân\\[-1pt]{\normalfont\scriptsize Hóa đơn, Thu tiền, Công nợ}};
+
+  \node[ext] (llm) at (6.8, 0.0) {Đa nhà cung cấp LLM\\[-1pt]{\normalfont\scriptsize Groq / Gemini / OpenAI}};
+  \node[ext] (cust) at (6.8, -1.8) {Khách hàng / Chủ xe\\[-1pt]{\normalfont\scriptsize Đặt lịch, Duyệt báo giá RO}};
+
+  \draw[arr] (admin.east) -- node[lbl, above, pos=0.48]{Cấu hình, Xem KPI} (sys.158);
+  \draw[arr] (advisor.east) -- node[lbl, above, pos=0.5]{Tạo RO, Duyệt AI} (sys.180);
+  \draw[arr] (tech.east) -- node[lbl, below, pos=0.48]{Cập nhật tiến độ} (sys.202);
+  \draw[arr] (acc.west) -- node[lbl, above, pos=0.48]{Xuất hóa đơn, Thu phí} (sys.22);
+  \draw[arr, <->] (sys.0) -- node[lbl, above, pos=0.5]{HTTPS JSON Schema} (llm.west);
+  \draw[arr, <->] (cust.west) -- node[lbl, below, pos=0.48]{Tra cứu, Thông báo} (sys.338);
+\end{tikzpicture}%
+}

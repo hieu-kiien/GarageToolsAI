@@ -1,0 +1,103 @@
+\appendix
+
+\chapter{HƯỚNG DẪN CÀI ĐẶT, VẬN HÀNH VÀ KIỂM CHỨNG ĐỘC LẬP}
+
+\section{Yêu cầu môi trường và cấu hình biến môi trường (\texttt{.env.example})}
+
+Hệ thống hỗ trợ khởi chạy trực tiếp trên môi trường máy trạm (Windows / Linux / macOS) hoặc qua Docker Container. Các biến môi trường cốt lõi trong tệp \texttt{.env.example} bao gồm:
+
+\begin{lstlisting}[aboveskip=2pt,belowskip=2pt,caption={Cấu hình mẫu tệp .env.example của hệ thống GarageTools AI}]
+DATABASE_PATH=garage_v2.db
+JWT_SECRET_KEY=change-this-secret-in-production-min-32-bytes
+JWT_EXPIRE_MINUTES=480
+BYOK_ENCRYPTION_KEY=32-byte-base64-fernet-key-for-ai-credentials
+AI_PROVIDER=groq
+GROQ_API_KEY=your_groq_api_key_here
+GEMINI_API_KEY=your_gemini_api_key_here
+AI_TIMEOUT_SECONDS=12
+\end{lstlisting}
+
+\section{Quy trình khởi tạo dữ liệu mẫu và chạy hệ thống}
+
+Thực thi các lệnh sau tại thư mục gốc \texttt{GarageAI\_\allowbreak Project/} để cài đặt phụ thuộc, khởi tạo 21 bảng CSDL kèm dữ liệu mẫu (\texttt{seed\_data.py}) và khởi chạy dịch vụ:
+
+\begin{lstlisting}[aboveskip=2pt,belowskip=2pt,caption={Lệnh khởi tạo CSDL, chạy máy chủ Backend, Frontend và Kiểm thử}]
+python -m backend.database.seed_data
+uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
+cd frontend && npm install && npm run dev
+pytest backend/tests -q && cd frontend && npx vitest run
+\end{lstlisting}
+
+Bảng~\ref{tab:g-seed-accounts} cung cấp danh sách 4 tài khoản mẫu đại diện cho 4 vai trò RBAC đã được nạp sẵn để phục vụ chấm thi và kiểm chứng phân quyền.
+
+\begin{table}[H]
+\centering
+\scriptsize
+\renewcommand{\arraystretch}{0.95}
+\caption{Danh sách tài khoản mẫu phục vụ kiểm thử nghiệm thu theo 4 vai trò}
+\label{tab:g-seed-accounts}
+\begin{tabularx}{\textwidth}{|L{2.5cm}|L{2.4cm}|L{2.1cm}|Y|}
+\hline
+\thead{Tên đăng nhập} & \thead{Mật khẩu mẫu} & \thead{Vai trò (\texttt{role})} & \thead{Phạm vi quyền hạn kiểm chứng trên giao diện}\\
+\hline
+\texttt{admin} & \texttt{Admin@123} & \texttt{admin} & Toàn quyền hệ thống, cấu hình khóa BYOK, sao lưu/phục hồi CSDL, xem toàn bộ KPI. \\
+\hline
+\texttt{advisor01} & \texttt{Advisor@123} & \texttt{advisor} & Tiếp nhận xe, mở phiếu RO, gọi trợ lý AI01--AI04, phê duyệt gợi ý AI đưa vào báo giá. \\
+\hline
+\texttt{tech01} & \texttt{Tech@123} & \texttt{technician} & Chỉ nhìn thấy và cập nhật chẩn đoán trên các phiếu RO được giao cho \texttt{tech01}. \\
+\hline
+\texttt{accountant01} & \texttt{Acc@123} & \texttt{accountant} & Phát hành hóa đơn từ RO đã đạt QC, tính thuế VAT/chiết khấu, ghi nhận thu tiền. \\
+\hline
+\end{tabularx}
+\end{table}
+
+\chapter{NHẬT KÝ SỬ DỤNG AI TRONG PHÁT TRIỂN VÀ RÀ SOÁT MÃ NGUỒN}
+
+Tuân thủ nguyên tắc minh bạch học thuật của học phần AIA331 (tiêu chí 1.7, 2.9 và 3.9), Bảng~\ref{tab:g-ai-sdlc-log} ghi nhận chi tiết cách nhóm sử dụng công cụ AI hỗ trợ trong quá trình phát triển phần mềm (SDLC), đặc biệt là các lỗi do AI sinh ra đã được nhóm phát hiện, bác bỏ và hiệu chỉnh thủ công.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\renewcommand{\arraystretch}{1.06}
+\caption{Nhật ký sử dụng AI theo giai đoạn phát triển và các lỗi kỹ thuật đã được nhóm kiểm soát}
+\label{tab:g-ai-sdlc-log}
+\begin{tabularx}{\textwidth}{|L{2.3cm}|L{3.2cm}|Y|Y|}
+\hline
+\thead{Giai đoạn SDLC} & \thead{Hạng mục tham vấn AI} & \thead{Lỗi / Khiếm khuyết trong mã do AI gợi ý ban đầu} & \thead{Biện pháp nhóm can thiệp và sửa chữa thủ công}\\
+\hline
+1. Thiết kế CSDL \& Giao dịch kho & Khởi tạo khung bảng \texttt{parts} và hàm xuất kho phụ tùng. & AI chỉ sinh cột \texttt{quantity} đơn lẻ và dùng câu lệnh \texttt{SELECT} thường trước khi \texttt{UPDATE}, dẫn đến lỗi xuất âm kho (Race Condition) khi 2 cố vấn duyệt cùng lúc. & Nhóm thiết kế lại bảng \texttt{inventory\_reservations}, tách cột \texttt{reserved\_qty} và bắt buộc mở giao dịch \texttt{BEGIN IMMEDIATE} để khóa ghi nguyên tử. \\
+\hline
+2. Phân quyền RBAC \& Bảo mật & Viết middleware kiểm tra quyền truy cập trên API \texttt{/api/repair-orders}. & Mã do AI sinh chỉ kiểm tra vai trò ở mức endpoint (\texttt{role in ['advisor', 'technician']}), làm lộ toàn bộ RO của xưởng cho mọi kỹ thuật viên (lỗ hổng IDOR). & Nhóm bổ sung bộ lọc phạm vi bản ghi bắt buộc: nếu \texttt{role == 'technician'} thì chỉ truy vấn các bản ghi có \texttt{technician\_id == current\_user.id}. \\
+\hline
+3. Quản lý khóa BYOK \& Mạng & Xây dựng tính năng cho phép người dùng nhập \texttt{base\_url} tùy chỉnh cho LLM. & AI nhận trực tiếp chuỗi URL từ người dùng truyền vào \texttt{httpx.post()}, tạo lỗ hổng nghiêm trọng cho phép tấn công SSRF quét cổng nội bộ máy chủ. & Nhóm viết bộ kiểm định DNS phân giải IP trong \texttt{ai\_provider\_service.py}, chặn toàn bộ dải IP loopback, LAN nội bộ và metadata đám mây. \\
+\hline
+4. Thiết kế Prompt \& Tích hợp AI & Soạn Prompt chẩn đoán và đề xuất phụ tùng (AI01, AI02). & Prompt \texttt{v1.0} do AI gợi ý không truyền tồn kho thực tế, khiến LLM tự bịa mã phụ tùng không tồn tại và tự động ghi thẳng vào bảng kê RO. & Nhóm nâng cấp lên kiến trúc RAG nối đất danh mục SKU khả dụng (Prompt \texttt{v3.2}) và thiết kế bảng đệm \texttt{ai\_suggestions} bắt buộc duyệt HITL. \\
+\hline
+5. Kiểm thử tự động (\texttt{pytest}) & Sinh khung dữ liệu mẫu cho các ca kiểm thử đơn vị. & Các ca test do AI gợi ý chỉ kiểm tra trường hợp thành công (Happy Path HTTP 200) và dùng chung một tệp CSDL gây nhiễm bẩn dữ liệu chéo. & Nhóm viết mới bộ kiểm thử cô lập từng ca test và bổ sung 8 nhóm kịch bản kiểm thử đối kháng (HTTP 401, 403, 409, SQLi, XSS, SSRF). \\
+\hline
+\end{tabularx}
+\end{table}
+
+\chapter{MA TRẬN ĐỐI CHIẾU YÊU CẦU ĐỀ TÀI 80277 VÀ TIÊU CHÍ HỌC PHẦN AIA331}
+
+Bảng~\ref{tab:g-rubric-trace} đối chiếu toàn diện 4 giai đoạn đánh giá (40 tiêu chí) của học phần Ứng dụng trí tuệ nhân tạo (AIA331) và yêu cầu đề tài 80277 với các chương mục trong báo cáo và tệp mã nguồn thực tế.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\renewcommand{\arraystretch}{1.04}
+\caption{Ma trận truy vết toàn diện yêu cầu đề tài 80277 và tiêu chí đánh giá AIA331}\label{tab:g-rubric-trace}
+\begin{tabularx}{\textwidth}{|C{1.5cm}|L{3.5cm}|L{3.3cm}|Y|}
+\hline
+\thead{Giai đoạn} & \thead{Nhóm tiêu chí đánh giá} & \thead{Vị trí trong Báo cáo} & \thead{Bằng chứng trong Mã nguồn \& Kiểm thử}\\
+\hline
+KT1 (1.1--1.10) & Phân tích bài toán, Stakeholders, FR/NFR, Use Case, ERD 3NF, Kiến trúc C4, Định vị AI HITL, Khởi tạo Prompt \& Nhật ký AI. & Chương 1, Chương 3, Chương 4 (Hình 1.1, 3.1, 4.1--4.3, Bảng 3.1--3.2, 4.1) \& Phụ lục B. & Lược đồ \texttt{backend/database/schema.sql} (21 bảng 3NF), cấu hình Prompt và tài liệu thiết kế kiến trúc. \\
+\hline
+KT2 (2.1--2.10) & Cấu trúc dự án chuẩn, Auth \& RBAC 4 vai trò, CRUD đầy đủ, Tìm kiếm/Lọc/Phân trang, Dashboard KPI, Giao diện 3 trạng thái, Seed Data, Xử lý lỗi \& \texttt{.env.example}. & Chương 2, Chương 3, Chương 5 (Bảng 5.1--5.3, Hình 5.1) \& Phụ lục A. & \texttt{backend/core/security.py}, 16 routers trong \texttt{backend/routers/}, \texttt{seed\_data.py}, 16 màn hình React 19 trong \texttt{frontend/src/routes/}. \\
+\hline
+KT3 (3.1--3.10) & Tích hợp 4 tính năng AI01--AI04, Đa mô hình \& Bảo mật khóa BYOK, Ngoại hóa System/User Prompt, Tối ưu Prompt 3 vòng, RAG Grounding, Cảnh báo UI, Smart Fallback \& Kiểm thử. & Chương 4 (Mục 4.3--4.4), Chương 5 (Mục 5.4), Chương 6 \& Chương 7 (Bảng 7.1--7.3). & \texttt{backend/\allowbreak services/\allowbreak ai\_service.py}, \texttt{ai\_provider\_service.py} (mã hóa khóa, chặn SSRF), \texttt{test\_ai\_hitl\_and\_byok.py}. \\
+\hline
+Cuối kỳ (4.1--4.10) & Hệ thống khép kín End-to-End, Mã nguồn sạch, Sao lưu \& Phục hồi CSDL, UI/UX đồng bộ, An toàn \& Đạo đức AI, Hiệu năng P95, Docker, Báo cáo \& Demo. & Toàn bộ 8 Chương và Phụ lục A, B, C (Tổng số trang $\le 60$ trang chuẩn in ấn). & \texttt{backup\_service.py}, \texttt{Dockerfile}, \texttt{docker-compose.yml}, 217/217 ca kiểm thử tự động Pass 100\%. \\
+\hline
+\end{tabularx}
+\end{table}

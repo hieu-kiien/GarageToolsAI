@@ -1,0 +1,105 @@
+\chapter{TỔNG QUAN ĐỀ TÀI VÀ BỐI CẢNH ỨNG DỤNG}
+
+\section{Bối cảnh thực tiễn tại các xưởng dịch vụ ô tô}
+
+Trong lĩnh vực dịch vụ hậu mãi ô tô (Automotive Aftermarket), một xưởng dịch vụ (Garage) điển hình phải xử lý hàng chục lượt phương tiện mỗi ngày với độ phức tạp kỹ thuật cao. Mỗi lượt xe vào xưởng đều khởi tạo một chuỗi tác nghiệp liên hoàn: tiếp nhận thông tin chủ xe và phương tiện (biển kiểm soát, số khung VIN 17 ký tự, số ODO hiện tại), ghi nhận triệu chứng ban đầu, kiểm tra chẩn đoán lỗi, tra cứu tồn kho phụ tùng và định mức giờ công, lập báo giá trình khách hàng phê duyệt, phân công kỹ thuật viên theo khoang sửa chữa (Service Bay), xuất vật tư, nghiệm thu chất lượng (QC) và quyết toán hóa đơn tài chính.
+
+Qua khảo sát hoạt động thực tế tại các garage quy mô vừa và nhỏ, ba điểm nghẽn vận hành phổ biến nhất bao gồm:
+\begin{itemize}
+  \item \textbf{Sai lệch giữa báo giá và tồn kho thực tế}: Cố vấn dịch vụ lập báo giá phụ tùng dựa trên số lượng tồn kho tổng mà không trừ đi lượng phụ tùng đã được đặt giữ (reserved) cho các xe khác đang chờ sửa, dẫn đến tình trạng thiếu hụt vật tư khi kỹ thuật viên bắt đầu tháo lắp.
+  \item \textbf{Thiếu minh bạch và đứt gãy luồng thông tin}: Lịch sử bảo dưỡng của từng số khung VIN không được liên kết tự động với quá trình chẩn đoán hiện tại; tiến độ sửa chữa giữa Cố vấn dịch vụ, Kỹ thuật viên và Kế toán bị phân mảnh, gây khó khăn trong việc truy vết trách nhiệm khi phát sinh khiếu nại bảo hành.
+  \item \textbf{Rủi ro khi ứng dụng AI tự phát}: Việc nhân sự tự ý sử dụng các công cụ trò chuyện AI công cộng để hỏi bệnh ô tô hoặc lập báo giá tiềm ẩn nguy cơ rò rỉ dữ liệu khách hàng, đồng thời AI công cộng không nắm được danh mục mã phụ tùng (SKU) và đơn giá thực tế tại xưởng, dẫn đến hiện tượng ảo giác (hallucination) về linh kiện và chi phí.
+\end{itemize}
+
+Đề tài \textbf{“Hệ thống quản trị xưởng dịch vụ ô tô tích hợp trợ lý trí tuệ nhân tạo (GarageTools AI -- Mã đề tài 80277)”} được xây dựng nhằm giải quyết triệt để các vấn đề trên thông qua một nền tảng quản trị tập trung, kết hợp quy trình kiểm duyệt Human-in-the-loop (HITL) với kiến trúc Đa nhà cung cấp AI (Groq, Google Gemini, OpenAI) có nối đất dữ liệu kho thực tế.
+
+\section{Các bên liên quan và phân tích nhu cầu}
+
+Hệ thống phục vụ bốn nhóm vai trò nội bộ tại xưởng dịch vụ cùng khách hàng sở hữu phương tiện, được phân tích chi tiết trong Bảng~\ref{tab:g-stakeholders}.
+
+\begin{table}[H]
+\centering
+\small
+\caption{Các bên liên quan, nhu cầu cốt lõi và cam kết bảo đảm của hệ thống}
+\label{tab:g-stakeholders}
+\begin{tabularx}{\textwidth}{|L{3.2cm}|Y|Y|}
+\hline
+\thead{Bên liên quan} & \thead{Nhu cầu cốt lõi} & \thead{Giải pháp bảo đảm trong GarageTools AI}\\
+\hline
+Quản lý xưởng / Quản trị viên (Admin / Manager) & Giám sát doanh thu, công suất khoang sửa chữa, kiểm soát tồn kho tối thiểu, quản trị nhân sự và cấu hình khóa kết nối AI an toàn. & Bảng điều khiển KPI thời gian thực; nhật ký kiểm toán bất biến (\texttt{audit\_logs}, \texttt{ai\_audit\_logs}); kho lưu trữ khóa BYOK mã hóa chuẩn AES-256-GCM / Fernet; công cụ sao lưu và phục hồi CSDL trực tiếp. \\
+\hline
+Cố vấn dịch vụ (Service Advisor) & Đặt lịch hẹn không trùng khoang, tiếp nhận xe nhanh, sử dụng AI hỗ trợ chẩn đoán sơ bộ và lập báo giá khớp tồn kho, theo dõi tiến độ toàn xưởng. & Quy trình tiếp nhận chuẩn hóa; trợ lý AI Copilot gợi ý nguyên nhân lỗi (AI01), đề xuất phụ tùng khớp mã SKU (AI02), tóm tắt tiến độ (AI03); cơ chế duyệt HITL một chạm đưa gợi ý vào phiếu sửa chữa (RO). \\
+\hline
+Kỹ thuật viên (Technician) & Nhận lệnh sửa chữa rõ ràng, xem triệu chứng và gợi ý kỹ thuật, cập nhật kết quả kiểm tra và trạng thái hoàn thành công việc được giao. & Phân quyền mức bản ghi (Record-level Scope NFR01): Kỹ thuật viên chỉ nhìn thấy và cập nhật các phiếu RO được phân công trực tiếp cho mình; giao diện tối ưu thao tác tại xưởng. \\
+\hline
+Kế toán / Thu ngân (Accountant) & Kiểm tra bảng kê phụ tùng và giờ công đã nghiệm thu, tính thuế VAT, chiết khấu, ghi nhận thanh toán đa phương thức và quản lý công nợ. & Tự động đồng bộ hạng mục từ phiếu RO sang Hóa đơn (\texttt{invoices}); khóa chỉnh sửa RO sau khi đã xuất hóa đơn; hỗ trợ thanh toán từng phần và đối soát công nợ chính xác. \\
+\hline
+\end{tabularx}
+\end{table}
+
+\section{Ranh giới và phạm vi hệ thống}
+
+Hình~\ref{fig:g-context} mô tả sơ đồ ngữ cảnh (C4 System Context) xác định ranh giới của hệ thống GarageTools AI và các luồng tương tác với tác nhân bên ngoài.
+
+\begin{figure}[H]
+\centering
+\vspace{2pt}
+\input{figures/context.tex}
+\vspace{4pt}
+\caption{Sơ đồ ngữ cảnh và ranh giới hệ thống GarageTools AI}
+\label{fig:g-context}
+\end{figure}
+
+\begin{itemize}
+  \item \textbf{Bên trong ranh giới hệ thống}: Ứng dụng web Single Page Application (React 19 + TanStack Start), máy chủ RESTful API (FastAPI), cơ sở dữ liệu quan hệ (SQLite 3 kích hoạt WAL mode, khóa ngoại và giao dịch \texttt{BEGIN IMMEDIATE}), cùng tầng điều phối AI (RAG Context Builder, Prompt Registry v3.2, BYOK Encrypted Vault và Smart Fallback Engine).
+  \item \textbf{Bên ngoài ranh giới hệ thống}: Các nhà cung cấp dịch vụ mô hình ngôn ngữ lớn (Groq Cloud, Google Gemini API, OpenAI API) giao tiếp qua kênh HTTPS được kiểm soát thời gian chờ (timeout) và chống giả mạo yêu cầu máy chủ (SSRF).
+\end{itemize}
+
+\section{Mục tiêu kỹ thuật và tiêu chí nghiệm thu thực chứng}
+
+Hệ thống xác lập 5 mục tiêu kỹ thuật định lượng (M1--M5), toàn bộ đều được kiểm chứng bằng dữ liệu thực tế và bộ kiểm thử tự động trong Bảng~\ref{tab:g-goals}.
+
+\begin{table}[H]
+\centering
+\small
+\caption{Mục tiêu kỹ thuật định lượng và bằng chứng nghiệm thu thực tế}
+\label{tab:g-goals}
+\begin{tabularx}{\textwidth}{|C{1.0cm}|L{3.5cm}|Y|L{3.5cm}|}
+\hline
+\thead{Mã} & \thead{Mục tiêu kỹ thuật} & \thead{Giải pháp hiện thực hóa} & \thead{Bằng chứng nghiệm thu}\\
+\hline
+M1 & Quản trị khép kín vòng đời dịch vụ ô tô. & Hiện thực hóa 21 bảng dữ liệu chuẩn 3NF: Khách hàng, Xe (VIN), Lịch hẹn, Phiếu RO (10 trạng thái), Kho phụ tùng, Đặt giữ kho, Hóa đơn, Bảo hành, Nhắc bảo dưỡng. & Vượt qua 100\% ca kiểm thử tích hợp CRUD và 35 kịch bản nghiệm thu người dùng (UAT). \\
+\hline
+M2 & Bảo mật phân quyền và toàn vẹn giao dịch kho. & RBAC 4 vai trò kết hợp cô lập bản ghi Kỹ thuật viên (IDOR Guard); giao dịch nguyên tử \texttt{BEGIN IMMEDIATE} chống xuất âm kho khi cạnh tranh. & Bộ kiểm thử đối kháng và kiểm thử tranh chấp đa luồng (Concurrency Tests) đạt tỷ lệ Pass 100\%. \\
+\hline
+M3 & Tích hợp AI nối đất dữ liệu thực và có kiểm soát HITL. & 4 tính năng AI (AI01--AI04) nối đất trực tiếp vào tồn kho SKU và lịch sử xe; bắt buộc Cố vấn dịch vụ duyệt trước khi ghi vào RO. & Đánh giá trên 320 mẫu đạt 100\% Schema Valid, 96.4\% Grounding Score, 0\% tự ý sửa đổi dữ liệu. \\
+\hline
+M4 & Trải nghiệm giao diện công nghiệp chuẩn xác. & Thiết kế Precision Industrial Light Mode trên React 19, hỗ trợ đầy đủ trạng thái Loading, Empty, Error và huy hiệu cảnh báo nội dung AI. & Kiểm thử đơn vị giao diện (\texttt{vitest} 15/15 Pass) và biên dịch Production thành công (Exit Code 0). \\
+\hline
+M5 & Khả năng tái lập, sao lưu và vận hành độc lập. & Đóng gói Docker, kịch bản tạo dữ liệu mẫu (\texttt{seed\_data.py}), dịch vụ sao lưu và phục hồi CSDL trực tuyến (\texttt{backup\_service.py}). & Tổng cộng 217 ca kiểm thử tự động (202 Backend + 15 Frontend) đạt tỷ lệ vượt qua 100\%. \\
+\hline
+\end{tabularx}
+\end{table}
+
+\section{Phạm vi hiện thực hóa}
+
+\subsection{Các phân hệ đã hiện thực hóa đầy đủ trong mã nguồn}
+\begin{enumerate}
+  \item \textbf{Xác thực, Phân quyền RBAC và Cô lập bản ghi}: Đăng nhập JWT (Bcrypt / PBKDF2), kiểm soát 4 vai trò (\texttt{admin}, \texttt{advisor}, \texttt{technician}, \texttt{accountant}), khóa tài khoản không hoạt động và cô lập danh sách RO theo Kỹ thuật viên phụ trách.
+  \item \textbf{Quản lý Hồ sơ Khách hàng, Phương tiện và Lịch hẹn}: Quản lý thông tin chủ xe, phân hạng thành viên, tra cứu theo biển số hoặc số khung VIN, đặt lịch hẹn theo khoang dịch vụ có kiểm tra chống trùng khung giờ.
+  \item \textbf{Quản lý Phiếu sửa chữa (Repair Order -- RO)}: Vòng đời 10 trạng thái chuẩn xưởng dịch vụ, quản lý bảng kê vật tư (\texttt{PART}) và nhân công (\texttt{LABOR}), nhật ký kiểm tra chất lượng (QC) và lịch sử chuyển trạng thái.
+  \item \textbf{Quản lý Kho phụ tùng, Nhà cung cấp và Đặt giữ nguyên tử}: Quản lý danh mục SKU, cảnh báo dưới định mức tồn tối thiểu (\texttt{min\_stock}), cơ chế đặt giữ tồn kho (\texttt{inventory\_reservations}) bảo đảm công thức $\text{Khả dụng} = \text{Tồn thực tế} - \text{Đang giữ}$.
+  \item \textbf{Quản lý Hóa đơn, Thanh toán và Bảo hành}: Xuất hóa đơn từ phiếu RO đã hoàn thành, tính tự động thuế GTGT (VAT) và chiết khấu, thu tiền nhiều đợt, quản lý yêu cầu bảo hành và lịch nhắc bảo dưỡng.
+  \item \textbf{Hệ thống Trợ lý AI Đa nhà cung cấp (AI01--AI04) \& Kho khóa BYOK}: Hỗ trợ chẩn đoán triệu chứng (AI01), đề xuất phụ tùng và công việc theo tồn kho (AI02), tóm tắt tiến độ RO cho khách hàng (AI03), cảnh báo bảo dưỡng định kỳ theo ODO (AI04), cùng kho khóa mã hóa BYOK và bộ suy diễn dự phòng Smart Fallback.
+\end{enumerate}
+
+\subsection{Các nội dung chủ động đặt ngoài phạm vi}
+\begin{itemize}
+  \item Kết nối phần cứng trực tiếp với cổng chẩn đoán OBD-II trên xe qua giao thức CAN-Bus (hệ thống tiếp nhận mã lỗi DTC và triệu chứng thông qua giao diện nhập liệu của Cố vấn dịch vụ và Kỹ thuật viên).
+  \item Gạch nợ tự động qua cổng thanh toán ngân hàng trực tuyến hoặc phát hành hóa đơn điện tử kết nối trực tiếp Tổng cục Thuế.
+  \item Tự huấn luyện mô hình ngôn ngữ lớn từ đầu (dự án áp dụng kiến trúc RAG và Prompt Engineering trên các mô hình thương mại kết hợp động cơ suy diễn quy tắc nội bộ).
+\end{itemize}
+
+\section{Kết luận chương}
+
+Chương 1 đã xác lập bối cảnh nghiệp vụ thực tiễn tại xưởng dịch vụ ô tô, phân tích nhu cầu của bốn nhóm tác nhân, định nghĩa ranh giới hệ thống và 5 mục tiêu kỹ thuật định lượng của đề tài 80277. Chương tiếp theo sẽ trình bày cơ sở lý thuyết, các tiêu chuẩn kỹ thuật và lý do lựa chọn ngăn xếp công nghệ của dự án.

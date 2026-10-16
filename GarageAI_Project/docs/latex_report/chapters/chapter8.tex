@@ -1,0 +1,49 @@
+\chapter{KẾT LUẬN VÀ GIỚI HẠN ĐÃ BIẾT}
+
+\section{Tổng kết thành quả đạt được}
+
+Đề tài \textbf{“Hệ thống quản trị xưởng dịch vụ ô tô tích hợp trợ lý trí tuệ nhân tạo (GarageTools AI -- Mã đề tài 80277)”} đã hoàn thành đầy đủ các mục tiêu nghiên cứu và hiện thực hóa phần mềm theo đúng yêu cầu của học phần Ứng dụng trí tuệ nhân tạo (AIA331). Những kết quả cốt lõi đạt được bao gồm:
+\begin{enumerate}[noitemsep,topsep=2pt]
+  \item \textbf{Xây dựng hoàn chỉnh hệ thống quản trị xưởng dịch vụ ô tô chuẩn 3NF}: Hiện thực hóa 21 bảng dữ liệu quan hệ và 16 nhóm RESTful API xử lý trọn vẹn chu trình từ quản lý khách hàng, phương tiện (biển số, số khung VIN), lịch hẹn theo khoang, phiếu sửa chữa RO (10 trạng thái), nghiệm thu QC, quản lý tồn kho SKU đến hóa đơn, thanh toán đa phương thức, bảo hành và nhắc bảo dưỡng.
+  \item \textbf{Bảo đảm toàn vẹn giao dịch kho nguyên tử và an ninh phân quyền mức bản ghi}: Giải quyết triệt để bài toán tranh chấp xuất kho đồng thời bằng khóa giao dịch \texttt{BEGIN IMMEDIATE} kết hợp cơ chế đặt giữ tồn kho (\texttt{inventory\_reservations}). Thiết lập mô hình RBAC 4 vai trò kết hợp cô lập phạm vi bản ghi Kỹ thuật viên (\texttt{Record-level NFR01}), ngăn chặn hoàn toàn lỗ hổng leo quyền ngang IDOR.
+  \item \textbf{Tích hợp Đa nhà cung cấp AI (AI01--AI04) có nối đất dữ liệu thực và kiểm duyệt HITL}: Hỗ trợ linh hoạt Groq Cloud, Google Gemini, OpenAI cùng kho khóa mã hóa BYOK (chống SSRF) và động cơ dự phòng Smart Fallback. Mọi đề xuất chẩn đoán và báo giá phụ tùng của AI đều đối chiếu trực tiếp với tồn kho thực tế và bắt buộc qua bước phê duyệt của Cố vấn dịch vụ trước khi ghi vào phiếu RO.
+  \item \textbf{Kiểm chứng thực nghiệm và định lượng minh bạch}: Vượt qua 100\% trên tổng số 217 ca kiểm thử tự động (\texttt{pytest} và \texttt{vitest}) cùng 35 kịch bản UAT; nâng tỷ lệ hợp lệ JSON Schema từ 35.0\% (\texttt{v1.0}) lên 100.0\% (\texttt{v3.2}) và đạt điểm bám sát dữ liệu gốc 96.4\% trên 320 mẫu thử nghiệm.
+\end{enumerate}
+
+\section{Đánh giá khách quan các giới hạn kỹ thuật đã biết}
+
+Trên tinh thần trung thực học thuật, nhóm thẳng thắn nhìn nhận các giới hạn kỹ thuật hiện tại của hệ thống và đề xuất giải pháp khắc phục trong Bảng~\ref{tab:g-limitations}.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\renewcommand{\arraystretch}{1.06}
+\caption{Các giới hạn kỹ thuật đã biết của hệ thống và định hướng nâng cấp}
+\label{tab:g-limitations}
+\begin{tabularx}{\textwidth}{|L{3.0cm}|Y|Y|}
+\hline
+\thead{Hạng mục kỹ thuật} & \thead{Hiện trạng và giới hạn trong phiên bản hiện tại} & \thead{Phương án nâng cấp trong giai đoạn tiếp theo}\\
+\hline
+Khả năng mở rộng CSDL đa chi nhánh & SQLite 3 (WAL mode + \texttt{BEGIN IMMEDIATE}) vận hành rất ổn định cho một xưởng dịch vụ độc lập (5--30 nhân sự thao tác đồng thời), nhưng chưa phù hợp cho chuỗi hàng chục garage dùng chung một cụm máy chủ phân tán. & Chuyển đổi tầng lưu trữ sang PostgreSQL 16 sử dụng cơ chế khóa dòng \texttt{SELECT ... FOR UPDATE} khi mở rộng lên mô hình chuỗi xưởng đa chi nhánh. \\
+\hline
+Kết nối phần cứng chẩn đoán OBD-II & Hiện tại các triệu chứng và mã lỗi DTC được Cố vấn dịch vụ hoặc Kỹ thuật viên nhập qua giao diện web; chưa đọc trực tiếp luồng dữ liệu từ giắc cắm OBD-II trên xe. & Phát triển ứng dụng cầu nối (Edge Gateway) đọc dữ liệu từ thiết bị OBD-II Bluetooth/Wi-Fi và đồng bộ tự động vào phiếu RO. \\
+\hline
+Cổng thanh toán và Hóa đơn điện tử & Hệ thống đã tính toán đầy đủ thuế VAT, chiết khấu và quản lý giao dịch thu tiền nội bộ, nhưng chưa tích hợp gạch nợ tự động qua VietQR ngân hàng hoặc API Hóa đơn điện tử thuế. & Tích hợp Webhook thanh toán QR động và kết nối API phát hành hóa đơn điện tử có mã của cơ quan thuế. \\
+\hline
+Năng lực AI Đa phương thức (Multimodal) & Bốn tác vụ AI01--AI04 hiện xử lý trên dữ liệu văn bản kỹ thuật và bảng số liệu tồn kho; chưa phân tích trực tiếp hình ảnh vết trầy xước thân vỏ hoặc âm thanh tiếng gõ động cơ. & Khai thác mô hình thị giác -- ngôn ngữ (Vision LLM) để hỗ trợ đánh giá mức độ hư hỏng đồng sơn từ ảnh chụp hiện trường khi tiếp nhận xe. \\
+\hline
+\end{tabularx}
+\end{table}
+
+\section{Lộ trình phát triển tiếp theo}
+
+Từ nền tảng kiến trúc hiện có, lộ trình nâng cấp hệ thống GarageTools AI được hoạch định qua ba giai đoạn:
+\begin{enumerate}[noitemsep,topsep=2pt]
+  \item \textbf{Giai đoạn 1 -- Chuỗi cung ứng và Đa chi nhánh}: Nâng cấp CSDL lên PostgreSQL kết hợp Redis Cache và tự động hóa quy trình gửi đơn đặt hàng (\texttt{purchase\_orders}) tới nhà cung cấp khi tồn kho chạm ngưỡng tối thiểu.
+  \item \textbf{Giai đoạn 2 -- Tích hợp IoT OBD-II và Cổng khách hàng}: Kết nối trực tiếp thiết bị đọc lỗi OBD-II tại khoang sửa chữa và cung cấp cổng tra cứu tiến độ sửa chữa trực tuyến qua mã QR cho chủ xe.
+  \item \textbf{Giai đoạn 3 -- Chẩn đoán đa phương thức}: Mở rộng trợ lý AI nhận diện ảnh chụp hư hỏng ngoại thất và đọc biển kiểm soát xe tự động qua camera cổng xưởng.
+\end{enumerate}
+
+\section{Lời kết}
+
+Đồ án GarageTools AI đã minh chứng rằng việc ứng dụng trí tuệ nhân tạo trong lĩnh vực kỹ thuật dịch vụ ô tô chỉ thực sự mang lại giá trị bền vững khi được đặt trên một nền tảng dữ liệu chuẩn mực, giao dịch kho nguyên tử và quy trình kiểm duyệt Human-in-the-loop nghiêm ngặt.

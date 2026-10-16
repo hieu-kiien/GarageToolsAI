@@ -325,42 +325,42 @@ INSERT INTO repair_logs (id, repair_order_id, technician_id, note) VALUES
 -- 10. Hoá đơn: 8 (6 đã thu đủ, 1 chưa thu, 1 thu một phần)
 --     total = tổng unit_price x qty của hạng mục thuộc phiếu, do backend tính
 -- ---------------------------------------------------------------------------
-INSERT INTO invoices (id, repair_order_id, total, paid, status) VALUES
-  (1, 1, 1170000, 1170000, 'PAID');
-INSERT INTO invoices (id, repair_order_id, total, paid, status) VALUES
-  (2, 2, 8700000, 8700000, 'PAID');
-INSERT INTO invoices (id, repair_order_id, total, paid, status) VALUES
-  (3, 3, 3200000, 3200000, 'PAID');
-INSERT INTO invoices (id, repair_order_id, total, paid, status) VALUES
-  (4, 5, 2005000, 2005000, 'PAID');
-INSERT INTO invoices (id, repair_order_id, total, paid, status) VALUES
-  (5, 8, 3160000, 3160000, 'PAID');
-INSERT INTO invoices (id, repair_order_id, total, paid, status) VALUES
-  (6, 9, 8000000, 8000000, 'PAID');
-INSERT INTO invoices (id, repair_order_id, total, paid, status) VALUES
-  (7, 10, 6100000, 0, 'UNPAID');
-INSERT INTO invoices (id, repair_order_id, total, paid, status) VALUES
-  (8, 11, 6600000, 3300000, 'PARTIAL');
+INSERT INTO invoices (id, repair_order_id, total, paid, status, created_at) VALUES
+  (1, 1, 1170000, 1170000, 'PAID', '2026-02-14 09:20');
+INSERT INTO invoices (id, repair_order_id, total, paid, status, created_at) VALUES
+  (2, 2, 8700000, 8700000, 'PAID', '2026-04-03 10:05');
+INSERT INTO invoices (id, repair_order_id, total, paid, status, created_at) VALUES
+  (3, 3, 3200000, 3200000, 'PAID', '2026-06-21 14:40');
+INSERT INTO invoices (id, repair_order_id, total, paid, status, created_at) VALUES
+  (4, 5, 2005000, 2005000, 'PAID', '2026-10-18 11:30');
+INSERT INTO invoices (id, repair_order_id, total, paid, status, created_at) VALUES
+  (5, 8, 3160000, 3160000, 'PAID', '2026-07-09 10:40');
+INSERT INTO invoices (id, repair_order_id, total, paid, status, created_at) VALUES
+  (6, 9, 8000000, 8000000, 'PAID', '2026-09-02 13:20');
+INSERT INTO invoices (id, repair_order_id, total, paid, status, created_at) VALUES
+  (7, 10, 6100000, 0, 'UNPAID', '2026-11-12 09:15');
+INSERT INTO invoices (id, repair_order_id, total, paid, status, created_at) VALUES
+  (8, 11, 6600000, 3300000, 'PARTIAL', '2026-11-13 10:30');
 
 -- ---------------------------------------------------------------------------
 -- 11. Thanh toán: 8
 -- ---------------------------------------------------------------------------
-INSERT INTO payments (id, invoice_id, amount, method) VALUES
-  (1, 1, 585000, 'CASH');
-INSERT INTO payments (id, invoice_id, amount, method) VALUES
-  (2, 1, 585000, 'TRANSFER');
-INSERT INTO payments (id, invoice_id, amount, method) VALUES
-  (3, 2, 8700000, 'CASH');
-INSERT INTO payments (id, invoice_id, amount, method) VALUES
-  (4, 3, 3200000, 'CARD');
-INSERT INTO payments (id, invoice_id, amount, method) VALUES
-  (5, 4, 2005000, 'CASH');
-INSERT INTO payments (id, invoice_id, amount, method) VALUES
-  (6, 5, 3160000, 'TRANSFER');
-INSERT INTO payments (id, invoice_id, amount, method) VALUES
-  (7, 6, 8000000, 'CARD');
-INSERT INTO payments (id, invoice_id, amount, method) VALUES
-  (8, 8, 3300000, 'ZALO');
+INSERT INTO payments (id, invoice_id, amount, method, paid_at) VALUES
+  (1, 1, 585000, 'CASH', '2026-02-14 09:20');
+INSERT INTO payments (id, invoice_id, amount, method, paid_at) VALUES
+  (2, 1, 585000, 'TRANSFER', '2026-02-14 09:20');
+INSERT INTO payments (id, invoice_id, amount, method, paid_at) VALUES
+  (3, 2, 8700000, 'CASH', '2026-04-03 10:05');
+INSERT INTO payments (id, invoice_id, amount, method, paid_at) VALUES
+  (4, 3, 3200000, 'CARD', '2026-06-21 14:40');
+INSERT INTO payments (id, invoice_id, amount, method, paid_at) VALUES
+  (5, 4, 2005000, 'CASH', '2026-10-18 11:30');
+INSERT INTO payments (id, invoice_id, amount, method, paid_at) VALUES
+  (6, 5, 3160000, 'TRANSFER', '2026-07-09 10:40');
+INSERT INTO payments (id, invoice_id, amount, method, paid_at) VALUES
+  (7, 6, 8000000, 'CARD', '2026-09-02 13:20');
+INSERT INTO payments (id, invoice_id, amount, method, paid_at) VALUES
+  (8, 8, 3300000, 'ZALO', '2026-11-13 10:30');
 
 -- ---------------------------------------------------------------------------
 -- 12. Kết quả AI: 6 (mỗi chức năng 1 kết quả đã duyệt, 1 kết quả chờ duyệt)
@@ -473,6 +473,42 @@ INSERT INTO warranties (id, repair_order_id, scope, service_id, part_id, months,
   (3, 5, 'SERVICE', 5, NULL, 3, '2026-10-18', '2027-01-18', 'ACTIVE', 'Bảo hành bảo dưỡng định kỳ 3 tháng.');
 INSERT INTO warranties (id, repair_order_id, scope, service_id, part_id, months, start_date, end_date, status, note) VALUES
   (4, 8, 'PART', NULL, 7, 6, '2026-07-09', '2027-01-09', 'ACTIVE', 'Bảo hành má phanh trước 6 tháng.');
+
+-- ---------------------------------------------------------------------------
+-- 15. Biên bản tiếp nhận (intake_records): 3 bản ghi mẫu cho phiếu 1, 10, 11
+-- ---------------------------------------------------------------------------
+INSERT INTO intake_records (id, repair_order_id, odometer_at_intake, fuel_level, exterior_condition, accessories, notes, created_by, created_at) VALUES
+  (1, 1, 48500, 'THREE_QUARTER', 'Sơn zin đều, vết xước nhẹ cản sau bên phải.', 'Chìa khoá thông minh, lốp dự phòng, bộ kích theo xe.', 'Khách yêu cầu kiểm tra kỹ mức dầu và lọc gió.', 2, '2026-02-14 09:25');
+INSERT INTO intake_records (id, repair_order_id, odometer_at_intake, fuel_level, exterior_condition, accessories, notes, created_by, created_at) VALUES
+  (2, 10, 62300, 'HALF', 'Cụm đèn pha trước ố vàng, thân vỏ không móp méo.', 'Chìa khoá cơ, thảm sàn cao su.', 'Tiếp nhận kiểm tra nâng cấp cụm đèn pha LED.', 2, '2026-11-12 09:20');
+INSERT INTO intake_records (id, repair_order_id, odometer_at_intake, fuel_level, exterior_condition, accessories, notes, created_by, created_at) VALUES
+  (3, 11, 35800, 'FULL', 'Ngoại thất nguyên vẹn, kính chắn gió sạch.', 'Chìa khoá thông minh, camera hành trình Vietmap.', 'Khách yêu cầu lập báo giá nâng cấp ánh sáng trước khi thi công.', 2, '2026-11-13 10:35');
+
+-- ---------------------------------------------------------------------------
+-- 16. Báo giá chính thức (quotations & quotation_items): 3 bản ghi mẫu
+--     Phiếu 1: APPROVED & đã áp dụng; Phiếu 10: APPROVED; Phiếu 11: SENT
+-- ---------------------------------------------------------------------------
+INSERT INTO quotations (id, repair_order_id, status, note, valid_until, total, created_by, approved_by, approved_at, created_at, applied_at, applied_by) VALUES
+  (1, 1, 'APPROVED', 'Báo giá bảo dưỡng định kỳ 6 tháng (đã duyệt & áp dụng).', '2026-03-01', 1170000, 2, 1, '2026-02-14 09:30', '2026-02-14 09:22', '2026-02-14 09:35', 1);
+INSERT INTO quotations (id, repair_order_id, status, note, valid_until, total, created_by, approved_by, approved_at, created_at, applied_at, applied_by) VALUES
+  (2, 10, 'APPROVED', 'Báo giá nâng cấp đèn pha LED H7 cho xe 30C-3334.', '2026-11-30', 6100000, 2, 1, '2026-11-12 09:40', '2026-11-12 09:25', '2026-11-12 09:45', 1);
+INSERT INTO quotations (id, repair_order_id, status, note, valid_until, total, created_by, approved_by, approved_at, created_at, applied_at, applied_by) VALUES
+  (3, 11, 'SENT', 'Báo giá gói nâng cấp ánh sáng & vệ sinh khoang máy xe 30E-5556.', '2026-11-30', 6600000, 2, NULL, NULL, '2026-11-13 10:40', NULL, NULL);
+
+INSERT INTO quotation_items (id, quotation_id, service_id, part_id, qty, unit_price) VALUES
+  (1, 1, 1, NULL, 1, 450000);
+INSERT INTO quotation_items (id, quotation_id, service_id, part_id, qty, unit_price) VALUES
+  (2, 1, NULL, 1, 4, 180000);
+INSERT INTO quotation_items (id, quotation_id, service_id, part_id, qty, unit_price) VALUES
+  (3, 2, 7, NULL, 2, 2400000);
+INSERT INTO quotation_items (id, quotation_id, service_id, part_id, qty, unit_price) VALUES
+  (4, 2, NULL, 12, 2, 650000);
+INSERT INTO quotation_items (id, quotation_id, service_id, part_id, qty, unit_price) VALUES
+  (5, 3, 7, NULL, 1, 2400000);
+INSERT INTO quotation_items (id, quotation_id, service_id, part_id, qty, unit_price) VALUES
+  (6, 3, NULL, 12, 6, 650000);
+INSERT INTO quotation_items (id, quotation_id, service_id, part_id, qty, unit_price) VALUES
+  (7, 3, 8, NULL, 1, 300000);
 
 COMMIT;
 

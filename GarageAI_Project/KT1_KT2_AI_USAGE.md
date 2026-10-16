@@ -101,23 +101,57 @@ tròn. Nhóm chuyển toàn bộ cột tiền sang `INTEGER` và chỉ chia khi 
 
 ## Nguyên văn
 
-> Phần này dành cho lượt trao đổi đầy đủ với công cụ AI, bổ sung sau khi nhóm
-> thực hiện lại từng bước.
+> Phần ghi lại các lượt trao đổi tiêu biểu với công cụ AI và quyết định kiểm chứng của nhóm.
 >
 > ```text
 > Bước 1.1 – Phân rã quy trình garage
 > Prompt:
-> Phản hồi:
+>   "Phân tích quy trình garage sửa chữa ô tô từ lúc khách đưa xe đến lúc hoàn tất
+>    thanh toán, nêu rõ các vai trò (actor) và dữ liệu phát sinh ở mỗi bước."
+> Phản hồi AI (tóm lược):
+>   - 5 vai trò: Quản lý, Lễ tân, Kỹ thuật viên, Thu ngân, Khách hàng.
+>   - Quy trình: Đặt lịch -> Tiếp nhận xe -> Kiểm tra/Báo giá -> Sửa chữa & Xuất
+>     phụ tùng -> Nghiệm thu -> Lập hóa đơn & Thanh toán -> Bảo hành.
+>   - Đề xuất tách bảng "công sửa chữa (labor_costs)" riêng với "dịch vụ (services)".
+> Quyết định của nhóm:
+>   - Giữ 4 vai trò đăng nhập hệ thống (MANAGER, RECEPTIONIST, TECHNICIAN, CASHIER);
+>     Khách hàng là đối tượng dữ liệu (bảng customers), không có tài khoản đăng nhập.
+>   - Loại bỏ bảng "labor_costs" riêng, gộp tiền công vào đơn giá bảng services.
 >
 > Bước 1.2 – Lược đồ CSDL
 > Prompt:
-> Phản hồi:
+>   "Từ quy trình trên, đề xuất lược đồ CSDL SQLite gồm các bảng, khóa chính,
+>    khóa ngoại và ràng buộc toàn vẹn cần có."
+> Phản hồi AI (tóm lược):
+>   - Đề xuất các bảng users, customers, vehicles, appointments, repair_orders,
+>     repair_order_items, services, parts, invoices, payments, ai_results...
+>   - Dùng kiểu REAL/FLOAT cho các cột giá tiền (price, unit_price, total, amount).
+> Quyết định của nhóm:
+>   - Chuyển toàn bộ cột tiền tệ sang INTEGER (VND nguyên) để tránh sai số dấu phẩy động.
+>   - Bổ sung ràng buộc CHECK XOR (service_id IS NOT NULL) <> (part_id IS NOT NULL)
+>     cho repair_order_items, quotation_items và warranties.
 >
 > Bước 1.3 – Trạng thái phiếu sửa chữa
 > Prompt:
-> Phản hồi:
+>   "Phiếu sửa chữa trong garage có những trạng thái nào, chuyển trạng thái theo
+>    điều kiện gì để không bị nhảy cóc?"
+> Phản hồi AI (tóm lược):
+>   - Chuỗi tuyến tính: RECEIVED -> INSPECTING -> ESTIMATING -> REPAIRING -> COMPLETED.
+> Quyết định của nhóm:
+>   - Bổ sung trạng thái CANCELLED (kèm tự động hoàn trả tồn kho qua sổ cái RETURN).
+>   - Cho phép quay vòng REPAIRING -> INSPECTING khi phát sinh hạng mục cần kiểm tra lại.
+>   - Chặn chuyển sang COMPLETED nếu phiếu chưa có hạng mục nào.
 >
 > Bước 1.4 – Vị trí ứng dụng AI
 > Prompt:
-> Phản hồi:
+>   "Trong ứng dụng quản lý garage, những chức năng AI nào hợp lý và cần kiểm soát
+>    ra sao để an toàn dữ liệu?"
+> Phản hồi AI (tóm lược):
+>   - Gợi ý 4 chức năng: (1) Tóm tắt lịch sử xe, (2) Giải thích dịch vụ cho khách,
+>     (3) Sinh báo giá nháp, (4) Tự động chẩn đoán bệnh xe từ tiếng động cơ.
+> Quyết định của nhóm:
+>   - Giữ 3 chức năng AI01, AI02, AI03 gắn trực tiếp với dữ liệu CSDL.
+>   - Loại bỏ chức năng (4) "AI tự chẩn đoán lỗi xe" vì rủi ro sai lệch kỹ thuật cao.
+>   - Áp dụng cơ chế Human Review: mọi kết quả AI đều lưu trạng thái PENDING, chờ
+>     nhân viên có quyền ai.review duyệt trước khi sử dụng.
 > ```

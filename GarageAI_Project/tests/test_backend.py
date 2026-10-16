@@ -1344,27 +1344,47 @@ class TestAiGateway(unittest.TestCase):
         self.assertEqual(goi_den, ['https://api.openai.com/v1/chat/completions'])
 
     def test_429_va_500_bi_chuyen_sang_mock(self):
-        """Lỗi nhà cung cấp: nếu cho_phep_mock thì trả None, không ném."""
+        """Lỗi nhà cung cấp (429, 500, timeout, phản hồi sai định dạng):
+        nếu cho_phep_mock thì trả None, không ném; tắt mock thì ném AiError."""
         from app import ai_gateway
+        import sys
+
+        class FakeTimeout(Exception):
+            pass
+
+        che_do = {'kieu': '429'}
 
         class FakeResp:
-            status_code = 429
+            def __init__(self, code, data):
+                self.status_code = code
+                self._data = data
             def json(self):
-                return {}
+                return self._data
 
         class FakeHttpx:
+            TimeoutException = FakeTimeout
             @staticmethod
             def post(url, **kw):
-                return FakeResp()
-            class TimeoutException(Exception):
-                pass
+                k = che_do['kieu']
+                if k == 'timeout':
+                    raise FakeTimeout('quá hạn')
+                if k == '429':
+                    return FakeResp(429, {})
+                if k == '500':
+                    return FakeResp(500, {})
+                if k == 'sai_dinh_dang':
+                    return FakeResp(200, {'khong_co_choices': []})
+                return FakeResp(200, {'choices': [{'message': {'content': ''}}]})
 
-        import sys
         sys.modules['httpx'] = FakeHttpx
         try:
-            self.assertIsNone(ai_gateway.goi('sys', 'user', cho_phep_mock=True))
-            self.assertRaises(ai_gateway.AiError, ai_gateway.goi,
-                              'sys', 'user', cho_phep_mock=False)
+            for k in ('429', '500', 'timeout', 'sai_dinh_dang'):
+                che_do['kieu'] = k
+                self.assertIsNone(
+                    ai_gateway.goi('sys', 'user', cho_phep_mock=True), k)
+                self.assertRaises(
+                    ai_gateway.AiError, ai_gateway.goi,
+                    'sys', 'user', cho_phep_mock=False)
         finally:
             del sys.modules['httpx']
 

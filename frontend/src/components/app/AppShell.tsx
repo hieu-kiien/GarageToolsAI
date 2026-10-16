@@ -86,7 +86,7 @@ function Sidebar({ onNav }: { onNav?: () => void }) {
           <div className="text-sm font-semibold text-sidebar-accent-foreground">
             GarageTools<span className="text-sidebar-primary"> AI</span>
           </div>
-          <div className="text-[10px] uppercase tracking-[0.16em] opacity-60">Xưởng Quận 7</div>
+          <div className="text-[10px] uppercase tracking-[0.16em] opacity-60">Quản trị Xưởng &amp; AI</div>
         </div>
       </div>
       <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-4">
@@ -374,7 +374,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Menu className="size-5" />
           </button>
           <div className="hidden text-sm font-medium text-foreground md:block">
-            GarageTools AI — Xưởng Quận 7
+            GarageTools AI — Hệ thống Quản trị Xưởng Dịch vụ &amp; Trợ lý AI
           </div>
           <div className="ml-auto flex items-center gap-2">
             <span className="hidden text-xs text-muted-foreground sm:inline">Đã đăng nhập</span>

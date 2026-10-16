@@ -1,0 +1,43 @@
+\resizebox{0.98\textwidth}{!}{%
+\begin{tikzpicture}[
+  font=\sffamily,
+  actor/.style={rectangle, rounded corners=3pt, draw=black, line width=0.7pt, fill=black!10, text width=2.8cm, minimum height=0.95cm, align=center, font=\sffamily\scriptsize\bfseries, inner sep=3pt},
+  uc/.style={rectangle, rounded corners=8pt, draw=black, line width=0.65pt, fill=white, text width=4.0cm, minimum height=0.68cm, align=center, font=\sffamily\scriptsize, inner sep=3pt},
+  aiuc/.style={rectangle, rounded corners=8pt, draw=black, line width=0.75pt, fill=black!8, text width=4.0cm, minimum height=0.68cm, align=center, font=\sffamily\scriptsize\bfseries, inner sep=3pt},
+  arr/.style={-{Latex[length=2mm,width=1.4mm]}, line width=0.55pt, draw=black}
+]
+  \draw[rounded corners=5pt, line width=0.8pt, draw=black] (-2.9,-3.7) rectangle (7.8,3.8);
+  \node[font=\sffamily\footnotesize\bfseries, fill=white, inner sep=3pt] at (2.45, 3.8) {RANH GIỚI NGHIỆP VỤ GARAGETOOLS AI (ĐỀ TÀI 80277)};
+
+  \node[uc] (uc1) at (-0.5, 2.7) {UC01: Quản lý Khách hàng \& Xe (VIN)};
+  \node[uc] (uc2) at (-0.5, 1.55) {UC02: Đặt lịch hẹn \& Tiếp nhận xe};
+  \node[uc] (uc3) at (-0.5, 0.4) {UC03: Lập \& Điều phối Phiếu sửa chữa (RO)};
+  \node[uc] (uc4) at (-0.5, -0.75) {UC04: Quản lý Kho \& Đặt giữ phụ tùng};
+  \node[uc] (uc5) at (-0.5, -1.9) {UC05: Xuất Hóa đơn, Thu tiền \& Công nợ};
+  \node[uc] (uc6) at (-0.5, -3.05) {UC06: Thống kê KPI \& Sao lưu CSDL};
+
+  \node[aiuc] (ai1) at (4.9, 2.5) {AI01: Chẩn đoán triệu chứng kỹ thuật};
+  \node[aiuc] (ai2) at (4.9, 1.15) {AI02: Đề xuất hạng mục \& phụ tùng};
+  \node[aiuc] (ai3) at (4.9, -0.2) {AI03: Tóm tắt tiến độ sửa chữa RO};
+  \node[aiuc] (ai4) at (4.9, -1.55) {AI04: Cảnh báo bảo dưỡng định kỳ};
+  \node[uc] (hitl) at (4.9, -2.9) {HITL: Duyệt / Từ chối đề xuất AI};
+
+  \node[actor] (sa) at (-5.2, 2.0) {Cố vấn dịch vụ\\(Service Advisor)};
+  \node[actor] (ktv) at (-5.2, -0.2) {Kỹ thuật viên\\(Technician)};
+  \node[actor] (kt) at (-5.2, -2.4) {Kế toán / Quản lý\\(Accountant / Admin)};
+
+  \draw[arr] (sa.east) -- (uc1.west);
+  \draw[arr] (sa.east) -- (uc2.west);
+  \draw[arr] (sa.east) -- (uc3.west);
+  \draw[arr] (ktv.east) -- (uc3.west);
+  \draw[arr] (ktv.east) -- (uc4.west);
+  \draw[arr] (kt.east) -- (uc5.west);
+  \draw[arr] (kt.east) -- (uc6.west);
+
+  \draw[arr, dashed] (uc3.east) -- (ai1.west);
+  \draw[arr, dashed] (uc3.east) -- (ai2.west);
+  \draw[arr, dashed] (uc3.east) -- (ai3.west);
+  \draw[arr, dashed] (uc1.east) -- (ai4.west);
+  \draw[arr] (hitl.east) -- ++(0.35, 0) |- (ai2.east);
+\end{tikzpicture}%
+}

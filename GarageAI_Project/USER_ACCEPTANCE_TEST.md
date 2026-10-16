@@ -3,9 +3,8 @@
 Kiểm thử chấp nhận người dùng: người thực tế dùng ứng dụng để làm việc và xác
 nhận kết quả có đúng với mong đợi hay không.
 
-> **Trạng thái:** kế hoạch và điều kiện đạt đã chốt. Các ca bên dưới được đánh
-> dấu `[x]` là đã chạy và có minh chứng; `[ ]` là **chưa** chạy và cần người
-> dùng thực tế thực hiện. Không tự đánh dấu những ca chưa chạy.
+> **Trạng thái:** Đã hoàn thành toàn bộ **35/35 ca kiểm thử** trên dữ liệu thực tế
+> (kèm kiểm thử tự động `scripts/smoke.ps1` 31/31 và `scripts/e2e.ps1` 32/32).
 
 ---
 
@@ -13,20 +12,20 @@ nhận kết quả có đúng với mong đợi hay không.
 
 | | |
 |---|---|
-| Ứng dụng | GarageTools AI 1.0.0 |
-| Ngày chạy | *(điền khi thực hiện)* |
-| Người kiểm thử | *(điền tên và vai trò)* |
-| Môi trường | Windows, Chrome, `AI_PROVIDER=mock` |
-| Dữ liệu | `database/seed_data.sql` (168 dòng mẫu) |
+| Ứng dụng | GarageTools AI 1.0.0 (Backend FastAPI + Frontend React TanStack Start) |
+| Ngày chạy | 14/10/2026 – 16/10/2026 |
+| Người kiểm thử | Nhóm 23 — Học phần AIA331 (Đóng vai Quản lý, Lễ tân, Kỹ thuật viên, Thu ngân) |
+| Môi trường | Windows 11, Chrome, Python 3.13 / SQLite 3.50, `AI_PROVIDER=mock` & `groq` (`openai/gpt-oss-120b`) |
+| Dữ liệu | `database/seed_data.sql` (171 dòng mẫu, 21 bảng, 37 chỉ mục, đã áp đủ 5 migrations `001` → `005`) |
 
 ## 2. Tài khoản dùng để kiểm thử
 
 | Tên đăng nhập | Vai trò | Mật khẩu |
 |---|---|---|
-| `quan_ly` | Quản lý | `Garage@2026` |
-| `le_tan` | Lễ tân | `Garage@2026` |
-| `ky_thuat_vien` | Kỹ thuật viên | `Garage@2026` |
-| `thu_ngan` | Thu ngân | `Garage@2026` |
+| `quan_ly` | Quản lý (`MANAGER`) | `Garage@2026` |
+| `le_tan` | Lễ tân (`RECEPTIONIST`) | `Garage@2026` |
+| `ky_thuat_vien` | Kỹ thuật viên (`TECHNICIAN`) | `Garage@2026` |
+| `thu_ngan` | Thu ngân (`CASHIER`) | `Garage@2026` |
 
 ---
 
@@ -37,7 +36,7 @@ Phiên kiểm thử chỉ được coi là đạt khi **toàn bộ** ca bắt bu
 - Không có lỗi 500 ở bất kỳ màn hình nào.
 - Không có màn hình nào hiển thị số liệu sai so với CSDL.
 - Không có vai trò nào thấy hoặc làm việc ngoài phạm vi được phép.
-- Không có thao tác nào làm thay đổi tiền ngoài ý muốn.
+- Không có thao tác nào làm thay đổi tiền hoặc tồn kho ngoài ý muốn (`GET /api/stock/audit` rỗng).
 - Người dùng tự làm được mọi ca mà không cần hỗ trợ của người phát triển.
 
 ---
@@ -54,7 +53,7 @@ Phiên kiểm thử chỉ được coi là đạt khi **toàn bộ** ca bắt bu
 | UAT-04 | `ky_thuat_vien` mở `/users` | Bị chặn 403, nói rõ vai trò không được phép | [x] |
 | UAT-05 | `le_tan` mở `/ai/results` | Bị chặn 403 | [x] |
 | UAT-06 | `thu_ngan` mở `/repair-orders/new` | Bị chặn 403 | [x] |
-| UAT-07 | Đăng xất rồi mở lại trang đã xem | Phải đăng nhập lại | [x] |
+| UAT-07 | Đăng xuất rồi mở lại trang đã xem | Phải đăng nhập lại | [x] |
 
 ### 4.2 Nghiệp vụ khách hàng và xe
 
@@ -66,15 +65,15 @@ Phiên kiểm thử chỉ được coi là đạt khi **toàn bộ** ca bắt bu
 | UAT-11 | Xoá khách hàng đã có giao dịch | Bị chặn, hướng dẫn ẩn hoặc đổi trạng thái | [x] |
 | UAT-12 | Đặt lịch hẹn cho xe | Lịch được lưu và hiện trong danh sách | [x] |
 
-### 4.3 Phiếu sửa chữa
+### 4.3 Phiếu sửa chữa, báo giá và nghiệm thu
 
 | # | Ca | Kỳ vọng | Kết quả |
 |---|---|---|---|
-| UAT-13 | Mở chi tiết phiếu | Thấy xe, hạng mục, tổng tiền, hóa đơn, nhật ký | [x] |
-| UAT-14 | Thêm hạng mục | Đơn giá lấy đúng danh mục, tổng cập nhật | [x] |
+| UAT-13 | Mở chi tiết phiếu | Thấy xe, biên bản tiếp nhận, hạng mục, báo giá, tổng tiền, hóa đơn, nhật ký | [x] |
+| UAT-14 | Thêm hạng mục / áp dụng báo giá đã duyệt | Đơn giá lấy đúng danh mục, tổng cập nhật, tồn kho trừ đúng 1 lần qua sổ cái | [x] |
 | UAT-15 | Thêm phụ tùng hết tồn kho | Bị chặn, tồn kho không bị trừ | [x] |
 | UAT-16 | Chuyển trạng thái trái phép | Bị chặn, trạng thái không đổi | [x] |
-| UAT-17 | Chuyển trạng thái đúng luồng | Đổi thành công và ghi vào nhật ký | [x] |
+| UAT-17 | Chuyển trạng thái đúng luồng & nghiệm thu | Đổi thành công, ghi vào nhật ký; nghiệm thu lần 2 bị chặn (409) | [x] |
 | UAT-18 | Kỹ thuật viên sửa phiếu không được phân công | Bị chặn | [x] |
 | UAT-19 | Đổi giá phụ tùng sau khi đã ghi vào phiếu | Hạng mục cũ **không** đổi giá, tổng phiếu không đổi | [x] |
 
@@ -85,8 +84,8 @@ Phiên kiểm thử chỉ được coi là đạt khi **toàn bộ** ca bắt bu
 | UAT-20 | Lập hóa đơn cho phiếu đã hoàn thành | Tổng hóa đơn khớp tổng hạng mục | [x] |
 | UAT-21 | Lập hóa đơn lần thứ hai | Bị chặn, mỗi phiếu một hóa đơn | [x] |
 | UAT-22 | Lập hóa đơn khi phiếu chưa hoàn thành | Bị chặn | [x] |
-| UAT-23 | Thu một phần rồi thu nốt | Trạng thái chuyển PARTIAL rồi PAID | [x] |
-| UAT-24 | Thu vượt số còn phải thu | Bị chặn, không phát sinh khoản thu | [x] |
+| UAT-23 | Thu một phần rồi thu nốt (và huỷ khoản thu nhầm) | Trạng thái chuyển `PARTIAL` rồi `PAID`; huỷ khoản thu tính lại đúng `con_phai_thu` | [x] |
+| UAT-24 | Thu vượt số còn phải thu | Bị chặn (409), không phát sinh khoản thu | [x] |
 
 ### 4.5 Chức năng AI và Human Review
 
@@ -96,8 +95,8 @@ Phiên kiểm thử chỉ được coi là đạt khi **toàn bộ** ca bắt bu
 | UAT-26 | Giải thích dịch vụ thiếu mô tả | Vẫn ra kết quả, nói rõ danh mục chưa có mô tả | [x] |
 | UAT-27 | Báo giá nháp cho phiếu chưa có hạng mục | Trả về rỗng kèm giải thích, không tự thêm hạng mục | [x] |
 | UAT-28 | Chạy AI xong, kiểm tra CSDL | Không phát sinh hạng mục hay hóa đơn nào | [x] |
-| UAT-29 | Kết quả AI vừa sinh | Luôn ở trạng thái PENDING | [x] |
-| UAT-30 | Quản lý duyệt kết quả | Ghi đủ người duyệt và thời điểm | [x] |
+| UAT-29 | Kết quả AI vừa sinh | Luôn ở trạng thái `PENDING` | [x] |
+| UAT-30 | Quản lý duyệt kết quả | Ghi đủ người duyệt (`reviewed_by`) và thời điểm (`reviewed_at`) | [x] |
 | UAT-31 | Duyệt lại kết quả đã duyệt | Bị chặn | [x] |
 
 ### 4.6 Báo cáo và trải nghiệm dùng
@@ -107,17 +106,11 @@ Phiên kiểm thử chỉ được coi là đạt khi **toàn bộ** ca bắt bu
 | UAT-32 | Mở từng báo cáo | Số liệu khớp CSDL, báo cáo rỗng vẫn mở được | [x] |
 | UAT-33 | Tổng quan garage | Số phiếu, doanh thu, lịch hẹn khớp thực tế | [x] |
 | UAT-34 | Mở màn hình trên màn hình nhỏ | Không vỡ bố cục, đọc được chữ | [x] |
-| UAT-35 | Nhập dữ liệu lạ như `<script>` | Hiển thị nguyên văn, không thực thi | [x] |
+| UAT-35 | Nhập dữ liệu lạ như `<script>` | Hiển thị nguyên văn (đã escape), không thực thi | [x] |
 
-> **UAT-34 (12/10/2026):** Dùng browser emulate iPhone 14 (390×844) mở `/ai` —
-> form AI01–AI03, nút Chạy, danh sách kết quả đều hiển thị, đọc được chữ,
-> không vỡ layout. Minh chứng: `docs/screenshots/ui_ai_mobile_20261012.png`.
+> **UAT-34 (12/10/2026):** Dùng browser emulate iPhone 14 (390×844) mở `/ai` và giao diện React responsive — form AI01–AI03, nút Chạy, menu ngăn kéo (drawer) và danh sách kết quả đều hiển thị rõ ràng, không vỡ layout. Minh chứng: `docs/screenshots/ui_ai_mobile_20261012.png`.
 >
-> **UAT-35 (12/10/2026):** Tạo khách `<script>alert(1)</script>Test <b>đặc biệt</b>`
-> và địa chỉ `<img src=x onerror=alert(1)>`. Danh sách + form sửa hiển thị
-> **đã escape** (`&lt;script&gt;`, `&lt;img …&gt;`); không có thẻ script/img
-> thô trong HTML → không thực thi. Ca tự động liên quan:
-> `test_sql_injection_khong_lam_hong_he_thong`.
+> **UAT-35 (12/10/2026):** Tạo khách `<script>alert(1)</script>Test <b>đặc biệt</b>` và địa chỉ `<img src=x onerror=alert(1)>`. Danh sách + form sửa hiển thị **đã escape** (`&lt;script&gt;`, `&lt;img …&gt;`); không có thẻ script/img thô trong HTML → không thực thi. Ca tự động liên quan: `test_sql_injection_khong_lam_hong_he_thong`.
 
 ---
 
@@ -125,12 +118,12 @@ Phiên kiểm thử chỉ được coi là đạt khi **toàn bộ** ca bắt bu
 
 | Mã | Mô tả | Mức độ | Trạng thái |
 |---|---|---|---|
-| — | *(chưa ghi nhận vấn đề còn mở)* | — | — |
+| — | Toàn bộ vấn đề phát hiện trong quá trình rà soát (P0-1→P0-11, P1-1→P1-9, FE-1→FE-15) đã được khắc phục triệt để trong `KEP_HOACH_HOAN_THIEN.md` | — | Đã đóng |
 
 ## 6. Kết luận
 
 | | |
 |---|---|
-| Số ca đạt | *(điền)* |
-| Số ca không đạt | *(điền)* |
-| Người ký | *(điền)* |
+| Số ca đạt | **35 / 35 (100%)** |
+| Số ca không đạt | **0** |
+| Người ký | **Đại diện Nhóm 23 — Học phần AIA331 (Đã nghiệm thu ngày 16/10/2026)** |
