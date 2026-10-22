@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thuyết trình Đồ án AIA331 — Nhóm 23 — GarageTools AI</title>
+
+    <!-- Reveal.js 5.1 Official CDN -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/white.css" id="theme">
+
+    <!-- Google Fonts: Be Vietnam Pro & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Lucide Icons & Chart.js -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+    <style>
+        :root {
+            --r-main-font: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, sans-serif;
+            --r-heading-font: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, sans-serif;
+            --r-code-font: 'JetBrains Mono', monospace;
+            --r-main-color: #0F172A;
+            --r-heading-color: #0F172A;
+            --r-background-color: #F8FAFC;
+            --primary: #2563EB;
+            --primary-dark: #1D4ED8;
+            --sky: #0284C7;
+            --emerald: #059669;
+            --amber: #D97706;
+            --rose: #E11D48;
+            --violet: #7C3AED;
+        }
+
+        body {
+            background: #F4F7FB;
+            overflow: hidden;
+            font-family: var(--r-main-font);
+        }
+
+        /* =====================================================================
+           HIỆU ỨNG NỀN AURORA MÀU SÁNG TƯƠI TẮN (ANIMATED MESH BACKGROUND)
+           ===================================================================== */
+        .aurora-bg {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+            background:
+                radial-gradient(circle at 12% 18%, rgba(56, 189, 248, 0.18), transparent 38%),
+                radial-gradient(circle at 88% 15%, rgba(99, 102, 241, 0.15), transparent 36%),
+                radial-gradient(circle at 80% 85%, rgba(16, 185, 129, 0.14), transparent 38%),
+                radial-gradient(circle at 18% 85%, rgba(245, 158, 11, 0.12), transparent 35%),
+                linear-gradient(180deg, #F8FAFC 0%, #EFF6FF 100%);
+        }
+
+        .aurora-blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(70px);
+            opacity: 0.55;
+            animation: floatBlob 16s infinite alternate ease-in-out;
+        }
+        .blob-1 { width: 420px; height: 420px; background: #BAE6FD; top: -100px; left: -80px; }
+        .blob-2 { width: 380px; height: 380px; background: #C7D2FE; bottom: -90px; right: -60px; animation-delay: -5s; }
+        .blob-3 { width: 300px; height: 300px; background: #A7F3D0; top: 40%; left: 55%; animation-delay: -10s; }
+
+        @keyframes floatBlob {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(40px, -30px) scale(1.12); }
+        }
+
+        /* Lưới chấm bi trang trí nhẹ nhàng */
+        .dot-pattern {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            background-image: radial-gradient(rgba(37, 99, 235, 0.12) 1px, transparent 1px);
+            background-size: 28px 28px;
+            mask-image: radial-gradient(ellipse at center, black 60%, transparent 100%);
+        }
+
+        /* =====================================================================
+           REVEAL.JS OVERRIDES CHO BỐ CỤC HIỆN ĐẠI
+           ===================================================================== */
+        .reveal {
+            z-index: 1;
+        }
+
+        .reveal .slides {
+            text-align: left;
+        }
+
+        .reveal .slides section {
+            padding: 10px 20px;
+            box-sizing: border-box;
+        }
+
+        .reveal h1, .reveal h2, .reveal h3, .reveal h4 {
+            text-transform: none;
+            font-family: var(--r-heading-font);
+            letter-spacing: -0.02em;
+            margin: 0;
+        }
+
+        /* Thanh tiến trình của Reveal.js */
+        .reveal .progress {
+            height: 5px;
+            background: rgba(37, 99, 235, 0.12);
+        }
+        .reveal .progress span {
+            background: linear-gradient(90deg, #2563EB, #06B6D4, #10B981);
+        }
+
+        .reveal .slide-number {
+            background: rgba(255, 255, 255, 0.9);
+            color: #1E293B;
+            border: 1px solid #CBD5E1;
+            border-radius: 999px;
+            padding: 5px 14px;
+            font-family: var(--r-main-font);
+            font-weight: 700;
+            font-size: 13px;
+            bottom: 18px;
+            right: 85px;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+        }
+
+        /* =====================================================================
+           THÀNH PHẦN GIAO DIỆN TRANG TRÍ (CARDS, BADGES, GRADIENTS)
+           ===================================================================== */
+        .slide-shell {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            width: 100%;
+        }
+
+        .slide-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            border-bottom: 2px solid rgba(37, 99, 235, 0.12);
+            padding-bottom: 12px;
+        }
+
+        .kicker-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 5px 14px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 700;
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.12), rgba(2, 132, 199, 0.12));
+            color: var(--primary);
+            border: 1px solid rgba(37, 99, 235, 0.25);
+            margin-bottom: 8px;
+        }
+
+        .title-gradient {
+            font-size: 36px !important;
+            font-weight: 800 !important;
+            line-height: 1.18 !important;
+            background: linear-gradient(135deg, #0F172A 0%, #1E3A8A 55%, #0284C7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .phase-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 700;
+            background: #FFFFFF;
+            border: 1px solid #E2E8F0;
+            color: #475569;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+            white-space: nowrap;
+        }
+
+        /* Thẻ kính sáng (Light Glassmorphism Cards) */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.88);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(226, 232, 240, 0.95);
+            border-radius: 18px;
+            padding: 22px 24px;
+            box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.06), 0 2px 6px rgba(15, 23, 42, 0.03);
+            transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.28s ease, border-color 0.28s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 18px 38px -8px rgba(37, 99, 235, 0.14);
+            border-color: rgba(37, 99, 235, 0.35);
+        }
+
+        .glass-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #2563EB, #38BDF8);
+        }
+
+        .glass-card.emerald::before { background: linear-gradient(90deg, #059669, #34D399); }
+        .glass-card.amber::before { background: linear-gradient(90deg, #D97706, #FBBF24); }
+        .glass-card.rose::before { background: linear-gradient(90deg, #E11D48, #FB7185); }
+        .glass-card.violet::before { background: linear-gradient(90deg, #7C3AED, #A78BFA); }
+
+        .icon-box {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #EFF6FF;
+            color: #2563EB;
+            flex-shrink: 0;
+        }
+        .icon-box.emerald { background: #ECFDF5; color: #059669; }
+        .icon-box.amber { background: #FFFBEB; color: #D97706; }
+        .icon-box.rose { background: #FFF1F2; color: #E11D48; }
+        .icon-box.violet { background: #F5F3FF; color: #7C3AED; }
+
+        .card-head {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .card-head h3 {
+            font-size: 19px !important;
+            font-weight: 800 !important;
+            color: #0F172A;
+        }
+
+        .feature-list {
+            list-style: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .feature-list li {
+            font-size: 15.5px;
+            line-height: 1.5;
+            color: #334155;
+            display: flex;
+            align-items: flex-start;
+            gap: 9px;
+        }
+
+        .feature-list li i {
+            color: var(--primary);
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+            margin-top: 3px;
+        }
+
+        .code-chip {
+            font-family: var(--r-code-font);
+            font-size: 0.86em;
+            background: #EFF6FF;
+            color: #1D4ED8;
+            padding: 2px 7px;
+            border-radius: 6px;
+            border: 1px solid #BFDBFE;
+            font-weight: 600;
+        }
+
+        /* =====================================================================
+           KHUNG TRÌNH DUYỆT MACBOOK HIỂN THỊ ẢNH THẬT & TƯƠNG TÁC
+           ===================================================================== */
+        .browser-mockup {
+            background: #FFFFFF;
+            border: 1px solid #CBD5E1;
+            border-radius: 16px;
+            box-shadow: 0 20px 45px -10px rgba(15, 23, 42, 0.14);
+            overflow: hidden;
+            cursor: zoom-in;
+            transition: transform 0.25s ease;
+        }
+        .browser-mockup:hover {
+            transform: scale(1.01);
+        }
+
+        .browser-bar {
+            background: #F1F5F9;
+            border-bottom: 1px solid #E2E8F0;
+            padding: 9px 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .browser-dots {
+            display: flex;
+            gap: 6px;
+        }
+        .browser-dots span {
+            width: 11px;
+            height: 11px;
+            border-radius: 50%;
+        }
+        .dot-r { background: #FB7185; }
+        .dot-y { background: #FBBF24; }
+        .dot-g { background: #34D399; }
+
+        .browser-url {
+            flex: 1;
+            background: #FFFFFF;
+            border: 1px solid #E2E8F0;
+            border-radius: 6px;
+            padding: 3px 12px;
+            font-family: var(--r-code-font);
+            font-size: 11.5px;
+            color: #64748B;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .browser-body {
+            background: #F8FAFC;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .browser-body img {
+            width: 100%;
+            height: auto;
+            max-height: 360px;
+            object-fit: contain;
+            margin: 0 !important;
+            transition: opacity 0.2s ease;
+        }
+
+        /* Các nút bấm chuyển màn hình tương tác */
+        .interactive-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .screen-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 14px;
+            border-radius: 999px;
+            border: 1px solid #CBD5E1;
+            background: #FFFFFF;
+            color: #475569;
+            font-family: var(--r-main-font);
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 5px rgba(15, 23, 42, 0.04);
+        }
+
+        .screen-pill:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            transform: translateY(-1px);
+        }
+
+        .screen-pill.active {
+            background: linear-gradient(135deg, #2563EB, #0284C7);
+            color: #FFFFFF;
+            border-color: transparent;
+            box-shadow: 0 6px 16px rgba(37, 99, 235, 0.28);
+        }
+
+        /* =====================================================================
+           SƠ ĐỒ DÒNG CHẢY ĐỘNG (ANIMATED WORKFLOW PIPELINE)
+           ===================================================================== */
+        .pipeline-row {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 10px;
+            position: relative;
+        }
+
+        .pipe-node {
+            background: #FFFFFF;
+            border: 1.5px solid #CBD5E1;
+            border-radius: 14px;
+            padding: 12px 10px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+            position: relative;
+            transition: all 0.2s ease;
+        }
+
+        .pipe-node:hover {
+            transform: translateY(-3px);
+            border-color: var(--primary);
+        }
+
+        .pipe-step {
+            font-family: var(--r-code-font);
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--primary);
+            background: #EFF6FF;
+            padding: 2px 8px;
+            border-radius: 999px;
+            display: inline-block;
+            margin-bottom: 4px;
+        }
+
+        .pipe-title {
+            font-size: 14px;
+            font-weight: 800;
+            color: #0F172A;
+        }
+
+        .pipe-sub {
+            font-size: 11.5px;
+            color: #64748B;
+            margin-top: 3px;
+            line-height: 1.3;
+        }
+
+        /* Ô KPI Đếm số tự động */
+        .kpi-grid-4 {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+        }
+
+        .kpi-stat {
+            background: rgba(255, 255, 255, 0.92);
+            border: 1px solid #E2E8F0;
+            border-radius: 16px;
+            padding: 16px 18px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            box-shadow: 0 8px 24px -4px rgba(15, 23, 42, 0.06);
+        }
+
+        .kpi-num {
+            font-size: 28px;
+            font-weight: 900;
+            color: #0F172A;
+            line-height: 1.05;
+        }
+
+        .kpi-lbl {
+            font-size: 13px;
+            color: #64748B;
+            font-weight: 600;
+            margin-top: 3px;
+        }
+
+        /* Lightbox phóng to ảnh khi click */
+        .zoom-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.88);
+            backdrop-filter: blur(8px);
+            z-index: 9999;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            cursor: zoom-out;
+        }
+        .zoom-overlay.open {
+            display: flex;
+            animation: fadeIn 0.2s ease;
+        }
+        .zoom-overlay img {
+            max-width: 92vw;
+            max-height: 84vh;
+            border-radius: 14px;
+            background: #fff;
+            padding: 6px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+        }
+        .zoom-caption {
+            color: #FFFFFF;
+            font-size: 16px;
+            font-weight: 700;
+            margin-top: 14px;
+            background: rgba(37, 99, 235, 0.9);
+            padding: 6px 18px;
+            border-radius: 999px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.96); }
+            to { opacity: 1; transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Nền Aurora Màu Sáng Tươi Tắn -->
+    <div class="aurora-bg">
+        <div class="aurora-blob blob-1"></div>
+        <div class="aurora-blob blob-2"></div>
+        <div class="aurora-blob blob-3"></div>
+    </div>
+    <div class="dot-pattern"></div>
+
+    <!-- REVEAL.JS PRESENTATION -->
+    <div class="reveal">
+        <div class="slides">
+
+            <!-- =========================================================
+                 SLIDE 1: TRANG BÌA (0:00 - 0:45)
+                 ========================================================= -->
+            <section data-transition="zoom">
+                <div class="slide-shell">
+                    <!-- Header Trường -->
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div style="display:flex; align-items:center; gap:14px;">
+                            <img src="./GarageAI_Project/docs/latex_report/logo_ictu.png" alt="ICTU" style="height:54px; width:auto; margin:0; border-radius:10px; background:#fff; padding:4px; box-shadow:0 4px 12px rgba(0,0,0,0.06);" onerror="this.style.display='none'">
+                            <div>
+                                <div style="font-size:13px; font-weight:800; color:#1D4ED8; letter-spacing:0.5px;">TRƯỜNG ĐẠI HỌC CÔNG NGHỆ THÔNG TIN & TRUYỀN THÔNG — ĐHTN</div>
+                                <div style="font-size:13.5px; color:#64748B; font-weight:600;">Học phần: Ứng dụng Trí tuệ Nhân tạo (AIA331) · Mã đề tài: 80277</div>
+                            </div>
+                        </div>
+                        <span class="phase-badge">
+                            <i data-lucide="sparkles" style="width:16px;height:16px;color:#2563EB;"></i>
+                            Báo cáo Bảo vệ Đồ án · Nhóm 23
+                        </span>
+                    </div>
+
+                    <!-- Hero Split -->
+                    <div style="display:grid; grid-template-columns:1.1fr 1.1fr; gap:28px; align-items:center; margin-top:4px;">
+                        <div style="display:flex; flex-direction:column; gap:16px;">
+                            <div>
+                                <div class="kicker-pill">
+                                    <i data-lucide="car-front" style="width:15px;height:15px;"></i>
+                                    Hệ thống Quản trị Xưởng Dịch vụ Ô tô & AI
+                                </div>
+                                <h1 style="font-size:44px !important; font-weight:900 !important; line-height:1.12 !important; color:#0F172A;">
+                                    GARAGETOOLS <span style="background:linear-gradient(135deg,#2563EB,#06B6D4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">AI</span>
+                                </h1>
+                            </div>
+
+                            <p style="font-size:17px; line-height:1.58; color:#475569; margin:0;">
+                                Quản lý khép kín từ <strong>Đặt lịch → Tiếp nhận → Báo giá → Sổ cái Kho → Sửa chữa → Nghiệm thu → Hóa đơn → Bảo hành</strong>, kết hợp <strong>3 Trợ lý AI (AI01, AI02, AI03)</strong> có kiểm soát qua <strong>Human Review</strong>.
+                            </p>
+
+                            <div class="glass-card" style="padding:16px 20px;">
+                                <div style="display:grid; grid-template-columns:1.2fr 1fr; gap:12px;">
+                                    <div>
+                                        <div style="font-size:11.5px; font-weight:800; color:#64748B; text-transform:uppercase;">Sinh viên thực hiện (Nhóm 23)</div>
+                                        <div style="font-size:15.5px; font-weight:800; color:#0F172A; margin-top:4px;">1. Nguyễn Đức Dũng <span style="color:#2563EB;font-size:13px;">(Trưởng nhóm)</span></div>
+                                        <div style="font-size:15.5px; font-weight:800; color:#0F172A;">2. Đồng Quốc Khánh</div>
+                                    </div>
+                                    <div style="border-left:1px solid #E2E8F0; padding-left:14px;">
+                                        <div style="font-size:11.5px; font-weight:800; color:#64748B; text-transform:uppercase;">Giảng viên hướng dẫn</div>
+                                        <div style="font-size:16.5px; font-weight:800; color:#1D4ED8; margin-top:6px;">TS. Nguyễn Tuấn Anh</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Khung trình duyệt ảnh thật -->
+                        <div class="browser-mockup" onclick="zoomImage('./GarageAI_Project/screenshots/02_dashboard.png', 'Giao diện Tổng quan Xưởng (React 19 + TanStack Start)')">
+                            <div class="browser-bar">
+                                <div class="browser-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+                                <div class="browser-url">
+                                    <span>http://localhost:3000/ — GarageTools AI (React 19)</span>
+                                    <span style="color:#2563EB;font-weight:700;">Bấm phóng to 🔍</span>
+                                </div>
+                            </div>
+                            <div class="browser-body">
+                                <img src="./GarageAI_Project/screenshots/02_dashboard.png" alt="Dashboard">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4 Ô Số liệu tự động đếm -->
+                    <div class="kpi-grid-4">
+                        <div class="kpi-stat">
+                            <div class="icon-box"><i data-lucide="database"></i></div>
+                            <div>
+                                <div class="kpi-num"><span class="count-up" data-target="21">21</span> bảng</div>
+                                <div class="kpi-lbl">CSDL SQLite WAL · 37 chỉ mục</div>
+                            </div>
+                        </div>
+                        <div class="kpi-stat">
+                            <div class="icon-box emerald"><i data-lucide="layout-dashboard"></i></div>
+                            <div>
+                                <div class="kpi-num"><span class="count-up" data-target="16">16</span> màn hình</div>
+                                <div class="kpi-lbl">React 19 + 4 Vai trò RBAC</div>
+                            </div>
+                        </div>
+                        <div class="kpi-stat">
+                            <div class="icon-box violet"><i data-lucide="bot"></i></div>
+                            <div>
+                                <div class="kpi-num"><span class="count-up" data-target="3">3</span> trợ lý AI</div>
+                                <div class="kpi-lbl">Đa Provider + Human Review</div>
+                            </div>
+                        </div>
+                        <div class="kpi-stat">
+                            <div class="icon-box amber"><i data-lucide="shield-check"></i></div>
+                            <div>
+                                <div class="kpi-num"><span class="count-up" data-target="226">226</span>/226</div>
+                                <div class="kpi-lbl">Ca Kiểm thử Tự động (100%)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- =========================================================
+                 SLIDE 2: ĐẶT VẤN ĐỀ & RANH GIỚI AI (KT1) (0:45 - 1:40)
+                 ========================================================= -->
+            <section data-transition="slide">
+                <div class="slide-shell">
+                    <div class="slide-top">
+                        <div>
+                            <div class="kicker-pill"><i data-lucide="compass" style="width:15px;height:15px;"></i> 01 · Đặt vấn đề & Giai đoạn KT1</div>
+                            <h2 class="title-gradient">Thực trạng Quản lý Xưởng & Vì sao cần "Rào chắn" cho AI?</h2>
+                        </div>
+                        <span class="phase-badge">Cột mốc 1: KT1 · Phân tích & Thiết kế</span>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns:1fr 1.1fr; gap:24px;">
+                        <!-- Cột trái: 3 Nỗi đau -->
+                        <div class="glass-card rose">
+                            <div class="card-head">
+                                <div class="icon-box rose"><i data-lucide="alert-triangle"></i></div>
+                                <h3>3 Rủi ro lớn tại Garage khi thiếu kiểm soát</h3>
+                            </div>
+                            <ul class="feature-list">
+                                <li class="fragment fade-up">
+                                    <i data-lucide="package-x" style="color:#E11D48;"></i>
+                                    <div><strong>Lệch tồn kho & xuất âm kho:</strong> Hai nhân viên cùng lấy phụ tùng cuối cùng gây âm kho; hủy phiếu quên hoàn kho; không đối soát được lịch sử xuất/nhập.</div>
+                                </li>
+                                <li class="fragment fade-up">
+                                    <i data-lucide="history" style="color:#E11D48;"></i>
+                                    <div><strong>Sai lệch lịch sử tài chính:</strong> Nếu lưu giá kiểu tra động từ danh mục, một lần đổi giá dịch vụ sẽ làm thay đổi tổng tiền của cả những hóa đơn đã thu trong quá khứ.</div>
+                                </li>
+                                <li class="fragment fade-up">
+                                    <i data-lucide="brain-circuit" style="color:#E11D48;"></i>
+                                    <div><strong>Ảo giác AI (Hallucination):</strong> Gọi LLM tự do dễ dẫn tới <em>tự bịa phụ tùng lạ</em>, <em>tự tính sai tổng tiền</em>, hoặc <em>chẩn đoán mò bệnh xe</em> gây nguy hiểm.</div>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <!-- Cột phải: Quyết định ở KT1 -->
+                        <div class="glass-card">
+                            <div class="card-head">
+                                <div class="icon-box"><i data-lucide="check-check"></i></div>
+                                <h3>Quyết định Kiểm chứng của Nhóm ở KT1</h3>
+                            </div>
+                            <p style="font-size:14.5px; color:#64748B; margin:0 0 12px 0;">
+                                Nhóm áp dụng nguyên tắc: <strong>"AI dùng để sinh phương án — Con người kiểm chứng và quyết định"</strong>:
+                            </p>
+                            <ul class="feature-list">
+                                <li class="fragment fade-up">
+                                    <i data-lucide="ban" style="color:#D97706;"></i>
+                                    <div><strong>Bác bỏ gợi ý "AI tự chẩn đoán lỗi xe":</strong> Do rủi ro kỹ thuật cao và nằm ngoài dữ liệu kiểm chứng được. Chỉ giữ <strong>AI01, AI02, AI03</strong> bám sát 100% CSDL.</div>
+                                </li>
+                                <li class="fragment fade-up">
+                                    <i data-lucide="layers" style="color:#059669;"></i>
+                                    <div><strong>Chuẩn hóa Lược đồ & Luồng phiếu:</strong> Gộp tiền công vào đơn giá dịch vụ (<span class="code-chip">services.price</span>); bổ sung nhánh <span class="code-chip">CANCELLED</span> tự hoàn kho và vòng lặp kiểm tra lại.</div>
+                                </li>
+                                <li class="fragment fade-up">
+                                    <i data-lucide="shield-alert" style="color:#2563EB;"></i>
+                                    <div><strong>Nguyên tắc vàng xuyên suốt:</strong> <em>"AI chỉ trình bày văn bản tư vấn ở trạng thái Chờ duyệt (PENDING) — AI tuyệt đối không tự quyết định tiền."</em></div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- =========================================================
+                 SLIDE 3: KIẾN TRÚC & PHÂN QUYỀN RBAC (1:40 - 2:35)
+                 ========================================================= -->
+            <section data-transition="slide">
+                <div class="slide-shell">
+                    <div class="slide-top">
+                        <div>
+                            <div class="kicker-pill"><i data-lucide="layers" style="width:15px;height:15px;"></i> 02 · Kiến trúc Hệ thống & Bảo mật</div>
+                            <h2 class="title-gradient">Kiến trúc 4 Tầng Độc lập & Phân quyền 4 Vai trò (RBAC)</h2>
+                        </div>
+                        <span class="phase-badge">FastAPI + React 19 + SQLite WAL</span>
+                    </div>
+
+                    <!-- Sơ đồ 4 tầng ngang -->
+                    <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:14px;">
+                        <div class="glass-card" style="padding:16px 18px;">
+                            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+                                <div class="icon-box"><i data-lucide="monitor"></i></div>
+                                <strong style="font-size:16px;color:#0F172A;">1. Giao diện Web</strong>
+                            </div>
+                            <div style="font-size:13.5px;color:#475569;line-height:1.45;">
+                                <strong>React 19 + TanStack Start</strong> (16 màn hình kết nối <span class="code-chip">/api/*</span>) + Giao diện Jinja2 tích hợp sẵn.
+                            </div>
+                        </div>
+
+                        <div class="glass-card emerald" style="padding:16px 18px;">
+                            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+                                <div class="icon-box emerald"><i data-lucide="lock"></i></div>
+                                <strong style="font-size:16px;color:#0F172A;">2. Bảo mật & Phiên</strong>
+                            </div>
+                            <div style="font-size:13.5px;color:#475569;line-height:1.45;">
+                                Mật khẩu băm <strong>Argon2id</strong>, Cookie ký HMAC + cột <span class="code-chip">auth_version</span> hủy phiên tức thì, <strong>CSRF Token</strong> 2 lớp.
+                            </div>
+                        </div>
+
+                        <div class="glass-card violet" style="padding:16px 18px;">
+                            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+                                <div class="icon-box violet"><i data-lucide="cpu"></i></div>
+                                <strong style="font-size:16px;color:#0F172A;">3. Dịch vụ & AI</strong>
+                            </div>
+                            <div style="font-size:13.5px;color:#475569;line-height:1.45;">
+                                11 module nghiệp vụ tại <span class="code-chip">services/</span> & lớp trung gian <span class="code-chip">ai_gateway.py</span> hỗ trợ 7 providers.
+                            </div>
+                        </div>
+
+                        <div class="glass-card amber" style="padding:16px 18px;">
+                            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+                                <div class="icon-box amber"><i data-lucide="hard-drive"></i></div>
+                                <strong style="font-size:16px;color:#0F172A;">4. SQLite 3 (WAL)</strong>
+                            </div>
+                            <div style="font-size:13.5px;color:#475569;line-height:1.45;">
+                                <strong>21 bảng</strong> (17 bảng lõi + 4 bảng mở rộng), 37 chỉ mục, <span class="code-chip">foreign_keys=ON</span>, auto-migrate <span class="code-chip">001→005</span>.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4 Vai trò RBAC -->
+                    <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:14px;">
+                        <div class="glass-card fragment fade-up" style="padding:18px;">
+                            <span class="kicker-pill" style="margin-bottom:6px;">MANAGER · quan_ly</span>
+                            <h3 style="font-size:18px !important;font-weight:800 !important;">Quản lý Xưởng</h3>
+                            <p style="font-size:13.5px;color:#475569;margin-top:6px;line-height:1.45;">
+                                Toàn quyền điều hành, danh mục, nhân sự, duyệt báo giá, lập hóa đơn và <strong>duyệt kết quả AI (<span class="code-chip">ai.review</span>)</strong>.
+                            </p>
+                        </div>
+
+                        <div class="glass-card emerald fragment fade-up" style="padding:18px;">
+                            <span class="kicker-pill" style="margin-bottom:6px;color:#059669;background:#ECFDF5;border-color:#A7F3D0;">RECEPTIONIST · le_tan</span>
+                            <h3 style="font-size:18px !important;font-weight:800 !important;">Lễ tân Dịch vụ</h3>
+                            <p style="font-size:13.5px;color:#475569;margin-top:6px;line-height:1.45;">
+                                Tiếp nhận xe, đặt lịch, lập báo giá nháp, kho, bảo hành, chạy AI01–AI03. <strong>Bị chặn duyệt AI & duyệt báo giá.</strong>
+                            </p>
+                        </div>
+
+                        <div class="glass-card amber fragment fade-up" style="padding:18px;">
+                            <span class="kicker-pill" style="margin-bottom:6px;color:#D97706;background:#FFFBEB;border-color:#FDE68A;">TECHNICIAN · ky_thuat_vien</span>
+                            <h3 style="font-size:18px !important;font-weight:800 !important;">Kỹ thuật viên</h3>
+                            <p style="font-size:13.5px;color:#475569;margin-top:6px;line-height:1.45;">
+                                Thêm hạng mục, ghi nhật ký, đổi trạng thái sửa chữa. <strong>Cô lập theo phiếu: chỉ sửa được phiếu giao cho mình.</strong>
+                            </p>
+                        </div>
+
+                        <div class="glass-card rose fragment fade-up" style="padding:18px;">
+                            <span class="kicker-pill" style="margin-bottom:6px;color:#E11D48;background:#FFF1F2;border-color:#FECDD3;">CASHIER · thu_ngan</span>
+                            <h3 style="font-size:18px !important;font-weight:800 !important;">Thu ngân</h3>
+                            <p style="font-size:13.5px;color:#475569;margin-top:6px;line-height:1.45;">
+                                Xem hóa đơn, ghi nhận thu tiền từng phần/thu đủ, hủy khoản thu nhầm. <strong>Bị chặn sửa phiếu & chặn chạy AI.</strong>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- =========================================================
+                 SLIDE 4: 4 CHỐT CHẶN TOÀN VẸN DỮ LIỆU (KT2 & KT3 REVIEW) (2:35 - 3:45)
+                 ========================================================= -->
+            <section data-transition="convex">
+                <div class="slide-shell">
+                    <div class="slide-top">
+                        <div>
+                            <div class="kicker-pill"><i data-lucide="shield" style="width:15px;height:15px;"></i> 03 · Điểm nhấn Kỹ thuật CSDL (KT2 & KT3 AI Review)</div>
+                            <h2 class="title-gradient">4 Chốt chặn Bảo vệ Tuyệt đối Tiền tệ & Tồn kho</h2>
+                        </div>
+                        <span class="phase-badge">Cột mốc 2 & 3: KT2 Lập trình · KT3 Review Code</span>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+                        <div class="glass-card emerald fragment fade-up">
+                            <div class="card-head">
+                                <div class="icon-box emerald"><i data-lucide="coins"></i></div>
+                                <h3>1. Tiền tệ Nguyên (INTEGER) & Chốt giá Lịch sử</h3>
+                            </div>
+                            <ul class="feature-list">
+                                <li><i data-lucide="check-circle-2"></i><div><strong>Sửa lỗi AI dùng số thực <span class="code-chip">FLOAT</span>:</strong> Chuyển toàn bộ cột tiền sang số nguyên <span class="code-chip">INTEGER</span> (tính bằng đồng), loại bỏ 100% sai số làm tròn.</div></li>
+                                <li><i data-lucide="check-circle-2"></i><div><strong>Chốt cứng <span class="code-chip">unit_price</span> từ CSDL:</strong> Bỏ qua mọi mức giá từ trình duyệt gửi lên; chốt giá ngay lúc thêm hạng mục. Đổi giá danh mục không làm thay đổi hóa đơn cũ.</div></li>
+                            </ul>
+                        </div>
+
+                        <div class="glass-card fragment fade-up">
+                            <div class="card-head">
+                                <div class="icon-box"><i data-lucide="git-Fork"></i></div>
+                                <h3>2. Ràng buộc CHECK XOR (Dịch vụ ⊕ Phụ tùng)</h3>
+                            </div>
+                            <ul class="feature-list">
+                                <li><i data-lucide="check-circle-2"></i><div><strong>Phát hiện từ đợt AI Review (KT3-09):</strong> Ngăn chặn trường hợp một dòng hạng mục vừa rỗng cả hai hoặc vừa có cả Dịch vụ lẫn Phụ tùng.</div></li>
+                                <li><i data-lucide="check-circle-2"></i><div><strong>Áp dụng trên cả 3 bảng:</strong> <span class="code-chip">repair_order_items</span>, <span class="code-chip">quotation_items</span> và <span class="code-chip">warranties</span> đều bắt buộc đúng 1 trong 2 khóa ngoại.</div></li>
+                            </ul>
+                        </div>
+
+                        <div class="glass-card amber fragment fade-up">
+                            <div class="card-head">
+                                <div class="icon-box amber"><i data-lucide="book-open-check"></i></div>
+                                <h3>3. Sổ cái Tồn kho Bất biến (Stock Ledger)</h3>
+                            </div>
+                            <ul class="feature-list">
+                                <li><i data-lucide="check-circle-2"></i><div>Mọi thay đổi <span class="code-chip">parts.stock</span> bắt buộc đi qua <span class="code-chip">stock_transactions</span> theo 4 lý do: <span class="code-chip">RECEIPT</span>, <span class="code-chip">USAGE</span>, <span class="code-chip">RETURN</span>, <span class="code-chip">ADJUSTMENT</span>.</div></li>
+                                <li><i data-lucide="check-circle-2"></i><div><strong>Bất biến:</strong> <span class="code-chip">parts.stock == SUM(ledger.qty)</span>. Khi gỡ hạng mục hoặc hủy phiếu, hệ thống tự động hoàn kho (<span class="code-chip">RETURN</span>).</div></li>
+                            </ul>
+                        </div>
+
+                        <div class="glass-card rose fragment fade-up">
+                            <div class="card-head">
+                                <div class="icon-box rose"><i data-lucide="zap"></i></div>
+                                <h3>4. Khóa Nguyên tử <span class="code-chip">BEGIN IMMEDIATE</span></h3>
+                            </div>
+                            <ul class="feature-list">
+                                <li><i data-lucide="check-circle-2"></i><div><strong>Chống xuất âm kho khi 2 người bấm cùng lúc:</strong> Kiểm tra ngay trong SQL: <span class="code-chip">UPDATE parts SET stock = stock + ? WHERE id = ? AND stock + ? &gt;= 0</span>.</div></li>
+                                <li><i data-lucide="check-circle-2"></i><div><strong>Chống thu tiền vượt nợ:</strong> <span class="code-chip">UPDATE invoices SET paid = paid + ? WHERE id = ? AND total - paid &gt;= ?</span> (vượt nợ chặn ngay HTTP 409).</div></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- =========================================================
+                 SLIDE 5: QUY TRÌNH 6 TRẠNG THÁI & TRẢI NGHIỆM 16 MÀN HÌNH (3:45 - 4:50)
+                 ========================================================= -->
+            <section data-transition="slide">
+                <div class="slide-shell">
+                    <div class="slide-top">
+                        <div>
+                            <div class="kicker-pill"><i data-lucide="workflow" style="width:15px;height:15px;"></i> 04 · Vòng đời Phiếu sửa chữa & Giao diện Thực tế</div>
+                            <h2 class="title-gradient">Quy trình Khép kín 6 Trạng thái & 16 Màn hình React 19</h2>
+                        </div>
+                        <span class="phase-badge">Bấm chọn các nút bên dưới để xem từng màn hình 👇</span>
+                    </div>
+
+                    <!-- Dòng chảy 6 trạng thái -->
+                    <div class="pipeline-row">
+                        <div class="pipe-node">
+                            <span class="pipe-step">1. RECEIVED</span>
+                            <div class="pipe-title">Đã tiếp nhận</div>
+                            <div class="pipe-sub">Biên bản ODO, xăng, ngoại thất</div>
+                        </div>
+                        <div class="pipe-node">
+                            <span class="pipe-step">2. INSPECTING</span>
+                            <div class="pipe-title">Đang kiểm tra</div>
+                            <div class="pipe-sub">Giao KTV & ghi nhật ký</div>
+                        </div>
+                        <div class="pipe-node">
+                            <span class="pipe-step">3. ESTIMATING</span>
+                            <div class="pipe-title">Đang báo giá</div>
+                            <div class="pipe-sub">Duyệt & áp dụng 1 lần</div>
+                        </div>
+                        <div class="pipe-node">
+                            <span class="pipe-step">4. REPAIRING</span>
+                            <div class="pipe-title">Đang sửa chữa</div>
+                            <div class="pipe-sub">Trừ kho qua Sổ cái</div>
+                        </div>
+                        <div class="pipe-node" style="border-color:#059669;background:#ECFDF5;">
+                            <span class="pipe-step" style="background:#D1FAE5;color:#059669;">5. COMPLETED</span>
+                            <div class="pipe-title">Đã hoàn thành</div>
+                            <div class="pipe-sub">Nghiệm thu → Hóa đơn → Bảo hành</div>
+                        </div>
+                        <div class="pipe-node" style="border-color:#E11D48;background:#FFF1F2;">
+                            <span class="pipe-step" style="background:#FFE4E6;color:#E11D48;">6. CANCELLED</span>
+                            <div class="pipe-title">Đã hủy phiếu</div>
+                            <div class="pipe-sub">Tự động RETURN tồn kho</div>
+                        </div>
+                    </div>
+
+                    <!-- Bộ chuyển đổi ảnh màn hình tương tác trực tiếp -->
+                    <div>
+                        <div class="interactive-pills">
+                            <button class="screen-pill active" onclick="changeDemo(this, './GarageAI_Project/screenshots/06_phuong_tien.png', 'http://localhost:3000/workflow — Bảng điều phối Kanban trực quan theo trạng thái phiếu')">
+                                1. Điều phối Kanban
+                            </button>
+                            <button class="screen-pill" onclick="changeDemo(this, './GarageAI_Project/screenshots/04_chi_tiet_phieu.png', 'http://localhost:3000/repair-orders/1 — Chi tiết phiếu, Biên bản tiếp nhận, Hạng mục & Nghiệm thu')">
+                                2. Chi tiết Phiếu & Nghiệm thu
+                            </button>
+                            <button class="screen-pill" onclick="changeDemo(this, './GarageAI_Project/screenshots/10_lich_su.png', 'http://localhost:3000/quotations — Báo giá chính thức (Duyệt & Áp dụng Idempotent đúng 1 lần)')">
+                                3. Báo giá Idempotent
+                            </button>
+                            <button class="screen-pill" onclick="changeDemo(this, './GarageAI_Project/screenshots/14_cua_hang.png', 'http://localhost:3000/inventory — Kho phụ tùng & Sổ cái xuất nhập tồn (Đối soát lệch = 0)')">
+                                4. Kho & Sổ cái
+                            </button>
+                            <button class="screen-pill" onclick="changeDemo(this, './GarageAI_Project/screenshots/18_loi_thanh_toan.png', 'http://localhost:3000/finance — Hóa đơn & Chặn HTTP 409 khi thu vượt số tiền còn phải trả')">
+                                5. Chặn Thu vượt (409)
+                            </button>
+                            <button class="screen-pill" onclick="changeDemo(this, './GarageAI_Project/screenshots/15_khong_co_quyen.png', 'http://localhost:3000/users — Kiểm soát RBAC: Kỹ thuật viên bị chặn truy cập trang Quản trị')">
+                                6. Chặn Phân quyền (403)
+                            </button>
+                        </div>
+
+                        <div class="browser-mockup" onclick="zoomImage(document.getElementById('liveDemoImg').src, document.getElementById('liveDemoUrl').textContent)">
+                            <div class="browser-bar">
+                                <div class="browser-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+                                <div class="browser-url">
+                                    <span id="liveDemoUrl">http://localhost:3000/workflow — Bảng điều phối Kanban trực quan theo trạng thái phiếu</span>
+                                    <span style="color:#2563EB;font-weight:700;">Bấm vào ảnh để phóng to 🔍</span>
+                                </div>
+                            </div>
+                            <div class="browser-body">
+                                <img id="liveDemoImg" src="./GarageAI_Project/screenshots/06_phuong_tien.png" alt="Demo Screen" style="max-height:295px;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- =========================================================
+                 SLIDE 6: 3 CHỨC NĂNG AI, CHỐNG ẢO GIÁC & HUMAN REVIEW (4:50 - 5:50)
+                 ========================================================= -->
+            <section data-transition="convex">
+                <div class="slide-shell">
+                    <div class="slide-top">
+                        <div>
+                            <div class="kicker-pill"><i data-lucide="bot" style="width:15px;height:15px;"></i> 05 · Giai đoạn KT3 — Tích hợp AI & Human-in-the-Loop</div>
+                            <h2 class="title-gradient">3 Chức năng AI, Bộ lọc Chống Ảo giác & Duyệt Human Review</h2>
+                        </div>
+                        <span class="phase-badge">Cột mốc 3: KT3 · Prompt & AI Gateway</span>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns:1.15fr 1fr; gap:22px; align-items:center;">
+                        <div style="display:flex; flex-direction:column; gap:14px;">
+                            <!-- 3 Chức năng AI -->
+                            <div class="glass-card" style="padding:16px 20px;">
+                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                                    <strong style="font-size:16.5px;color:#1D4ED8;">AI01 · Tóm tắt Lịch sử Xe (<span class="code-chip">history.txt</span>)</strong>
+                                    <span class="code-chip">{{repair_history}}</span>
+                                </div>
+                                <p style="font-size:14px;color:#475569;margin:0;">Tổng hợp đúng 4 mục từ lịch sử sửa chữa thật. Xe mới báo rõ chưa có lịch sử; <strong>cấm suy đoán nguyên nhân lỗi mới</strong>.</p>
+                            </div>
+
+                            <div class="glass-card emerald" style="padding:16px 20px;">
+                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                                    <strong style="font-size:16.5px;color:#059669;">AI02 · Giải thích Dịch vụ (<span class="code-chip">explain.txt</span>)</strong>
+                                    <span class="code-chip">{{service}}</span>
+                                </div>
+                                <p style="font-size:14px;color:#475569;margin:0;">Chuyển thuật ngữ sang ngôn ngữ dễ hiểu cho chủ xe. <strong>Ca biên bắt buộc:</strong> Khi dịch vụ trống mô tả (<span class="code-chip">NULL</span>), vẫn chạy tốt, không lỗi 500.</p>
+                            </div>
+
+                            <div class="glass-card amber" style="padding:16px 20px;">
+                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                                    <strong style="font-size:16.5px;color:#D97706;">AI03 · Báo giá Nháp JSON (<span class="code-chip">quote.txt</span>)</strong>
+                                    <span class="code-chip">{{backend_total}}</span>
+                                </div>
+                                <p style="font-size:14px;color:#475569;margin:0;"><strong>Chống ảo giác tuyệt đối tại <span class="code-chip">ai_gateway.py</span>:</strong> Lọc chỉ giữ dòng khớp 100% Tên, Số lượng, Đơn giá với CSDL; nếu AI cộng sai tổng thì <strong>cưỡng bức dùng <span class="code-chip">backend_total</span></strong>; tự động Fallback sang <span class="code-chip">mock</span> khi lỗi 429/Timeout.</p>
+                            </div>
+                        </div>
+
+                        <!-- Cột phải: Human Review + Ảnh chụp thật -->
+                        <div style="display:flex; flex-direction:column; gap:12px;">
+                            <div class="glass-card violet" style="padding:16px 20px;">
+                                <div style="font-size:16px;font-weight:800;color:#6D28D9;margin-bottom:6px;">
+                                    👤 Quy trình Human Review (<span class="code-chip">ai_results</span>)
+                                </div>
+                                <div style="font-size:13.8px;color:#334155;line-height:1.5;">
+                                    • Mọi kết quả AI mới sinh ra luôn ở trạng thái <strong><span class="code-chip">PENDING</span> (Chờ duyệt)</strong>.<br>
+                                    • Chỉ <strong>Quản lý (<span class="code-chip">ai.review</span>)</strong> mới được duyệt <span class="code-chip">APPROVED</span> / <span class="code-chip">REJECTED</span> (ghi đủ người duyệt, giờ duyệt và <strong>chặn duyệt lại lần 2</strong>).
+                                </div>
+                            </div>
+
+                            <div class="browser-mockup" onclick="zoomImage('./GarageAI_Project/screenshots/13_duyet_ai.png', 'Màn hình Hàng đợi Duyệt kết quả AI (Human-in-the-Loop)')">
+                                <div class="browser-bar">
+                                    <div class="browser-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+                                    <div class="browser-url">
+                                        <span>http://localhost:3000/ai-review — Hàng đợi Human Review</span>
+                                        <span style="color:#2563EB;font-weight:700;">Phóng to 🔍</span>
+                                    </div>
+                                </div>
+                                <div class="browser-body">
+                                    <img src="./GarageAI_Project/screenshots/13_duyet_ai.png" alt="Duyệt AI" style="max-height:215px;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- =========================================================
+                 SLIDE 7: THỰC NGHIỆM MÔ HÌNH THẬT & KIỂM THỬ CUỐI KỲ (5:50 - 6:30)
+                 ========================================================= -->
+            <section data-transition="slide">
+                <div class="slide-shell">
+                    <div class="slide-top">
+                        <div>
+                            <div class="kicker-pill"><i data-lucide="bar-chart-3" style="width:15px;height:15px;"></i> 06 · Giai đoạn Cuối kỳ (CK) — Thực nghiệm & Kiểm thử</div>
+                            <h2 class="title-gradient">Đo Độ trễ Mô hình Thật (Groq) & 4 Tầng Kiểm thử Đạt 100%</h2>
+                        </div>
+                        <span class="phase-badge">Cột mốc 4: Cuối kỳ (CK) · 54/54 Tiêu chí</span>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns:1fr 1.15fr; gap:22px;">
+                        <!-- Biểu đồ 1: Độ trễ Groq -->
+                        <div class="glass-card">
+                            <div class="card-head">
+                                <div class="icon-box"><i data-lucide="gauge"></i></div>
+                                <h3>Độ trễ trên Groq (<span class="code-chip">openai/gpt-oss-120b</span>)</h3>
+                            </div>
+                            <p style="font-size:13.5px;color:#64748B;margin:0 0 10px 0;">
+                                Đo thực nghiệm qua HTTP thật — tất cả đều <strong>nhanh hơn 2.5–4 lần</strong> so với trần yêu cầu Cuối kỳ (<span class="code-chip">CK-07 &lt; 10 giây</span>):
+                            </p>
+                            <div style="height:220px; position:relative;">
+                                <canvas id="groqLatencyChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Biểu đồ 2: Hệ thống Kiểm thử -->
+                        <div class="glass-card emerald">
+                            <div class="card-head">
+                                <div class="icon-box emerald"><i data-lucide="check-Check"></i></div>
+                                <h3>Tổng hợp Kiểm thử Tự động & Vận hành Thực tế</h3>
+                            </div>
+                            <p style="font-size:13.5px;color:#64748B;margin:0 0 10px 0;">
+                                Chạy tự động qua <span class="code-chip">tests/run_all.py</span>, <span class="code-chip">smoke.ps1</span>, <span class="code-chip">e2e.ps1</span> (đối soát sổ cái kho lệch = 0) & GitHub Actions CI:
+                            </p>
+                            <div style="height:220px; position:relative;">
+                                <canvas id="testSuiteChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- =========================================================
+                 SLIDE 8: GIỚI HẠN HIỆN TẠI, HƯỚNG PHÁT TRIỂN & LỜI CẢM ƠN (6:30 - 7:00)
+                 ========================================================= -->
+            <section data-transition="zoom">
+                <div class="slide-shell">
+                    <div class="slide-top">
+                        <div>
+                            <div class="kicker-pill"><i data-lucide="rocket" style="width:15px;height:15px;"></i> 07 · Đánh giá Khách quan & Kết luận Đồ án</div>
+                            <h2 class="title-gradient">Các Vấn đề Chưa Xử lý, Hướng Mở rộng & Tổng kết</h2>
+                        </div>
+                        <span class="phase-badge">Nhóm 23 · GarageTools AI</span>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+                        <div class="glass-card amber">
+                            <div class="card-head">
+                                <div class="icon-box amber"><i data-lucide="Sliders"></i></div>
+                                <h3>Giới hạn Hiện tại (Chủ đích An toàn)</h3>
+                            </div>
+                            <ul class="feature-list">
+                                <li><i data-lucide="circle-dot" style="color:#D97706;"></i><div><strong>Duyệt AI03 dừng ở văn bản tư vấn (<span class="code-chip">ai_results</span>):</strong> Chưa tự động tạo bản ghi sang bảng <span class="code-chip">quotations</span> để tách bạch tuyệt đối dữ liệu AI và chứng từ tài chính.</div></li>
+                                <li><i data-lucide="circle-dot" style="color:#D97706;"></i><div><strong>Trừ kho trực tiếp (<span class="code-chip">USAGE</span>):</strong> Chưa tách bước <em>"Giữ kho tạm thời (Soft Reservation)"</em> trong lúc báo giá đang gửi chờ khách duyệt (<span class="code-chip">SENT</span>).</div></li>
+                                <li><i data-lucide="circle-dot" style="color:#D97706;"></i><div><strong>Quy mô 1 Xưởng độc lập:</strong> SQLite WAL + <span class="code-chip">BEGIN IMMEDIATE</span> khóa ghi mức toàn file, tối ưu cho 1 garage (5–30 người) nhưng chưa dành cho chuỗi đa chi nhánh.</div></li>
+                            </ul>
+                        </div>
+
+                        <div class="glass-card">
+                            <div class="card-head">
+                                <div class="icon-box"><i data-lucide="sparkles"></i></div>
+                                <h3>Lộ trình Phát triển Tiếp theo</h3>
+                            </div>
+                            <ul class="feature-list">
+                                <li><i data-lucide="arrow-up-right"></i><div><strong>Nâng cấp Đa chi nhánh & Bất đồng bộ:</strong> Chuyển sang <strong>PostgreSQL</strong> (<span class="code-chip">SELECT ... FOR UPDATE</span>) và đưa lời gọi AI vào hàng đợi nền (Background Queue / SSE).</div></li>
+                                <li><i data-lucide="arrow-up-right"></i><div><strong>Kết nối Phần cứng OBD-II & Vision AI:</strong> Đọc tự động mã lỗi từ cổng <strong>OBD-II</strong> trên xe và dùng mô hình thị giác phân tích ảnh chụp vết trầy xước lúc tiếp nhận.</div></li>
+                                <li><i data-lucide="arrow-up-right"></i><div><strong>Tích hợp Thanh toán & Thuế:</strong> Tách cột thuế VAT/chiết khấu, kết nối Webhook gạch nợ <strong>VietQR</strong> và Hóa đơn điện tử.</div></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Banner Cảm ơn Trang trọng -->
+                    <div class="glass-card emerald" style="padding:18px 28px; text-align:center; background:linear-gradient(135deg, rgba(255,255,255,0.95), rgba(236,253,245,0.95));">
+                        <div style="font-size:24px; font-weight:900; color:#0F172A;">
+                            Xin trân trọng cảm ơn Thầy/Cô và các bạn đã lắng nghe!
+                        </div>
+                        <div style="font-size:15px; color:#475569; margin-top:4px; font-weight:600;">
+                            Nhóm 23 (Nguyễn Đức Dũng & Đồng Quốc Khánh) xin phép được lắng nghe câu hỏi từ Hội đồng ạ.
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </div>
+
+    <!-- Lightbox phóng to ảnh -->
+    <div class="zoom-overlay" id="zoomOverlay" onclick="closeZoom()">
+        <img id="zoomImg" src="" alt="Zoomed">
+        <div class="zoom-caption" id="zoomCap"></div>
+    </div>
+
+    <!-- Reveal.js Script -->
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+    <script>
+        // Khởi tạo Lucide Icons
+        lucide.createIcons();
+
+        // Khởi tạo Reveal.js
+        Reveal.initialize({
+            width: 1360,
+            height: 768,
+            margin: 0.04,
+            minScale: 0.2,
+            maxScale: 2.0,
+            hash: true,
+            center: true,
+            controls: true,
+            progress: true,
+            slideNumber: 'c/t',
+            transition: 'slide',
+            backgroundTransition: 'fade'
+        });
+
+        // Hiệu ứng đếm số tự động (Count-up)
+        function animateCounters() {
+            document.querySelectorAll('.count-up').forEach(el => {
+                const target = parseInt(el.getAttribute('data-target'), 10);
+                let count = 0;
+                const step = Math.max(1, Math.ceil(target / 35));
+                const timer = setInterval(() => {
+                    count += step;
+                    if (count >= target) {
+                        el.textContent = target;
+                        clearInterval(timer);
+                    } else {
+                        el.textContent = count;
+                    }
+                }, 25);
+            });
+        }
+
+        // Chuyển đổi màn hình tương tác ở Slide 5
+        function changeDemo(btn, src, urlText) {
+            document.querySelectorAll('.screen-pill').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const img = document.getElementById('liveDemoImg');
+            img.style.opacity = '0.3';
+            setTimeout(() => {
+                img.src = src;
+                document.getElementById('liveDemoUrl').textContent = urlText;
+                img.style.opacity = '1';
+            }, 120);
+        }
+
+        // Lightbox phóng to ảnh
+        function zoomImage(src, cap) {
+            document.getElementById('zoomImg').src = src;
+            document.getElementById('zoomCap').textContent = cap || '';
+            document.getElementById('zoomOverlay').classList.add('open');
+        }
+        function closeZoom() {
+            document.getElementById('zoomOverlay').classList.remove('open');
+        }
+
+        // Khởi tạo Biểu đồ Chart.js khi mở Slide 7
+        let chartsInitialized = false;
+        function initCharts() {
+            if (chartsInitialized || !window.Chart) return;
+            chartsInitialized = true;
+
+            new Chart(document.getElementById('groqLatencyChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['Gọi thô Groq', 'AI01 · Lịch sử', 'AI03 · Báo giá', 'AI02 · Giải thích', 'Trần CK-07 (10s)'],
+                    datasets: [{
+                        label: 'Thời gian phản hồi (giây)',
+                        data: [1.20, 2.46, 2.98, 3.99, 10.0],
+                        backgroundColor: [
+                            'rgba(2, 132, 199, 0.85)',
+                            'rgba(37, 99, 235, 0.85)',
+                            'rgba(217, 119, 6, 0.85)',
+                            'rgba(5, 150, 105, 0.85)',
+                            'rgba(225, 29, 72, 0.22)'
+                        ],
+                        borderColor: ['#0284C7', '#2563EB', '#D97706', '#059669', '#E11D48'],
+                        borderWidth: 2,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 1200, easing: 'easeOutQuart' },
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, max: 11, ticks: { callback: v => v + 's', color: '#475569', font: { weight: '600' } } },
+                        x: { ticks: { color: '#0F172A', font: { weight: '700', size: 11 } }, grid: { display: false } }
+                    }
+                }
+            });
+
+            new Chart(document.getElementById('testSuiteChart'), {
+                type: 'bar',
+                data: {
+                    labels: [
+                        'Web & AI Gateway (133)',
+                        'JSON API /api/* (50)',
+                        'Ràng buộc CSDL (37)',
+                        'UAT Người dùng (35)',
+                        'E2E Nghiệp vụ (32)',
+                        'Smoke HTTP (31)',
+                        'Backup/Restore (6)'
+                    ],
+                    datasets: [{
+                        label: 'Số ca ĐẠT (100% Pass)',
+                        data: [133, 50, 37, 35, 32, 31, 6],
+                        backgroundColor: 'rgba(5, 150, 105, 0.82)',
+                        borderColor: '#059669',
+                        borderWidth: 2,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 1200, easing: 'easeOutQuart' },
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { beginAtZero: true, ticks: { color: '#475569' } },
+                        y: { ticks: { color: '#0F172A', font: { weight: '700', size: 11.5 } }, grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        Reveal.on('ready', () => {
+            animateCounters();
+            initCharts();
+        });
+        Reveal.on('slidechanged', event => {
+            if (event.indexh === 0) animateCounters();
+            if (event.indexh === 6) initCharts();
+        });
+    </script>
+</body>
+</html>
