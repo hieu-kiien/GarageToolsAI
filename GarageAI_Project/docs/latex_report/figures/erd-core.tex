@@ -1,84 +1,80 @@
-\resizebox{0.98\textwidth}{!}{%
+\resizebox{\textwidth}{!}{%
 \begin{tikzpicture}[
-  font=\sffamily,
-  ent/.style={
-    rectangle split,
-    rectangle split parts=2,
-    rectangle split part fill={black!12,white},
-    draw=black,
-    line width=0.65pt,
-    text width=3.9cm,
-    align=left,
     font=\sffamily\scriptsize,
-    inner sep=4pt
-  },
-  rel/.style={-{Latex[length=1.8mm,width=1.4mm]}, line width=0.6pt, draw=black},
-  lbl/.style={font=\sffamily\scriptsize, fill=white, inner sep=1.2pt}
+    >=Latex,
+    entity/.style={rectangle, draw=diagblueline, line width=0.9pt, fill=white, rounded corners=4pt, inner sep=0pt},
+    rel/.style={line width=0.9pt, diagblueline, -Latex}
 ]
-  \node[ent] (cust) at (0, 3.2) {
-    \textbf{customers (Khách hàng)}
-    \nodepart{second}
-    \underline{id} (PK) : INTEGER\\
-    full\_name, phone : TEXT\\
-    email, tier, total\_spent
-  };
 
-  \node[ent] (veh) at (5.6, 3.2) {
-    \textbf{vehicles (Phương tiện)}
-    \nodepart{second}
-    \underline{id} (PK), customer\_id (FK)\\
-    license\_plate (UQ), vin (UQ)\\
-    brand, model, year, mileage
-  };
+\node[entity] (cust) at (0,0) {
+\begin{tabular}{p{4.3cm}}
+\rowcolor{diagbluefill}\textbf{1. customers}\\
+\hline
+\textbf{PK} id \textit{INTEGER}\\
+name, phone \textit{UNIQUE}\\
+email, address, created\_at\\
+\end{tabular}
+};
 
-  \node[ent] (app) at (11.2, 3.2) {
-    \textbf{appointments (Lịch hẹn)}
-    \nodepart{second}
-    \underline{id} (PK), customer\_id (FK)\\
-    vehicle\_id (FK), advisor\_id (FK)\\
-    scheduled\_at, bay\_number, status
-  };
+\node[entity] (veh) at (6.2,0) {
+\begin{tabular}{p{4.3cm}}
+\rowcolor{diagbluefill}\textbf{2. vehicles}\\
+\hline
+\textbf{PK} id, \textbf{FK} customer\_id\\
+plate \textit{UNIQUE}, brand, model\\
+year \textit{1900..2100}, vin \textit{UNIQUE}\\
+odometer \textit{>=0}, is\_active\\
+\end{tabular}
+};
 
-  \node[ent] (ro) at (5.6, 0.0) {
-    \textbf{repair\_orders (Phiếu RO)}
-    \nodepart{second}
-    \underline{id} (PK), ro\_number (UQ)\\
-    vehicle\_id (FK), advisor\_id (FK)\\
-    technician\_id (FK), status (10 mức)\\
-    symptoms, diagnosis, total\_amount
-  };
+\node[entity] (appt) at (12.4,0) {
+\begin{tabular}{p{4.3cm}}
+\rowcolor{diagbluefill}\textbf{3. appointments}\\
+\hline
+\textbf{PK} id, \textbf{FK} customer\_id, vehicle\_id\\
+scheduled\_at, notes\\
+status (\textit{4 trạng thái}), created\_at\\
+\end{tabular}
+};
 
-  \node[ent] (item) at (0, -3.2) {
-    \textbf{ro\_line\_items (Hạng mục RO)}
-    \nodepart{second}
-    \underline{id} (PK), repair\_order\_id (FK)\\
-    item\_type (LABOR / PART)\\
-    part\_id (FK), service\_id (FK)\\
-    quantity, unit\_price, subtotal
-  };
+\node[entity, draw=diaggreenline] (roi) at (0,-4.2) {
+\begin{tabular}{p{4.3cm}}
+\rowcolor{diaggreenfill}\textbf{4. repair\_order\_items \& logs}\\
+\hline
+\textbf{PK} id, \textbf{FK} repair\_order\_id\\
+\textit{CHECK XOR}(service\_id, part\_id)\\
+qty \textit{>0}, unit\_price \textit{>=0 (chốt cứng)}\\
+\textbf{1-N} repair\_logs (technician\_id, note)\\
+\end{tabular}
+};
 
-  \node[ent] (part) at (5.6, -3.2) {
-    \textbf{parts \& suppliers (Kho SKU)}
-    \nodepart{second}
-    \underline{id} (PK), sku (UQ), name\\
-    quantity\_on\_hand, reserved\_qty\\
-    min\_stock, unit\_price, supplier\_id
-  };
+\node[entity, draw=diagamberline] (ro) at (6.2,-4.2) {
+\begin{tabular}{p{4.3cm}}
+\rowcolor{diagamberfill}\textbf{5. repair\_orders \& intake\_records}\\
+\hline
+\textbf{PK} id, \textbf{FK} vehicle\_id, technician\_id\\
+status (\textit{6 trạng thái}), technical\_notes\\
+acceptance\_note, accepted\_by, acceptance\_at\\
+\textbf{1-1} intake\_records (ODO, nhiên liệu, ngoại thất)\\
+\end{tabular}
+};
 
-  \node[ent] (res) at (11.2, -3.2) {
-    \textbf{inventory\_reservations}
-    \nodepart{second}
-    \underline{id} (PK), repair\_order\_id (FK)\\
-    part\_id (FK), reserved\_qty\\
-    status (RESERVED / CONSUMED)
-  };
+\node[entity, draw=diagpurpleline] (stock) at (12.4,-4.2) {
+\begin{tabular}{p{4.3cm}}
+\rowcolor{diagpurplefill}\textbf{6. services, parts \& stock\_txns}\\
+\hline
+\textbf{services}: id, name \textit{UNIQUE}, price\\
+\textbf{parts}: id, name \textit{UNIQUE}, sku, stock\\
+\textbf{stock\_transactions} (Sổ cái kho):\\
+reason \textit{RECEIPT|USAGE|RETURN|ADJ}, qty\\
+\end{tabular}
+};
 
-  \draw[rel] (cust.east) -- node[lbl, above]{1..n} (veh.west);
-  \draw[rel] (veh.east) -- node[lbl, above]{1..n} (app.west);
-  \draw[rel] (veh.south) -- node[lbl, right=2pt]{1..n} (ro.north);
-  \draw[rel] (ro.west) -| node[lbl, above, pos=0.25]{1..n} (item.north);
-  \draw[rel] (part.west) -- node[lbl, above]{1..n} (item.east);
-  \draw[rel] (ro.east) -| node[lbl, above, pos=0.25]{1..n} (res.north);
-  \draw[rel] (part.east) -- node[lbl, above]{1..n} (res.west);
+\draw[rel] (cust.east) -- node[above, font=\scriptsize]{1 : N} (veh.west);
+\draw[rel] (veh.east) -- node[above, font=\scriptsize]{1 : N} (appt.west);
+\draw[rel] (veh.south) -- node[right, font=\scriptsize]{1 : N} (ro.north);
+\draw[rel] (ro.west) -- node[above, font=\scriptsize]{1 : N} (roi.east);
+\draw[rel] (stock.west) -- node[above, font=\scriptsize]{1 : N} (ro.east);
+
 \end{tikzpicture}%
 }

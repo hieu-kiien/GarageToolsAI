@@ -1,161 +1,146 @@
-# KỊCH BẢN THUYẾT TRÌNH 7 PHÚT (8 SLIDE REVEAL.JS) & CẨM NANG HỎI – ĐÁP
-
-- **Học phần:** Ứng dụng Trí tuệ Nhân tạo (AIA331) — **Mã đề tài:** 80277 — **Nhóm 23**
+# KỊCH BẢN TRÌNH BÀY DỰ ÁN HỌC PHẦN & HƯỚNG DẪN TRẢ LỜI CÂU HỎI
+## Đề tài: Hệ thống Quản lý Xưởng Dịch vụ Ô tô & Trợ lý AI (GarageTools AI)
+- **Học phần:** Ứng dụng Trí tuệ Nhân tạo (AIA331) — Mã đề tài: **80277**
 - **Giảng viên hướng dẫn:** TS. Nguyễn Tuấn Anh
-- **Sinh viên thực hiện:** Nguyễn Đức Dũng (Trưởng nhóm) & Đồng Quốc Khánh
-- **Thời lượng thuyết trình:** **Đúng 7 phút** (8 Slide trên thư viện **Reveal.js 5.1**, không chèn câu hỏi vào slide).
-- **File Slide trình chiếu:** [`Slide_Thuyet_Trinh_Nhom23.html`](./Slide_Thuyet_Trinh_Nhom23.html)
+- **Nhóm thực hiện:** Nhóm 23 (Nguyễn Đức Dũng · Đồng Quốc Khánh)
+- **Tài liệu đi kèm:**
+  - Slide trình bày: `Slide_Thuyet_Trinh_Nhom23.html` (12 Slide thoáng đãng, phông chữ **Be Vietnam Pro**, có **Logo trường ICTU**, mỗi slide giao diện chỉ hiển thị 1 ảnh lớn sắc nét bên phải + 3 ý ngắn bên trái)
+  - Báo cáo chi tiết: `Báo cáo.pdf`
 
 ---
 
-## PHẦN 1: CÁC HIỆU ỨNG & TƯƠNG TÁC TRÊN BỘ SLIDE REVEAL.JS MỚI
+## PHẦN 1: CẤU TRÚC & NHỊP ĐIỆU BÀI TRÌNH BÀY 12 SLIDE (10 – 12 PHÚT)
 
-Bộ slide [`Slide_Thuyet_Trinh_Nhom23.html`](./Slide_Thuyet_Trinh_Nhom23.html) đã được tích hợp trực tiếp thư viện **Reveal.js 5.1** chuẩn quốc tế + **Lucide Icons** + **Chart.js** + **Hiệu ứng nền Aurora Sáng (Light Glassmorphism)**:
-
-1. **Chuyển hiệu ứng từng ý (Fragments) & Chuyển trang:**
-   - Bấm phím mũi tên **`→`** hoặc **`Space`**: Ở **Slide 2, 3, 4**, mỗi lần bấm `→` các thẻ nội dung sẽ **trượt nhẹ lên (Fade-up)** theo đúng nhịp nói của bạn để thầy cô và các bạn dễ theo dõi.
-2. **Xem toàn cảnh 8 Slide dạng lưới 3D (Overview Mode của Reveal.js):**
-   - Bấm phím **`O`** (hoặc **`Esc`**) bất kỳ lúc nào để thu nhỏ toàn bộ 8 slide thành bảng tổng quan rất đẹp mắt, bấm vào slide nào sẽ bay thẳng tới slide đó.
-3. **Tương tác chuyển đổi 6 Màn hình Web thật ngay tại Slide 5:**
-   - Tại **Slide 5**, có 6 nút tròn (`1. Điều phối Kanban` → `6. Chặn Phân quyền 403`). Khi bấm vào, khung trình duyệt MacBook bên dưới sẽ chuyển mượt sang ảnh màn hình thật tương ứng.
-   - **Bấm trực tiếp vào bất kỳ khung ảnh trình duyệt nào** (ở Slide 1, Slide 5, Slide 6) để **phóng to ảnh toàn màn hình (Lightbox)** cho thầy cô nhìn rõ từng chi tiết.
-4. **Biểu đồ động (Chart.js) & Số đếm tự động (Count-up):**
-   - Ở **Slide 1**, 4 ô số liệu (`21 bảng`, `16 màn hình`, `3 trợ lý AI`, `226/226`) tự động chạy hiệu ứng đếm số.
-   - Ở **Slide 7**, 2 biểu đồ đo độ trễ Groq và kết quả kiểm thử tự động vẽ hiệu ứng chuyển động mượt mà.
-
----
-
-## PHẦN 2: KỊCH BẢN NÓI CHI TIẾT TỪNG PHÚT (8 SLIDE — GÓI GỌN ĐÚNG 7 PHÚT)
+| Slide | Nền Slide | Nội dung chính | Người trình bày gợi ý | Thời lượng |
+| :--- | :---: | :--- | :--- | :---: |
+| **Slide 01** | **Tối (Navy)** | Trang bìa có Logo ICTU, tên đề tài, thông tin nhóm & ảnh lớn màn hình Tổng quan | Nguyễn Đức Dũng | 1 phút |
+| **Slide 02** | Sáng | 3 bài toán thực tế tại xưởng sửa chữa ô tô & nguyên tắc kiểm soát AI | Nguyễn Đức Dũng | 1 phút |
+| **Slide 03** | Sáng | Phân quyền 4 vai trò nhân sự & kiến trúc hệ thống 4 tầng | Nguyễn Đức Dũng | 1 phút |
+| **Slide 04** | Sáng | Luồng vận hành Phiếu sửa chữa 6 trạng thái & màn hình Quản lý phiếu | Đồng Quốc Khánh | 1 phút |
+| **Slide 05** | Sáng | Chi tiết Phiếu sửa chữa, chốt cứng đơn giá lịch sử & Biên bản tiếp nhận | Đồng Quốc Khánh | 1 phút |
+| **Slide 06** | Sáng | Sổ cái Kho phụ tùng đối soát thời gian thực (`Lệch sổ = 0`) & Báo giá | Đồng Quốc Khánh | 1 phút |
+| **Slide 07** | Sáng | Bảo vệ toàn vẹn Tiền tệ, Công nợ & minh chứng chặn thu vượt nợ | Đồng Quốc Khánh | 1 phút |
+| **Slide 08** | **Tối (Navy)** | **Trọng tâm AIA331:** Thiết kế 3 chức năng Trợ lý AI & Bộ lọc 3 bước chống bịa giá | Nguyễn Đức Dũng | 1,5 phút |
+| **Slide 09** | Sáng | Giao diện Trung tâm AI — Cơ chế Hàng chờ ở trạng thái **“Chờ duyệt”** | Nguyễn Đức Dũng | 1 phút |
+| **Slide 10** | Sáng | Giao diện Phê duyệt kết quả AI — Chuyển sang **“Đã duyệt”** kèm tên người duyệt | Nguyễn Đức Dũng | 1 phút |
+| **Slide 11** | Sáng | Kết quả đo độ trễ thực tế trên Groq API (`< 4 giây`) & kiểm thử tự động (`226/226`) | Nguyễn Đức Dũng | 1 phút |
+| **Slide 12** | **Tối (Navy)** | Tổng kết kết quả đạt được, giới hạn hiện tại, hướng phát triển & Cảm ơn | Nguyễn Đức Dũng | 1 phút |
 
 ---
 
-### 🔹 SLIDE 1: Trang bìa — Giới thiệu Đề tài & Quy mô (0:00 – 0:45 | 45 giây)
+## PHẦN 2: LỜI THOẠI CHI TIẾT THEO TỪNG SLIDE
 
-> **Lời thoại:**
-> "Em xin kính chào Thầy và Hội đồng chấm đồ án, chào các bạn sinh viên ạ. Em là đại diện của **Nhóm 23** (gồm Nguyễn Đức Dũng và Đồng Quốc Khánh). Hôm nay em xin trình bày đồ án học phần Ứng dụng Trí tuệ Nhân tạo (mã đề tài 80277): **Hệ thống Quản trị Xưởng Dịch vụ Ô tô tích hợp Trợ lý AI — GarageTools AI**.
+### SLIDE 01: Trang bìa Dự án Học phần
+> *"Em chào Thầy và các bạn. Hôm nay Nhóm 23 chúng em gồm Nguyễn Đức Dũng và Đồng Quốc Khánh xin trình bày dự án kết thúc học phần Ứng dụng Trí tuệ Nhân tạo với đề tài: **Hệ thống Quản lý Xưởng Dịch vụ Ô tô & Trợ lý AI (GarageTools AI)**.*
 >
-> Hệ thống của nhóm quản lý khép kín toàn bộ quy trình xưởng từ đặt lịch, tiếp nhận, báo giá, sổ cái kho đến nghiệm thu, hóa đơn, bảo hành; kết hợp **3 chức năng Trợ lý AI có kiểm duyệt Human Review**. Đồ án đã hoàn thiện trọn vẹn qua 4 cột mốc từ KT1 đến Cuối kỳ với **21 bảng CSDL SQLite**, **16 màn hình React 19** kết nối **FastAPI**, và vượt qua **100% trên tổng số 226 ca kiểm thử tự động**."
-
----
-
-### 🔹 SLIDE 2: Thực trạng Quản lý Xưởng & Vì sao cần "Rào chắn" cho AI? (0:45 – 1:40 | 55 giây)
-
-*(Lưu ý thao tác: Slide này có hiệu ứng xuất hiện từng ý — vừa nói vừa bấm nhẹ phím `→`)*
-
-> **Lời thoại:**
-> "Thưa thầy cô, xuất phát từ thực tế tại các garage vừa và nhỏ, có **3 rủi ro gây thất thoát lớn nhất**:
-> - *(Bấm `→`)* **Một là** lệch tồn kho và xuất âm kho khi hai nhân viên cùng lấy một phụ tùng cuối cùng, hoặc hủy phiếu nhưng quên hoàn kho.
-> - *(Bấm `→`)* **Hai là** sai lệch lịch sử tài chính: nếu lưu giá kiểu tra cứu động từ danh mục, một lần đổi giá dịch vụ sẽ làm thay đổi tổng tiền của cả các hóa đơn cũ đã thu.
-> - *(Bấm `→`)* **Ba là** rủi ro **ảo giác (Hallucination)** khi gọi AI tự do: AI rất dễ tự bịa phụ tùng lạ, tính sai tổng tiền hoặc chẩn đoán mò bệnh xe.
+> *Mục tiêu của nhóm là xây dựng một phần mềm web hoàn chỉnh giúp các xưởng sửa chữa ô tô vừa và nhỏ quản lý khép kín từ khâu nhận xe, báo giá, xuất kho phụ tùng đến hóa đơn; đồng thời ứng dụng Trợ lý AI để hỗ trợ tóm tắt lịch sử xe, giải thích dịch vụ và gợi ý báo giá nháp một cách an toàn.*
 >
-> Vì vậy ở giai đoạn **KT1**, khi dùng AI hỗ trợ phân tích thiết kế, nhóm xác lập nguyên tắc: **AI chỉ sinh phương án, con người kiểm chứng và quyết định**:
-> - *(Bấm `→`)* Nhóm **chủ động bác bỏ gợi ý 'AI tự chẩn đoán lỗi xe'** vì rủi ro kỹ thuật cao, chỉ giữ **AI01, AI02, AI03** bám sát CSDL.
-> - *(Bấm `→`)* Chuẩn hóa lược đồ bằng cách gộp tiền công vào đơn giá dịch vụ và thêm nhánh hủy phiếu tự hoàn kho.
-> - *(Bấm `→`)* Giữ vững nguyên tắc vàng: **AI chỉ trình bày văn bản tư vấn ở trạng thái Chờ duyệt (`PENDING`), tuyệt đối không tự quyết định tiền.**"
+> *Bên phải màn hình là giao diện Bảng điều khiển Tổng quan thực tế của hệ thống."*
 
 ---
 
-### 🔹 SLIDE 3: Kiến trúc 4 Tầng & Phân quyền 4 Vai trò (RBAC) (1:40 – 2:35 | 55 giây)
-
-*(Lưu ý thao tác: Nói xong 4 tầng kiến trúc ở hàng trên thì bấm `→` để hiện lần lượt 4 vai trò ở hàng dưới)*
-
-> **Lời thoại:**
-> "Về kiến trúc ở **Slide 3**, hệ thống tách biệt thành **4 tầng**:
-> 1. **Giao diện Web** xây dựng bằng **React 19 + TanStack Start** (16 màn hình) kèm giao diện Jinja2 tích hợp sẵn.
-> 2. **Tầng Bảo mật** băm mật khẩu bằng **Argon2id**, dùng Cookie ký HMAC kèm cột **`auth_version`** giúp thu hồi ngay lập tức mọi phiên đang mở khi đổi mật khẩu hoặc khóa tài khoản, kết hợp **CSRF Token** 2 lớp.
-> 3. **Tầng Dịch vụ & AI Gateway** độc lập nhà cung cấp.
-> 4. **Tầng CSDL SQLite 3 bật chế độ WAL** với 21 bảng và 37 chỉ mục.
+### SLIDE 02: 3 Bài toán Thực tế tại Xưởng Dịch vụ Ô tô
+> *"Qua khảo sát thực tế, nhóm tập trung giải quyết 3 bài toán chính:*
+> 1. ***Một là lệch tồn kho và nhảy giá cũ:** Khi quản lý rời rạc, việc hủy phiếu giữa chừng rất dễ quên hoàn trả phụ tùng về kho; hoặc khi xưởng đổi bảng giá mới thì các phiếu sửa chữa cũ lại bị nhảy tổng tiền.*
+> 2. ***Hai là tốn thời gian tra cứu và tư vấn:** Cố vấn dịch vụ mất nhiều thời gian đọc lại lịch sử sửa chữa dài của xe và giải thích chi phí kỹ thuật cho khách hàng.*
+> 3. ***Ba là rủi ro ảo giác khi dùng AI:** Nếu dùng mô hình ngôn ngữ lớn tự do mà không có rào chắn, AI rất dễ tự bịa ra tên phụ tùng ngoài danh mục hoặc tính nhầm tiền.*
 >
-> Hệ thống kiểm soát phân quyền **4 vai trò nội bộ**:
-> - *(Bấm `→`)* **Quản lý (`MANAGER`)**: Toàn quyền điều hành và là vai trò duy nhất được **duyệt kết quả AI (`ai.review`)**.
-> - *(Bấm `→`)* **Lễ tân (`RECEPTIONIST`)**: Tiếp nhận xe, lập báo giá, quản lý kho, chạy AI01–AI03 nhưng bị chặn quyền duyệt AI.
-> - *(Bấm `→`)* **Kỹ thuật viên (`TECHNICIAN`)**: Bị **cô lập quyền thao tác theo từng phiếu** — chỉ sửa được đúng phiếu giao cho mình.
-> - *(Bấm `→`)* **Thu ngân (`CASHIER`)**: Ghi nhận thanh toán, bị chặn sửa phiếu kỹ thuật và chặn chạy AI."
+> *Từ đó, nguyên tắc cốt lõi của nhóm là: **Cơ sở dữ liệu quyết định tuyệt đối tiền tệ và tồn kho — Trợ lý AI chỉ tư vấn nháp và bắt buộc phải qua bước con người kiểm duyệt.**"*
 
 ---
 
-### 🔹 SLIDE 4: 4 Chốt chặn Bảo vệ Tuyệt đối Tiền tệ & Tồn kho (2:35 – 3:45 | 70 giây)
-
-*(Lưu ý thao tác: Bấm `→` lần lượt cho 4 thẻ chốt chặn hiện ra — đây là phần kỹ thuật ăn điểm nhất)*
-
-> **Lời thoại:**
-> "Sang giai đoạn **KT2 và đợt dùng AI Review mã nguồn ở KT3**, nhóm đã xây dựng **4 chốt chặn kỹ thuật** bảo vệ tiền và tồn kho:
-> - *(Bấm `→`)* **Thứ nhất — Tiền tệ nguyên và Chốt giá lịch sử:** Nhóm đã sửa lỗi AI dùng số thực `FLOAT` sang số nguyên **`INTEGER` (tính bằng đồng)** để triệt tiêu sai số làm tròn; đồng thời Backend luôn tự đọc giá từ CSDL và **chốt cứng vào cột `unit_price`** lúc thêm hạng mục. Đổi giá danh mục không bao giờ làm thay đổi hóa đơn cũ.
-> - *(Bấm `→`)* **Thứ hai — Ràng buộc `CHECK XOR`:** Áp dụng trực tiếp trong SQLite trên cả 3 bảng hạng mục phiếu, báo giá và bảo hành — bắt buộc mỗi dòng **hoặc là Dịch vụ, hoặc là Phụ tùng, đúng một trong hai**, không bao giờ mơ hồ.
-> - *(Bấm `→`)* **Thứ ba — Sổ cái tồn kho bất biến (`stock_transactions`):** Mọi biến động tồn kho bắt buộc đi qua Sổ cái theo 4 lý do Nhập, Xuất, Hoàn trả, Điều chỉnh, giữ bất biến **`parts.stock` luôn bằng tổng đại số `SUM(qty)` trên sổ cái**.
-> - *(Bấm `→`)* **Thứ tư — Giao dịch nguyên tử `BEGIN IMMEDIATE`:** Kiểm tra điều kiện ngay trong câu lệnh `UPDATE` (`WHERE stock + ? >= 0` và `WHERE total - paid >= ?`), chặn 100% lỗi xuất âm kho hay thu tiền vượt tổng hóa đơn khi 2 người bấm cùng lúc."
-
----
-
-### 🔹 SLIDE 5: Quy trình 6 Trạng thái & 16 Màn hình React 19 Thực tế (3:45 – 4:50 | 65 giây)
-
-*(Lưu ý thao tác: Dùng chuột bấm nhanh qua các nút tròn `2. Chi tiết Phiếu`, `3. Báo giá Idempotent`, `5. Chặn Thu vượt (409)` để thầy cô thấy ngay ảnh giao diện thật)*
-
-> **Lời thoại:**
-> "Ở **Slide 5** là vòng đời 6 trạng thái của phiếu sửa chữa: từ **Đã tiếp nhận** (ghi biên bản số ODO, mức xăng, ngoại thất), sang **Đang kiểm tra**, **Đang báo giá**, **Đang sửa chữa** cho tới khi **Đã hoàn thành** (để Nghiệm thu, Lập hóa đơn, Cấp bảo hành); hoặc nhánh **Đã hủy phiếu** tự động hoàn trả phụ tùng về kho.
+### SLIDE 03: Phân quyền 4 Vai trò Nhân sự & Kiến trúc Hệ thống
+> *"Ở Slide 03, hệ thống được phân quyền theo đúng 4 vị trí công việc tại xưởng:*
+> - ***Quản lý xưởng:** Quản trị danh mục, điều chỉnh kho và là người phê duyệt kết quả AI.*
+> - ***Lễ tân / Cố vấn:** Tiếp nhận khách, lập phiếu sửa chữa, báo giá và dùng AI hỗ trợ tư vấn.*
+> - ***Kỹ thuật viên:** Được cô lập phạm vi dữ liệu — mỗi kỹ thuật viên khi đăng nhập chỉ nhìn thấy và cập nhật tiến độ trên đúng các phiếu được giao cho mình.*
+> - ***Thu ngân:** Phụ trách phát hành hóa đơn, giảm giá và thu tiền.*
 >
-> *(Bấm qua vài nút màn hình bên dưới)*
-> Ngay trên khung trình duyệt bên dưới là ảnh chụp thực tế từ 16 màn hình React 19 của hệ thống: từ Bảng điều phối Kanban, màn hình Chi tiết phiếu & Nghiệm thu, màn hình Báo giá chính thức chỉ cho phép áp dụng **đúng một lần (idempotent)**, cho tới màn hình Tài chính tự động chặn lỗi **HTTP 409** khi thu ngân nhập số tiền vượt quá số còn phải trả."
+> *Bên dưới là kiến trúc 4 tầng độc lập từ giao diện React đến tầng bảo mật, xử lý nghiệp vụ và cơ sở dữ liệu 21 bảng."*
 
 ---
 
-### 🔹 SLIDE 6: 3 Chức năng AI, Bộ lọc Chống Ảo giác & Human Review (4:50 – 5:50 | 60 giây)
-
-> **Lời thoại:**
-> "Tại **Slide 6** là trọng tâm của giai đoạn **KT3**: tích hợp 3 chức năng AI với các tệp prompt tách độc lập khỏi mã nguồn:
-> - **AI01 (`history.txt`):** Tóm tắt lịch sử sửa chữa của xe theo đúng 4 mục, xe mới chưa sửa lần nào thì báo rõ chưa có lịch sử, cấm suy đoán bệnh mới.
-> - **AI02 (`explain.txt`):** Giải thích dịch vụ bằng ngôn ngữ đời thường cho chủ xe; xử lý an toàn cả ca biên khi dịch vụ bị trống mô tả (`NULL`) mà không gây lỗi 500.
-> - **AI03 (`quote.txt`):** Lập báo giá nháp dạng JSON. Điểm đắt giá nhất tại `ai_gateway.py` là **Bộ lọc hậu kiểm không tin lời model**: hệ thống bóc tách JSON, lọc chỉ giữ lại dòng nào khớp chính xác cả Tên, Số lượng và Đơn giá với CSDL; nếu AI cộng sai tổng tiền thì hệ thống **cưỡng bức dùng `backend_total` của Backend**; và tự động Fallback sang chế độ dự phòng `mock` nếu đứt mạng hoặc lỗi 429.
+### SLIDE 04: Luồng Vận hành Phiếu sửa chữa 6 Trạng thái
+> *"Sang Slide 04, em xin trình bày luồng vận hành của một phiếu sửa chữa qua 6 trạng thái: **Tiếp nhận → Kiểm tra → Báo giá → Đang sửa → Hoàn thành**, cùng nhánh rẽ **Đã hủy**.*
 >
-> Đặc biệt, mọi kết quả AI sinh ra đều lưu ở trạng thái **`PENDING` (Chờ duyệt)**. Chỉ **Quản lý (`ai.review`)** mới được bấm Duyệt hoặc Từ chối và bị khóa một chiều không cho duyệt lại lần hai."
-
----
-
-### 🔹 SLIDE 7: Thực nghiệm Mô hình Thật (Groq) & Kiểm thử Cuối kỳ (5:50 – 6:30 | 40 giây)
-
-> **Lời thoại:**
-> "Ở **Slide 7 (Giai đoạn Cuối kỳ)** là kết quả đo lường thực nghiệm và kiểm thử:
-> - Biểu đồ bên trái là độ trễ đo thực tế trên mô hình thật **`openai/gpt-oss-120b` qua Groq Cloud**: trung bình chỉ từ **2.46 giây đến 3.99 giây**, nhanh hơn gấp 3 lần so với trần yêu cầu Cuối kỳ là dưới 10 giây.
-> - Biểu đồ bên phải là kết quả 4 tầng kiểm thử đạt **100% PASS**: gồm **226/226 ca tự động Backend**, **31/31 ca Smoke**, **32/32 ca E2E xuyên suốt** (đối soát sổ cái kho sau toàn bộ quy trình lệch bằng 0), cùng **35/35 ca UAT** và đóng gói hoàn chỉnh bằng Docker kèm GitHub Actions CI."
-
----
-
-### 🔹 SLIDE 8: Giới hạn Hiện tại, Hướng Phát triển & Lời Cảm ơn (6:30 – 7:00 | 30 giây)
-
-> **Lời thoại:**
-> "Cuối cùng ở **Slide 8**, nhóm xin nhìn nhận khách quan 3 giới hạn hiện tại và hướng phát triển:
-> - **Về giới hạn hiện tại:** (1) Kết quả AI03 sau khi duyệt đang dừng ở văn bản tư vấn trong `ai_results` chứ chưa tự sinh bản ghi sang bảng `quotations` để tách bạch an toàn dữ liệu AI và chứng từ tài chính; (2) Kho hiện trừ trực tiếp khi áp dụng báo giá chứ chưa tách bước *'Giữ kho tạm thời'* lúc báo giá đang chờ khách duyệt; và (3) SQLite WAL khóa ghi mức toàn file nên tối ưu cho 1 xưởng độc lập (5–30 người).
-> - **Hướng nâng cấp tiếp theo** là chuyển lên **PostgreSQL** cho chuỗi đa chi nhánh, bổ sung hàng đợi bất đồng bộ cho AI, kết nối thiết bị đọc lỗi **OBD-II**, **Vision AI** nhận diện vết trầy xước xe và thanh toán **VietQR**.
+> *Hệ thống kiểm soát chặt 2 điểm:*
+> - *Thứ nhất, phiếu chỉ được chuyển sang **Hoàn thành** khi đã có ít nhất một hạng mục dịch vụ hoặc phụ tùng.*
+> - *Thứ hai, khi hủy một phiếu đã xuất phụ tùng nhưng chưa thu tiền, hệ thống sẽ **tự động hoàn trả 100% số lượng phụ tùng đó về kho**.*
 >
-> Phần trình bày 7 phút của Nhóm 23 đến đây là kết thúc. Em xin trân trọng cảm ơn Thầy/Cô và các bạn đã lắng nghe, và xin phép được lắng nghe câu hỏi từ Hội đồng ạ!"
+> *Hình bên phải là giao diện Quản lý và lọc phiếu sửa chữa theo từng trạng thái."*
 
 ---
 
-## PHẦN 3: CẨM NANG 12 CÂU HỎI PHẢN BIỆN DÀNH RIÊNG CHO BẠN (ĐỌC TRÊN ĐIỆN THOẠI/GIẤY KHI HỎI ĐÁP)
+### SLIDE 05: Chi tiết Phiếu sửa chữa & Biên bản Tiếp nhận Xe
+> *"Trên Slide 05 là màn hình đi sâu vào **Chi tiết của một Phiếu sửa chữa**:*
+> - *Ngay khi nhân viên thêm dịch vụ hoặc phụ tùng vào phiếu, đơn giá hiện tại được **chốt cứng vào dòng hạng mục**, giúp hóa đơn lịch sử không bị nhảy giá khi xưởng cập nhật bảng giá mới.*
+> - *Kèm theo phiếu là **Biên bản tiếp nhận xe** ghi nhận số ODO, mức nhiên liệu, tình trạng thân vỏ và tư trang khách gửi, cùng nhật ký lưu vết mọi lần chuyển trạng thái."*
 
-*(Phần này chỉ nằm trong tài liệu này để bạn ôn trước khi lên bảng, hoàn toàn không xuất hiện trên Slide)*
+---
 
-1. **Tại sao nhóm lại loại bỏ chức năng "AI tự chẩn đoán lỗi xe"?**
-   - **Trả lời:** Ở giai đoạn KT1, công cụ AI có đề xuất tính năng này nhưng nhóm **chủ động bác bỏ** vì cùng một triệu chứng (như *động cơ rung giật*) có hàng chục nguyên nhân cơ khí/điện tử cần đo kiểm thực tế bằng máy OBD-II tại cầu nâng. Nếu để LLM tự phán đoán từ vài dòng chữ sẽ vi phạm nguyên tắc *"Chỉ sử dụng dữ liệu có thật trong CSDL"* và gây rủi ro kỹ thuật cao.
-2. **Làm sao đảm bảo AI không tự bịa giá tiền hoặc tự thêm phụ tùng vào phiếu sửa chữa (AI03)?**
-   - **Trả lời:** Có **3 lớp khóa** trong `app/ai_gateway.py`: (1) Hàm `bao_gia_nhap()` chỉ `SELECT`, tuyệt đối không `INSERT`/`UPDATE` vào bảng hạng mục hay hóa đơn; (2) Mảng `items` do AI trả về bị lọc đối chiếu từng dòng: phải khớp 100% Tên, Số lượng và Đơn giá với CSDL mới được giữ lại; (3) Tổng tiền chính thức `backend_total` do SQL tự tính, nếu AI trả `total` khác thì hệ thống ghi cảnh báo và **ép dùng `backend_total`**.
-3. **Nếu đang chạy thật mà mất mạng, quá thời gian chờ (Timeout) hoặc API Groq báo lỗi 429 (hết hạn mức) thì sao?**
-   - **Trả lời:** Trong `ai_gateway.py`, hàm `goi()` bắt toàn bộ ngoại lệ `TimeoutException`, HTTP `429`, `500` hoặc JSON vỡ và tự động chuyển sang chế độ dự phòng **`_goi_mock()`** dựng kết quả chuẩn từ CSDL để quy trình tiếp nhận của xưởng không bao giờ bị lỗi 500. (Đã có 15 ca kiểm thử trong `TestAiGateway`).
-4. **Nếu một dịch vụ bị bỏ trống mô tả (`description = NULL`), khi chạy AI02 (Giải thích dịch vụ) có bị lỗi không?**
-   - **Trả lời:** Không lỗi ạ. Khi `description` là `NULL`, hệ thống bắt buộc phần 1 trả về đúng câu quy định: *"1. Dịch vụ là gì: Danh mục chưa có mô tả cho dịch vụ này"* (được kiểm chứng tự động bởi ca test `test_ai02_dich_vu_thieu_mo_ta_van_tao_duoc_ket_qua`).
-5. **Cơ chế Human Review kiểm soát ở tầng CSDL và phân quyền như thế nào?**
-   - **Trả lời:** Mọi kết quả AI sinh ra đều lưu vào `ai_results` với `review_status = 'PENDING'`. Ràng buộc `CHECK` của bảng bắt buộc khi chuyển sang `APPROVED`/`REJECTED` phải có đủ `reviewed_by` và `reviewed_at`. Chỉ vai trò **`MANAGER`** mới có quyền `ai.review` (Lễ tân/KTV gọi API bị chặn 403), và câu lệnh `UPDATE ... WHERE review_status = 'PENDING'` chặn tuyệt đối việc duyệt lại lần 2.
-6. **Giải thích cơ chế chống Race Condition khi 2 người cùng lấy 1 phụ tùng cuối cùng hoặc thu tiền cùng lúc?**
-   - **Trả lời:** Nhóm không dùng `if stock >= qty` trong Python rồi mới `UPDATE` (vì sẽ bị lỗi tranh chấp TOCTOU). Thay vào đó, nhóm mở transaction **`BEGIN IMMEDIATE`** và gộp điều kiện kiểm tra ngay trong câu lệnh SQL nguyên tử: `UPDATE parts SET stock = stock + ? WHERE id = ? AND stock + ? >= 0` (và `WHERE total - paid >= ?` với hóa đơn). Nếu `rowcount != 1`, giao dịch tự rollback và báo lỗi 409/422 ngay.
-7. **Nếu bấm nút "Áp dụng báo giá vào phiếu" 2 lần liên tiếp (double-click) thì kho có bị trừ 2 lần không?**
-   - **Trả lời:** Tuyệt đối không. Bảng `quotations` có cột `applied_at`. Hàm `ap_dung_vao_phieu()` kiểm tra trong `BEGIN IMMEDIATE`: nếu `applied_at IS NOT NULL` thì từ chối ngay với mã **HTTP 409 Conflict**. Kịch bản `scripts/e2e.ps1` đã bắn lặp 2 lần liên tiếp và chứng minh kho chỉ trừ đúng 1 lần, đối soát `/api/stock/audit` lệch bằng 0.
-8. **Tại sao phải có ràng buộc `CHECK XOR` trên bảng hạng mục (`repair_order_items`)?**
-   - **Trả lời:** Đây là phát hiện quan trọng nhất của nhóm trong đợt **AI Review mã nguồn (KT3-09)**. Vì bảng hạng mục dùng chung cho cả dịch vụ (`service_id`) và phụ tùng (`part_id`), nếu không có `CHECK ((service_id IS NOT NULL AND part_id IS NULL) OR (service_id IS NULL AND part_id IS NOT NULL))`, dữ liệu có thể lọt dòng cả hai cùng rỗng hoặc cả hai cùng có giá trị, làm sai lệch báo cáo doanh thu.
-9. **Khi đổi giá dịch vụ/phụ tùng trong Danh mục (`catalog`), các hóa đơn cũ đã phát hành có bị nhảy số không?**
-   - **Trả lời:** Không bao giờ thay đổi. Tại thời điểm thêm hạng mục vào phiếu hoặc báo giá, đơn giá hiện hành được sao chép và **chốt cứng vào cột `unit_price`**. Tổng phiếu và hóa đơn luôn tính trên `unit_price` đã chốt (có ca kiểm thử đổi toàn bộ giá danh mục về 0đ và xác nhận hóa đơn cũ không đổi).
-10. **Khi nhân viên bị khóa tài khoản hoặc bị đổi mật khẩu, phiên đăng nhập đang mở trên máy họ có còn tác dụng không?**
-    - **Trả lời:** Mất hiệu lực ngay lập tức ở request kế tiếp nhờ cột **`auth_version`** trong bảng `users`. Mỗi khi đổi mật khẩu hoặc khóa tài khoản, `auth_version` tăng lên 1, làm chữ ký phiên cũ trong cookie không còn khớp.
-11. **Trong quá trình dùng AI lập trình (KT2), lỗi nguy hiểm nhất do AI sinh ra mà nhóm bắt được là gì?**
-    - **Trả lời:** Có 2 lỗi liên quan đến tiền: (1) AI cho phép form phía client gửi `unit_price` lên server (người dùng có thể sửa HTML thành giá 0đ) — nhóm sửa lại để Backend luôn tự tra giá từ CSDL; (2) AI dùng số thực `FLOAT` cho tiền tệ gây sai số làm tròn — nhóm chuyển toàn bộ sang số nguyên `INTEGER`.
-12. **Nếu thầy cô hỏi: "Sao trong file PDF báo cáo có nhắc tới AI04 / bảng đặt giữ kho riêng, mà trên Slide và Code thực tế lại là 3 chức năng AI01–AI03 và sổ cái `stock_transactions`?"**
-    - **Trả lời:** *"Dạ thưa thầy, trong báo cáo lý thuyết nhóm có phác thảo cả kiến trúc mở rộng định hướng. Khi hiện thực hóa mã nguồn chính thức và nghiệm thu theo đúng **40 tiêu chí bắt buộc của học phần AIA331 (KT1 → KT3 → Cuối kỳ)**, nhóm đã chuẩn hóa vào **3 chức năng AI01–AI03** và **Sổ cái tồn kho nguyên tử (`stock_transactions`)** để đảm bảo 100% tính tất định, không có tính năng thừa ngoài kiểm soát và vượt qua toàn bộ **226/226 ca kiểm thử tự động** ạ!"*
+### SLIDE 06: Sổ cái Kho phụ tùng Đối soát Thời gian thực
+> *"Ở Slide 06 là màn hình **Kho phụ tùng và Sổ cái giao dịch**:*
+> - *Mọi biến động từ Nhập kho (+), Xuất cho phiếu sửa chữa (-) đến Hoàn trả khi hủy phiếu (+) đều bắt buộc sinh chứng từ trong sổ cái. Nhờ đó số lượng tồn kho hiện tại luôn khớp tuyệt đối với tổng lũy kế sổ cái, hiển thị chỉ số **Lệch sổ bằng 0** ngay trên màn hình.*
+> - *Đồng thời, các báo giá sau khi khách đồng ý và nạp vào phiếu sửa chữa sẽ tự khóa sang trạng thái **Đã áp dụng** để ngăn nhân viên bấm nhầm lần hai gây trừ kho kép."*
+
+---
+
+### SLIDE 07: Bảo vệ Toàn vẹn Tiền tệ, Công nợ & Phân quyền
+> *"Slide 07 minh họa cơ chế bảo vệ tiền tệ và công nợ của hệ thống:*
+> - *Toàn bộ tiền tệ được lưu bằng **số nguyên VNĐ** để không xảy ra sai số làm tròn.*
+> - *Khi thu ngân ghi nhận thanh toán, hệ thống khóa giao dịch và kiểm tra công nợ tức thời. Như trên màn hình thực tế bên phải: khi số tiền còn phải thu là **6.100.000 đồng** mà nhập số tiền lớn hơn, hệ thống lập tức chặn lại và báo lỗi rõ ràng."*
+
+---
+
+### SLIDE 08: Trọng tâm Học phần AIA331 — 3 Chức năng Trợ lý AI & Bộ lọc Chống bịa giá
+> *"Sang phần trọng tâm của học phần Ứng dụng AI ở Slide 08, nhóm thiết kế 3 chức năng Trợ lý AI:*
+> - ***AI01 – Tóm tắt lịch sử xe:** Tổng hợp nhanh các lần sửa trước và cảnh báo rõ hạng mục còn hạn bảo hành.*
+> - ***AI02 – Giải thích dịch vụ cho khách:** Chuyển bảng kê kỹ thuật thành lời tư vấn dễ hiểu và giữ đúng tổng tiền trên phiếu.*
+> - ***AI03 – Gợi ý báo giá nháp từ triệu chứng:** Để chặn triệt để hiện tượng AI bịa giá, nhóm xây dựng **Bộ lọc hậu xử lý 3 bước**:*
+>   - ***Bước 1:** Tự động xóa bỏ mọi dịch vụ/phụ tùng do AI tự nghĩ ra mà không có trong danh mục xưởng.*
+>   - ***Bước 2:** Gắn lại 100% đơn giá niêm yết chuẩn từ cơ sở dữ liệu.*
+>   - ***Bước 3:** Cộng lại thành tiền và tổng cộng bằng thuật toán số nguyên."*
+
+---
+
+### SLIDE 09: Trung tâm AI — Cơ chế Hàng chờ “Chờ duyệt”
+> *"Slide 09 là giao diện **Trung tâm AI** khi nhân viên vừa bấm chạy một chức năng AI:*
+> - *Kết quả sinh ra không bao giờ tự ý ghi đè vào phiếu sửa chữa mà được lưu vào **Hàng chờ duyệt kết quả** với nhãn màu vàng **Chờ duyệt**.*
+> - *Trên mỗi thẻ kết quả đều hiển thị minh bạch nhà cung cấp mô hình, thời gian xử lý và hai nút thao tác **Duyệt / Từ chối**."*
+
+---
+
+### SLIDE 10: Phê duyệt Kết quả AI & Lưu vết Trách nhiệm
+> *"Tiếp nối ở Slide 10 là màn hình sau khi **Quản lý xưởng** đã kiểm tra và bấm phê duyệt:*
+> - *Lễ tân và Kỹ thuật viên được chạy AI để hỗ trợ công việc, nhưng chỉ Quản lý mới có thẩm quyền phê duyệt.*
+> - *Sau khi bấm duyệt, thẻ kết quả chuyển sang nhãn xanh **Đã duyệt** và ghi rõ tên người chịu trách nhiệm: **'Duyệt bởi Trần Thu Hà'**."*
+
+---
+
+### SLIDE 11: Kết quả Đo kiểm Độ trễ AI & Kiểm thử Toàn diện
+> *"Ở Slide 11 là các con số đo kiểm thực nghiệm của dự án:*
+> - *Khi gọi mô hình ngôn ngữ lớn thật qua dịch vụ **Groq API** (sử dụng gói miễn phí **0 VNĐ**), thời gian phản hồi thực tế chỉ từ **2,46 giây đến 3,99 giây**, nhanh hơn rất nhiều so với ngưỡng mục tiêu 10 giây. Khi mất mạng, chế độ dự phòng nội bộ phản hồi tức thì trong 1 mili-giây.*
+> - *Về chất lượng phần mềm, hệ thống đã vượt qua **226 trên 226 ca kiểm thử tự động**, cùng đầy đủ các kịch bản kiểm thử biên và luồng nghiệp vụ khép kín."*
+
+---
+
+### SLIDE 12: Tổng kết Dự án, Giới hạn & Hướng Phát triển
+> *"Cuối cùng ở Slide 12, nhóm xin tổng kết lại kết quả đạt được cùng các giới hạn hiện tại:*
+> - *Hệ thống đã hoàn thiện 7 phân hệ khép kín với 16 màn hình, đảm bảo toàn vẹn tiền tệ – tồn kho và tích hợp 3 trợ lý AI an toàn.*
+> - *Về giới hạn trong phạm vi học phần: hiện tại nội dung tư vấn chưa tự động đẩy qua tin nhắn Zalo/SMS, và AI mới xử lý văn bản chứ chưa phân tích hình ảnh vết xước xe.*
+> - *Hướng phát triển tiếp theo của nhóm là tích hợp AI đa phương thức nhận diện ảnh chụp thân vỏ xe lúc tiếp nhận, kết nối thông báo tự động qua Zalo OA và mở rộng cho mô hình chuỗi nhiều chi nhánh.*
+>
+> *Phần trình bày của Nhóm 23 đến đây là kết thúc. Chúng em xin chân thành cảm ơn Thầy và các bạn đã lắng nghe ạ!"*
+
+---
+
+## PHẦN 3: CÂU HỎI THƯỜNG GẶP KHI TRÌNH BÀY DỰ ÁN HỌC PHẦN
+
+1. **Hỏi: AI trong bài là gọi API thật hay dữ liệu viết sẵn? Dùng API nào để không tốn tiền?**
+   - **Đáp:** Gọi API mô hình ngôn ngữ lớn thật 100%, hỗ trợ **Groq**, **Google Gemini**, **OpenRouter** và **OpenAI**. Nhóm dùng gói **Free Tier (0 VNĐ)** từ `console.groq.com` và `aistudio.google.com` với độ trễ dưới 4 giây, đồng thời có cơ chế dự phòng nội bộ khi mất mạng.
+2. **Hỏi: Làm sao chặn việc AI báo sai giá phụ tùng?**
+   - **Đáp:** Kết quả của AI03 đi qua bộ lọc đối chiếu trực tiếp với bảng danh mục trong CSDL: mục nào không khớp tên sẽ bị loại bỏ, mục nào khớp sẽ bị ghi đè lại bằng đúng đơn giá niêm yết trong CSDL rồi tính lại tổng tiền bằng code Python.
+3. **Hỏi: Khi xưởng tăng giá phụ tùng trong danh mục thì phiếu cũ có bị thay đổi tổng tiền không?**
+   - **Đáp:** Không, vì đơn giá đã được sao chép và khóa cứng vào dòng hạng mục ngay tại thời điểm thêm vào phiếu sửa chữa.
+4. **Hỏi: Hủy phiếu sửa chữa đã lấy phụ tùng ra khỏi kho thì sao?**
+   - **Đáp:** Nếu phiếu đã thu tiền thì chặn không cho hủy; nếu chưa thu tiền thì hệ thống tự động cộng trả lại 100% phụ tùng về kho và ghi dòng hoàn trả (`RETURN`) vào sổ cái.

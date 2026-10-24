@@ -1,73 +1,81 @@
-\resizebox{0.98\textwidth}{!}{%
+\resizebox{\textwidth}{!}{%
 \begin{tikzpicture}[
-  font=\sffamily,
-  ent/.style={
-    rectangle split,
-    rectangle split parts=2,
-    rectangle split part fill={black!12,white},
-    draw=black,
-    line width=0.65pt,
-    text width=3.9cm,
-    align=left,
     font=\sffamily\scriptsize,
-    inner sep=4pt
-  },
-  rel/.style={-{Latex[length=1.8mm,width=1.4mm]}, line width=0.6pt, draw=black},
-  lbl/.style={font=\sffamily\scriptsize, fill=white, inner sep=1.2pt}
+    >=Latex,
+    entity/.style={rectangle, draw=diagblueline, line width=0.9pt, fill=white, rounded corners=4pt, inner sep=0pt},
+    rel/.style={line width=0.9pt, diagblueline, -Latex}
 ]
-  \node[ent] (usr) at (0, 1.85) {
-    \textbf{users (Tài khoản \& Vai trò)}
-    \nodepart{second}
-    \underline{id} (PK), username, email\\
-    password\_hash, role (4 vai trò)\\
-    is\_active, created\_at
-  };
 
-  \node[ent] (inv) at (5.6, 1.85) {
-    \textbf{invoices \& payments}
-    \nodepart{second}
-    \underline{id} (PK), repair\_order\_id (FK)\\
-    subtotal, discount, tax\_vat\\
-    total\_payable, paid\_amount, status
-  };
+\node[entity] (user) at (0,0) {
+\begin{tabular}{p{4.3cm}}
+\rowcolor{diagbluefill}\textbf{7. users (Nhân sự nội bộ)}\\
+\hline
+\textbf{PK} id, username \textit{UNIQUE}\\
+full\_name, email, password\_hash\\
+role (\textit{4 vai trò}), is\_active\\
+auth\_version \textit{CHECK (>=1)}\\
+\end{tabular}
+};
 
-  \node[ent] (war) at (11.2, 1.85) {
-    \textbf{warranty\_claims \& reminders}
-    \nodepart{second}
-    \underline{id} (PK), repair\_order\_id (FK)\\
-    vehicle\_id (FK), due\_mileage\\
-    due\_date, claim\_status
-  };
+\node[entity, draw=diaggreenline] (quote) at (6.2,0) {
+\begin{tabular}{p{4.3cm}}
+\rowcolor{diaggreenfill}\textbf{8. quotations \& quotation\_items}\\
+\hline
+\textbf{PK} id, \textbf{FK} repair\_order\_id\\
+status (\textit{5 trạng thái}), total \textit{>=0}\\
+approved\_by, applied\_at (\textit{1 lần})\\
+\textbf{1-N} quotation\_items (\textit{CHECK XOR})\\
+\end{tabular}
+};
 
-  \node[ent] (aisug) at (0, -1.85) {
-    \textbf{ai\_suggestions (Đề xuất HITL)}
-    \nodepart{second}
-    \underline{id} (PK), repair\_order\_id (FK)\\
-    task\_code (AI01..AI04), payload\_json\\
-    confidence, review\_status (HITL)\\
-    reviewed\_by (FK), reviewed\_at
-  };
+\node[entity, draw=diagpurpleline] (inv) at (12.4,0) {
+\begin{tabular}{p{4.3cm}}
+\rowcolor{diagpurplefill}\textbf{9. invoices \& payments}\\
+\hline
+\textbf{PK} id, \textbf{FK} repair\_order\_id \textit{UNIQUE}\\
+total, paid \textit{CHECK (paid <= total)}\\
+status \textit{UNPAID|PARTIAL|PAID}\\
+\textbf{1-N} payments (amount \textit{>0}, method)\\
+\end{tabular}
+};
 
-  \node[ent] (ailog) at (5.6, -1.85) {
-    \textbf{ai\_audit\_logs \& prompts}
-    \nodepart{second}
-    \underline{id} (PK), user\_id (FK), task\_code\\
-    provider, model, prompt\_version\\
-    latency\_ms, is\_fallback, status
-  };
+\node[entity, draw=diaggreenline] (war) at (0,-4.2) {
+\begin{tabular}{p{4.3cm}}
+\rowcolor{diaggreenfill}\textbf{10. warranties (Bảo hành)}\\
+\hline
+\textbf{PK} id, \textbf{FK} repair\_order\_id\\
+scope \textit{SERVICE|PART} (\textit{CHECK XOR})\\
+months \textit{>0}, start\_date, end\_date\\
+status \textit{ACTIVE|EXPIRED|CLAIMED}\\
+\end{tabular}
+};
 
-  \node[ent] (cred) at (11.2, -1.85) {
-    \textbf{ai\_provider\_credentials}
-    \nodepart{second}
-    \underline{id} (PK), owner\_user\_id (FK)\\
-    provider\_name, encrypted\_api\_key\\
-    base\_url, is\_valid, updated\_at
-  };
+\node[entity, draw=diagamberline] (ai) at (6.2,-4.2) {
+\begin{tabular}{p{4.3cm}}
+\rowcolor{diagamberfill}\textbf{11. ai\_results (Kết quả AI)}\\
+\hline
+\textbf{PK} id, kind \textit{history|explain|quote}\\
+\textbf{FK} repair\_order\_id, is\_valid\\
+review\_status \textit{PENDING|APPROVED|...}\\
+reviewed\_by, reviewed\_at, created\_at\\
+\end{tabular}
+};
 
-  \draw[rel] (usr.east) -- node[lbl, above]{1..n} (inv.west);
-  \draw[rel] (inv.east) -- node[lbl, above]{1..n} (war.west);
-  \draw[rel] (usr.south) -- node[lbl, right=2pt]{1..n} (aisug.north);
-  \draw[rel] (aisug.east) -- node[lbl, above]{1..1} (ailog.west);
-  \draw[rel] (ailog.east) -- node[lbl, above]{1..n} (cred.west);
+\node[entity, draw=diagslateline] (shop) at (12.4,-4.2) {
+\begin{tabular}{p{4.3cm}}
+\rowcolor{diagslatefill}\textbf{12. shop\_* (4 bảng mở rộng)}\\
+\hline
+shop\_categories (name, slug \textit{UNIQUE})\\
+shop\_products (\textbf{FK} category\_id, sku)\\
+shop\_orders (customer\_name, total)\\
+shop\_order\_items (\textbf{FK} order\_id, product\_id)\\
+\end{tabular}
+};
+
+\draw[rel] (user.east) -- node[above, font=\scriptsize]{1 : N} (quote.west);
+\draw[rel] (quote.east) -- node[above, font=\scriptsize]{Đồng bộ RO} (inv.west);
+\draw[rel] (user.south) -- node[left, font=\scriptsize]{created\_by} (war.north);
+\draw[rel] (user.south east) -- node[above, sloped, font=\scriptsize]{reviewed\_by} (ai.north west);
+
 \end{tikzpicture}%
 }

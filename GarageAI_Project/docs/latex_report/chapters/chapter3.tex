@@ -1,27 +1,25 @@
 \chapter{PHÂN TÍCH YÊU CẦU HỆ THỐNG VÀ KIỂM SOÁT PHÂN QUYỀN}
 
-\section{Phân tích tác nhân và mục tiêu nghiệp vụ}
+\section{Phân tích các vai trò người dùng và phạm vi nghiệp vụ}
 
-Hệ thống GarageTools AI định nghĩa bốn nhóm tác nhân con người nội bộ tương ứng với bốn vai trò trong cơ sở dữ liệu (\texttt{admin}, \texttt{advisor}, \texttt{technician}, \texttt{accountant}) cùng các dịch vụ mô hình ngôn ngữ lớn bên ngoài, được đặc tả tại Bảng~\ref{tab:g-actors} và sơ đồ ca sử dụng tại Hình~\ref{fig:g-usecase}.
+Trong giai đoạn phân tích KT1, khi tham vấn công cụ AI về các tác nhân của hệ thống, AI từng gợi ý 5 vai trò bao gồm cả Khách hàng đăng nhập. Tuy nhiên, đối chiếu với thực tế vận hành tại xưởng và phạm vi đề tài 80277, nhóm quyết định chỉ giữ \textbf{4 vai trò nhân sự đăng nhập nội bộ} trong bảng \texttt{users} (\texttt{MANAGER}, \texttt{RECEPTIONIST}, \texttt{TECHNICIAN}, \texttt{CASHIER}), còn Khách hàng được quản lý như một thực thể dữ liệu tại bảng \texttt{customers}. Chi tiết mục tiêu và giới hạn quyền của từng vai trò được trình bày tại Bảng~\ref{tab:g-actors} và sơ đồ Use Case tại Hình~\ref{fig:g-usecase}.
 
 \begin{table}[H]
 \centering
 \small
-\caption{Tác nhân, mục tiêu nghiệp vụ và giới hạn quyền hạn trong hệ thống}
+\caption{Bốn vai trò người dùng, tài khoản demo và giới hạn quyền hạn trong hệ thống}
 \label{tab:g-actors}
-\begin{tabularx}{\textwidth}{|L{3.1cm}|Y|Y|}
+\begin{tabularx}{\textwidth}{|L{3.2cm}|Y|Y|}
 \hline
-\thead{Tác nhân} & \thead{Mục tiêu nghiệp vụ chính} & \thead{Giới hạn quyền hạn bắt buộc (RBAC \& Scope)}\\
+\thead{Vai trò \& Tài khoản} & \thead{Nhiệm vụ nghiệp vụ chính} & \thead{Giới hạn quyền hạn (\texttt{security\_matrix.py})}\\
 \hline
-Quản trị viên / Quản lý (\texttt{admin}) & Quản trị người dùng, cấu hình nhà cung cấp AI và khóa BYOK, giám sát toàn bộ hoạt động xưởng, sao lưu và phục hồi CSDL. & Toàn quyền điều hành hệ thống; không được xóa nhật ký kiểm toán bất biến (\texttt{audit\_logs}). \\
+Quản lý xưởng (\texttt{MANAGER}\\TK: \texttt{quan\_ly}) & Quản trị người dùng (\texttt{user.manage}), sửa danh mục dịch vụ/phụ tùng (\texttt{catalog.edit}), duyệt báo giá (\texttt{quote.approve}), lập hóa đơn (\texttt{invoice.manage}), duyệt kết quả AI (\texttt{ai.review}) và xem báo cáo. & Toàn quyền điều hành; là vai trò duy nhất có quyền phê duyệt hoặc từ chối kết quả AI (\texttt{APPROVED}/\texttt{REJECTED}) và duyệt báo giá chính thức. \\
 \hline
-Cố vấn dịch vụ (\texttt{advisor}) & Quản lý khách hàng, xe, lịch hẹn; mở phiếu sửa chữa (RO); gọi trợ lý AI01--AI04; thẩm định và phê duyệt gợi ý AI đưa vào báo giá RO. & Được quyền duyệt đề xuất AI (\texttt{/approve-suggestion}) và điều phối RO; không có quyền cấu hình hệ thống hoặc xóa dữ liệu kế toán. \\
+Lễ tân dịch vụ (\texttt{RECEPTIONIST}\\TK: \texttt{le\_tan}) & Quản lý khách hàng, phương tiện, lịch hẹn; tiếp nhận xe và lập biên bản (\texttt{intake\_records}); phân công KTV; lập báo giá nháp; nhập/điều chỉnh kho; tạo bảo hành; chạy AI01, AI02, AI03. & Được gọi cả 3 chức năng AI (\texttt{ai.history}, \texttt{ai.explain}, \texttt{ai.quote}) nhưng \textbf{bị chặn} quyền duyệt kết quả AI (\texttt{ai.review}) và duyệt báo giá (\texttt{quote.approve}). \\
 \hline
-Kỹ thuật viên (\texttt{technician}) & Tiếp nhận xe tại khoang sửa chữa, thực hiện chẩn đoán kỹ thuật, yêu cầu xuất phụ tùng và cập nhật tiến độ sửa chữa. & \textbf{Cô lập mức bản ghi (NFR01)}: Chỉ được xem và cập nhật các phiếu RO có trường \texttt{technician\_id} trùng với mã định danh của chính mình; cấm duyệt báo giá hoặc xem doanh thu. \\
+Kỹ thuật viên (\texttt{TECHNICIAN}\\TK: \texttt{ky\_thuat\_vien}) & Xem phiếu sửa chữa, cập nhật trạng thái kiểm tra/sửa chữa (\texttt{order.progress}), thêm/gỡ hạng mục dịch vụ và phụ tùng (\texttt{order.item}), ghi nhật ký kỹ thuật (\texttt{repair\_logs}) và gọi AI03 (\texttt{ai.quote}). & \textbf{Cô lập theo phiếu được giao (\texttt{duoc\_gan\_cong})}: Chỉ được sửa trạng thái, thêm hạng mục, ghi nhật ký hoặc chạy AI03 trên phiếu có \texttt{technician\_id == user.id}. \\
 \hline
-Kế toán / Thu ngân (\texttt{accountant}) & Lập hóa đơn từ phiếu RO đã nghiệm thu, áp dụng thuế VAT và chiết khấu, ghi nhận thanh toán và quản lý công nợ. & Toàn quyền trên phân hệ Hóa đơn và Thanh toán; chỉ đọc đối với thông tin kỹ thuật của phiếu RO; không được sửa danh mục phụ tùng kho. \\
-\hline
-Dịch vụ AI Đa nhà cung cấp & Phân tích triệu chứng, đối chiếu phụ tùng tồn kho, tóm tắt tiến độ RO và dự báo lịch bảo dưỡng theo cấu trúc JSON Schema. & Thực thể tính toán thụ động; không có quyền ghi trực tiếp vào bảng \texttt{ro\_line\_items}; mọi kết quả đều khởi tạo ở trạng thái chờ duyệt (\texttt{PENDING}). \\
+Thu ngân (\texttt{CASHIER}\\TK: \texttt{thu\_ngan}) & Tra cứu phiếu sửa chữa và hóa đơn, ghi nhận thanh toán từng phần hoặc toàn bộ (\texttt{payment.record}) và hủy khoản thu nhầm. & Chỉ có quyền ghi ở phân hệ Thanh toán; bị chặn (HTTP 403) khi cố tạo/sửa phiếu sửa chữa, chỉnh kho hoặc chạy AI. \\
 \hline
 \end{tabularx}
 \end{table}
@@ -31,18 +29,18 @@ Dịch vụ AI Đa nhà cung cấp & Phân tích triệu chứng, đối chiếu
 \vspace{2pt}
 \input{figures/usecase.tex}
 \vspace{2pt}
-\caption{Sơ đồ ca sử dụng tổng thể của hệ thống GarageTools AI}
+\caption{Sơ đồ ca sử dụng tổng thể (Use Case Diagram) của hệ thống GarageTools AI}
 \label{fig:g-usecase}
 \end{figure}
 
 \section{Danh mục yêu cầu chức năng (FR)}
 
-Hệ thống hiện thực hóa đầy đủ 14 nhóm yêu cầu chức năng cốt lõi (FR01--FR14) bao phủ toàn bộ quy trình vận hành xưởng dịch vụ ô tô và tích hợp AI, được tổng hợp cùng kết quả kiểm chứng trong Bảng~\ref{tab:g-functional}.
+Hệ thống hiện thực hóa đầy đủ 14 nhóm yêu cầu chức năng (FR01--FR14) bao phủ toàn bộ quy trình vận hành garage và 3 chức năng trợ lý AI, được tổng hợp cùng kết quả kiểm chứng trong Bảng~\ref{tab:g-functional}.
 
 \begin{small}
 \renewcommand{\arraystretch}{1.08}
-\begin{longtable}{|C{1.0cm}|L{2.0cm}|L{3.9cm}|L{4.7cm}|C{2.2cm}|}
-\caption{Danh mục yêu cầu chức năng và kết quả nghiệm thu thực chứng}\label{tab:g-functional}\\
+\begin{longtable}{|C{1.0cm}|L{2.1cm}|L{3.9cm}|L{4.6cm}|C{2.1cm}|}
+\caption{Danh mục yêu cầu chức năng và cơ chế kiểm chứng trong hệ thống}\label{tab:g-functional}\\
 \hline
 \thead{Mã} & \thead{Phân hệ} & \thead{Mô tả yêu cầu nghiệp vụ} & \thead{Cơ chế hiện thực \& Kiểm chứng} & \thead{Trạng thái}\\
 \hline
@@ -59,97 +57,102 @@ Hệ thống hiện thực hóa đầy đủ 14 nhóm yêu cầu chức năng c�
 \hline
 \endlastfoot
 
-FR01 & Xác thực & Đăng nhập bằng tài khoản/mật khẩu; cấp phát JWT token có thời hạn và kiểm tra trạng thái hoạt động. & Băm mật khẩu an toàn; trả HTTP 401 khi sai thông tin và HTTP 403 khi tài khoản bị khóa (\texttt{is\_active = 0}). & TESTED\\
+FR01 & Xác thực & Đăng nhập bằng tài khoản/mật khẩu; băm Argon2id; ký phiên HMAC và hủy phiên tức thì khi đổi mật khẩu/khóa user. & Kiểm tra \texttt{is\_active = 1} và đối chiếu \texttt{auth\_version}; bảo vệ mọi form/API bằng CSRF token 2 lớp. & ĐÃ KIỂM THỬ\\
 \hline
-FR02 & Phân quyền & Kiểm soát truy cập theo 4 vai trò (RBAC) và cô lập dữ liệu theo phạm vi phụ trách tại tầng API. & Middleware kiểm tra vai trò; Kỹ thuật viên truy cập RO của người khác bị chặn với HTTP 403 Forbidden. & TESTED\\
+FR02 & Phân quyền & Kiểm soát truy cập theo 4 vai trò (RBAC) từ một nguồn duy nhất và cô lập phiếu theo Kỹ thuật viên. & Định nghĩa tập trung tại \texttt{app/services/\allowbreak security\_matrix.py}; chặn vượt quyền dọc/ngang với HTTP 403. & ĐÃ KIỂM THỬ\\
 \hline
-FR03 & Khách hàng & Quản lý hồ sơ khách hàng, phân hạng thành viên (Standard, Silver, Gold, VIP) và lịch sử chi tiêu. & Hỗ trợ CRUD, tìm kiếm đa tiêu chí theo tên, số điện thoại, email; ràng buộc khóa ngoại khi xóa. & TESTED\\
+FR03 & Khách hàng & Quản lý hồ sơ khách hàng (\texttt{customers}): thêm, sửa, xóa có kiểm tra khóa ngoại, tìm kiếm \& phân trang. & Ràng buộc \texttt{phone UNIQUE}; \texttt{ON DELETE RESTRICT} chặn xóa khách đã có xe hoặc lịch hẹn. & ĐÃ KIỂM THỬ\\
 \hline
-FR04 & Phương tiện & Quản lý hồ sơ xe theo biển kiểm soát, số khung VIN (17 ký tự), hãng xe, đời xe và số ODO. & Ràng buộc duy nhất (Unique) cho biển số và mã VIN; tự động cập nhật số ODO mới nhất từ phiếu RO. & TESTED\\
+FR04 & Phương tiện & Quản lý hồ sơ xe (\texttt{vehicles}) theo biển số, hãng, dòng, năm sản xuất, số khung VIN và số công-tơ-mét (\texttt{odometer}). & Ràng buộc \texttt{plate UNIQUE}, \texttt{vin UNIQUE}, \texttt{year BETWEEN 1900 AND 2100}, \texttt{odometer >= 0}. & ĐÃ KIỂM THỬ\\
 \hline
-FR05 & Lịch hẹn & Đặt lịch hẹn dịch vụ theo khung giờ, khoang sửa chữa (Service Bay) và cố vấn phụ trách. & Kiểm tra chống trùng lịch trên cùng khoang dịch vụ; hỗ trợ chuyển đổi trực tiếp lịch hẹn thành phiếu RO. & TESTED\\
+FR05 & Lịch hẹn & Đặt lịch hẹn dịch vụ (\texttt{appointments}) và quản lý 4 trạng thái (\texttt{SCHEDULED}, \texttt{CONFIRMED}, \texttt{CANCELLED}, \texttt{DONE}). & Kiểm tra \texttt{customer\_id} khớp với chủ sở hữu của \texttt{vehicle\_id}; chặn đặt trùng giờ cho cùng một xe. & ĐÃ KIỂM THỬ\\
 \hline
-FR06 & Phiếu RO & Quản lý vòng đời Lệnh sửa chữa (RO) qua 10 trạng thái từ khi tiếp nhận đến khi đóng phiếu. & Kiểm soát chặt chẽ điều kiện chuyển trạng thái; tự động tính tổng tiền vật tư và nhân công. & TESTED\\
+FR06 & Tiếp nhận xe & Ghi biên bản tiếp nhận xe (\texttt{intake\_records}) gắn 1--1 với phiếu sửa chữa. & Lưu \texttt{odometer\_at\_intake}, \texttt{fuel\_level}, tình trạng ngoại thất (\texttt{exterior\_condition}) và phụ kiện kèm theo. & ĐÃ KIỂM THỬ\\
 \hline
-FR07 & Kho \& SKU & Quản lý danh mục phụ tùng, nhà cung cấp, đơn nhập kho và cảnh báo tồn kho tối thiểu. & Theo dõi tách biệt tồn thực tế (\texttt{quantity\_on\_hand}) và lượng đang giữ (\texttt{reserved\_qty}). & TESTED\\
+FR07 & Phiếu sửa chữa & Quản lý vòng đời Phiếu sửa chữa (\texttt{repair\_orders}) qua 6 trạng thái, nhật ký kỹ thuật và nghiệm thu. & Chặn mở 2 phiếu đang chạy cho cùng 1 xe trong khối \texttt{BEGIN IMMEDIATE}; chặn hoàn thành khi phiếu chưa có hạng mục. & ĐÃ KIỂM THỬ\\
 \hline
-FR08 & Đặt giữ kho & Đặt giữ và xuất phụ tùng cho phiếu RO đảm bảo không bao giờ xuất âm kho khi thao tác đồng thời. & Sử dụng khóa giao dịch \texttt{BEGIN IMMEDIATE}; tự động hoàn trả tồn kho khi hủy hạng mục hoặc hủy RO. & TESTED\\
+FR08 & Báo giá & Lập báo giá chính thức (\texttt{quotations}, \texttt{quotation\_items}) qua 5 trạng thái và áp dụng vào phiếu sửa chữa. & Áp dụng \textit{idempotent} đúng 1 lần qua cột \texttt{applied\_at}/\texttt{applied\_by}; tự động trừ kho qua sổ cái khi áp dụng. & ĐÃ KIỂM THỬ\\
 \hline
-FR09 & Hóa đơn & Phát hành hóa đơn từ phiếu RO, tính chiết khấu, thuế VAT và ghi nhận thanh toán đa đợt. & Tự động cập nhật trạng thái \texttt{UNPAID}, \texttt{PARTIAL}, \texttt{PAID}; chặn sửa RO sau khi đã thanh toán. & TESTED\\
+FR09 & Kho \& Sổ cái & Quản lý danh mục dịch vụ (\texttt{services}), phụ tùng (\texttt{parts}) và sổ cái tồn kho (\texttt{stock\_transactions}). & Bất biến $\texttt{parts.stock} = \sum \texttt{qty}$; tự động hoàn kho (\texttt{RETURN}) khi gỡ hạng mục hoặc hủy phiếu. & ĐÃ KIỂM THỬ\\
 \hline
-FR10 & AI Chẩn đoán & AI01: Phân tích triệu chứng khách hàng mô tả để gợi ý nguyên nhân lỗi và các bước kiểm tra. & Nạp lịch sử sửa chữa của xe vào RAG Context; trả về JSON gồm danh sách nguyên nhân và mức độ tin cậy. & MEASURED\\
+FR10 & Hóa đơn \& Thu & Lập hóa đơn (\texttt{invoices}) cho phiếu đã hoàn thành, thu tiền nhiều đợt (\texttt{payments}) và hủy khoản thu nhầm. & Ràng buộc \texttt{CHECK (paid <= total)}; kiểm tra chống thu vượt nợ trong khối \texttt{BEGIN IMMEDIATE} (HTTP 409). & ĐÃ KIỂM THỬ\\
 \hline
-FR11 & AI Báo giá & AI02: Đề xuất hạng mục công việc và phụ tùng thay thế dựa trên chẩn đoán và tồn kho thực tế. & Chỉ gợi ý các mã SKU có thật trong bảng \texttt{parts}; gắn nhãn cảnh báo nếu tồn kho khả dụng không đủ. & MEASURED\\
+FR11 & Bảo hành & Cấp và theo dõi bảo hành theo từng hạng mục dịch vụ hoặc phụ tùng (\texttt{warranties}). & Ràng buộc \texttt{CHECK XOR} giữa \texttt{SERVICE} và \texttt{PART}; chỉ tạo được cho phiếu \texttt{COMPLETED}. & ĐÃ KIỂM THỬ\\
 \hline
-FR12 & AI Tóm tắt & AI03: Tóm tắt tình trạng kỹ thuật và tiến độ phiếu RO bằng ngôn ngữ dễ hiểu cho khách hàng. & Bám sát 100\% hạng mục thực tế trong RO; không tự suy diễn thời gian giao xe nếu chưa có lịch hẹn. & MEASURED\\
+FR12 & AI01 \& AI02 & AI01 (\texttt{history}) tóm tắt lịch sử xe 4 mục; AI02 (\texttt{explain}) giải thích dịch vụ 3 mục cho khách hàng. & Xử lý an toàn cả ca biên xe mới chưa có lịch sử (\texttt{vehicle\_id=6}) và dịch vụ trống mô tả (\texttt{service\_id=7}). & ĐÃ ĐO KIỂM\\
 \hline
-FR13 & AI Bảo dưỡng & AI04: Dự báo và tạo cảnh báo các mốc bảo dưỡng định kỳ tiếp theo dựa trên số ODO và lịch sử xe. & Đối chiếu số km hiện tại với chu kỳ bảo dưỡng tiêu chuẩn (5.000km, 10.000km, 40.000km). & MEASURED\\
+FR13 & AI03 Báo giá & AI03 (\texttt{quote}) sinh báo giá nháp JSON từ hạng mục của phiếu sửa chữa hoặc báo giá đang mở. & Lọc chỉ giữ dòng khớp Tên, Số lượng, Đơn giá với CSDL; ép \texttt{total == backend\_total}; tự động fallback \texttt{\_goi\_mock}. & ĐÃ ĐO KIỂM\\
 \hline
-FR14 & Duyệt HITL \& Kiểm toán & Cơ chế Human-in-the-loop phê duyệt đề xuất AI và lưu vết toàn bộ lịch sử gọi mô hình, sao lưu CSDL. & Lưu bảng \texttt{ai\_suggestions} và \texttt{ai\_audit\_logs}; chỉ ghi vào RO khi Cố vấn gọi API phê duyệt. & TESTED\\
+FR14 & Human Review & Lưu toàn bộ kết quả AI vào bảng \texttt{ai\_results} ở trạng thái chờ duyệt và kiểm duyệt bởi Quản lý. & Khởi tạo \texttt{review\_status='PENDING'}; chỉ \texttt{MANAGER} (\texttt{ai.review}) được duyệt và chặn duyệt lại lần 2. & ĐÃ KIỂM THỬ\\
 \hline
 \end{longtable}
 \end{small}
 
 \section{Danh mục yêu cầu phi chức năng (NFR)}
 
-Hệ thống đáp ứng 6 yêu cầu phi chức năng trọng yếu (NFR01--NFR06):
-\begin{itemize}
-  \item \textbf{NFR01 (Bảo mật phân quyền đa tầng và chống IDOR)}: Mọi API đều xác thực JWT kết hợp kiểm tra vai trò và quyền sở hữu bản ghi. Kỹ thuật viên bị cô lập hoàn toàn khỏi dữ liệu của các xe không được phân công.
-  \item \textbf{NFR02 (Toàn vẹn giao dịch tài chính và tồn kho)}: Không chấp nhận số lượng âm hoặc đơn giá âm; sử dụng giao dịch nguyên tử \texttt{BEGIN IMMEDIATE} bảo đảm $\text{Tồn khả dụng} \ge 0$ trong mọi kịch bản tải đồng thời.
-  \item \textbf{NFR03 (Hiệu năng phản hồi)}: Độ trễ các API nghiệp vụ nội bộ đạt trung vị P50 $<$ 12ms và P95 $<$ 40ms; thời gian phản hồi của động cơ AI Smart Fallback $<$ 25ms.
-  \item \textbf{NFR04 (Tính khả dụng và minh bạch giao diện AI)}: Mọi kết quả do AI sinh ra đều hiển thị rõ huy hiệu \textbf{“Đề xuất bởi AI -- Cần kỹ thuật viên/cố vấn kiểm tra”}, kèm chỉ số độ tin cậy và nút thao tác Duyệt / Từ chối tường minh.
-  \item \textbf{NFR05 (Khả năng chịu lỗi và dự phòng dịch vụ AI)}: Tự động bắt lỗi quá thời gian chờ (Timeout 12 giây), lỗi vượt hạn ngạch (HTTP 429) hoặc lỗi sai lệch JSON Schema để kích hoạt Smart Fallback mà không làm gián đoạn quy trình tiếp nhận xe.
-  \item \textbf{NFR06 (Khả năng sao lưu, phục hồi và tái lập)}: Tích hợp công cụ sao lưu nóng CSDL SQLite (\texttt{backup\_service.py}), kiểm tra toàn vẹn tệp sao lưu (\texttt{PRAGMA integrity\_check}) và khôi phục an toàn.
+Hệ thống đáp ứng 6 yêu cầu phi chức năng cốt lõi (NFR01--NFR06):
+\begin{itemize}[noitemsep,topsep=2pt]
+  \item \textbf{NFR01 (An toàn xác thực, chống CSRF và phân quyền chặt chẽ)}: Không lưu mật khẩu thô; tự động hủy phiên cũ qua \texttt{auth\_version}; kiểm tra CSRF trên mọi thao tác ghi; cô lập Kỹ thuật viên theo phiếu được phân công.
+  \item \textbf{NFR02 (Chính xác tuyệt đối về tiền tệ và tồn kho)}: Mọi cột tiền dùng kiểu số nguyên \texttt{INTEGER} (tính bằng đồng VNĐ); \texttt{unit\_price} được chốt cứng tại thời điểm thêm hạng mục để việc đổi giá danh mục không làm sai lệch hóa đơn cũ; đối soát sổ cái kho luôn đạt chênh lệch bằng 0.
+  \item \textbf{NFR03 (Hiệu năng và thời gian phản hồi)}: Các thao tác CRUD nội bộ phản hồi dưới 50ms; thời gian gọi mô hình thật trên Groq (\texttt{openai/gpt-oss-120b}) trung bình từ 2,46s đến 3,99s, đáp ứng tốt yêu cầu dưới 10 giây (tiêu chí CK-07).
+  \item \textbf{NFR04 (Kiểm soát AI không tự quyết định tiền)}: Kết quả AI chỉ dừng ở văn bản tư vấn trong bảng \texttt{ai\_results}, tuyệt đối không tự chèn hạng mục vào phiếu sửa chữa hay tự tạo hóa đơn.
+  \item \textbf{NFR05 (Chịu lỗi và giới hạn tần suất gọi API)}: Bắt toàn bộ ngoại lệ mạng, quá thời gian chờ (\texttt{AI\_TIMEOUT = 15s}), lỗi HTTP 429/500 từ nhà cung cấp AI để tự động chuyển sang \texttt{\_goi\_mock} mà không làm dừng ứng dụng; giới hạn tốc độ bấm nút chạy AI (\texttt{AI\_RATE\_LIMIT = 10} lần / 60 giây).
+  \item \textbf{NFR06 (Tự động nâng cấp CSDL và Sao lưu / Khôi phục an toàn)}: Tự động chạy các bản nâng cấp lược đồ \texttt{001} $\rightarrow$ \texttt{005} (\texttt{database/migrations/run\_missing.py}) một cách \textit{idempotent} khi khởi động; hỗ trợ sao lưu trực tuyến và khôi phục kèm kiểm tra \texttt{PRAGMA integrity\_check}.
 \end{itemize}
 
-\section{Kiến trúc phân quyền RBAC và Cô lập dữ liệu mức bản ghi (Record-level NFR01)}
+\section{Kiểm soát phân quyền RBAC và Cô lập phiếu theo Kỹ thuật viên (\texttt{duoc\_gan\_cong})}
 
-Trong môi trường xưởng dịch vụ, việc phân tách quyền hạn giữa bộ phận điều phối (Cố vấn dịch vụ), bộ phận thực thi (Kỹ thuật viên) và bộ phận tài chính (Kế toán) là yêu cầu bắt buộc để phòng chống gian lận vật tư và bảo vệ dữ liệu khách hàng. Hình~\ref{fig:g-repair-seq} mô tả luồng kiểm soát phân quyền và phê duyệt đề xuất AI.
+Hình~\ref{fig:g-repair-seq} minh họa trình tự phối hợp giữa Lễ tân, Kỹ thuật viên, Quản lý, Backend FastAPI, AI Gateway và SQLite từ lúc tiếp nhận xe đến khi nghiệm thu, thanh toán và cấp bảo hành.
 
 \begin{figure}[H]
 \centering
 \vspace{2pt}
 \input{figures/repair-sequence.tex}
 \vspace{2pt}
-\caption{Quy trình kiểm soát phân quyền, gọi trợ lý AI và phê duyệt Human-in-the-loop}
+\caption{Biểu đồ tuần tự (Sequence Diagram) quy trình sửa chữa khép kín và duyệt kết quả AI}
 \label{fig:g-repair-seq}
 \end{figure}
 
-Tại tầng xác thực (\texttt{backend/core/security.py}), mỗi yêu cầu truy cập phải thỏa mãn đồng thời biểu thức logic:
+Toàn bộ ma trận phân quyền của hệ thống được định nghĩa tập trung tại một tệp duy nhất là \texttt{app/services/security\_matrix.py} (biến \texttt{PERMISSIONS}) để dùng chung cho cả Backend lẫn giao diện. Đối với các thao tác sửa đổi trên Phiếu sửa chữa, hàm \texttt{\_kiem\_tra\_quyen\_thao\_tac} trong \texttt{app/services/orders.py} kết hợp kiểm tra vai trò và phạm vi phân công:
 {\small
 \begin{equation}
-\text{AccessGranted} \iff (\text{ValidJWT}) \land (\text{is\_active} = 1) \land (\text{role} \in \text{AllowedRoles}) \land (\text{RecordScopeOK})
+\begin{aligned}
+\text{DuocThaoTac}(\text{user}, \text{phieu}) \iff\ & (\text{user.role} \in \{\texttt{'MANAGER'}, \texttt{'RECEPTIONIST'}\}) \\
+&\lor \left(\text{user.role} = \texttt{'TECHNICIAN'} \land \text{phieu.technician\_id} = \text{user.id}\right)
+\end{aligned}
 \end{equation}
 }
 
-Cơ chế giải quyết phạm vi bản ghi (\texttt{RecordScopeOK}) được áp dụng nghiêm ngặt đối với vai trò Kỹ thuật viên (\texttt{technician}):
-\begin{enumerate}
-  \item \textbf{Khi truy vấn danh sách Phiếu sửa chữa (\texttt{GET /api/repair-orders})}: Hệ thống tự động bổ sung mệnh đề lọc \texttt{WHERE technician\_id = :current\_user\_id}. Kỹ thuật viên chỉ nhận được danh sách các xe mà mình đang trực tiếp phụ trách.
-  \item \textbf{Khi xem chi tiết hoặc cập nhật tiến độ (\texttt{GET/PUT /api/repair-orders/\{ro\_id\}}) }: Nếu \texttt{ro.technician\_id != current\_user.id}, hệ thống lập tức từ chối yêu cầu với mã lỗi \textbf{HTTP 403 Forbidden}, ngăn chặn hoàn toàn hành vi thay đổi mã ID trên đường dẫn để xem hoặc can thiệp vào phiếu sửa chữa của kỹ thuật viên khác (lỗ hổng Horizontal IDOR).
-  \item \textbf{Khi phê duyệt đề xuất AI hoặc phát hành hóa đơn}: Kỹ thuật viên bị chặn ở tầng kiểm tra vai trò; chỉ Cố vấn dịch vụ hoặc Quản lý mới có quyền chuyển đề xuất AI thành hạng mục báo giá chính thức trên phiếu RO.
-\end{enumerate}
+Nhờ chốt chặn này, một Kỹ thuật viên chỉ có thể cập nhật trạng thái, thêm/gỡ hạng mục, ghi nhật ký kỹ thuật hoặc chạy AI03 trên đúng những phiếu sửa chữa được giao cho mình; mọi nỗ lực can thiệp vào phiếu của Kỹ thuật viên khác hoặc phiếu chưa phân công đều bị từ chối ngay tại tầng dịch vụ.
 
-\section{Máy trạng thái Phiếu sửa chữa (RO) và Kiểm duyệt AI Human-in-the-loop}
+\section{Máy trạng thái Phiếu sửa chữa (6 trạng thái) và Quy trình Human Review}
 
-Vòng đời của một Phiếu sửa chữa (RO) và các đề xuất từ trợ lý AI được quản lý bởi hai máy trạng thái hữu hạn liên kết chặt chẽ với nhau, thể hiện tại Hình~\ref{fig:g-ro-state}.
+Vòng đời của một Phiếu sửa chữa (\texttt{repair\_orders.status}) và trạng thái duyệt kết quả AI (\texttt{ai\_results.review\_status}) được quy định chặt chẽ tại biến \texttt{CHUYEN\_TRANG\_THAI} trong \texttt{app/services/security\_matrix.py} và thể hiện trên Hình~\ref{fig:g-ro-state}.
 
 \begin{figure}[H]
 \centering
 \vspace{2pt}
 \input{figures/ro-state.tex}
 \vspace{2pt}
-\caption{Máy trạng thái vòng đời Phiếu sửa chữa (RO) và quy trình duyệt đề xuất AI (HITL)}
+\caption{Máy trạng thái vòng đời Phiếu sửa chữa (6 trạng thái) và Trạng thái duyệt kết quả AI}
 \label{fig:g-ro-state}
 \end{figure}
 
-Hệ thống thiết lập bốn quy tắc bảo vệ trạng thái (Anti-Tampering Guardrails):
+Bốn quy tắc bảo vệ trạng thái quan trọng được cài đặt trong \texttt{app/services/orders.py} và \texttt{app/services/ai.py} gồm:
 \begin{enumerate}[noitemsep,topsep=2pt]
-  \item \textbf{Cô lập vùng đệm đề xuất AI}: Khi người dùng gọi các tính năng AI01 hoặc AI02, kết quả sinh ra chỉ được lưu vào bảng \texttt{ai\_suggestions} với trạng thái \texttt{PENDING}. AI tuyệt đối không có quyền tự động chèn bản ghi vào bảng \texttt{ro\_line\_items} hay tự ý trừ tồn kho phụ tùng.
-  \item \textbf{Phê duyệt có kiểm tra tồn kho nguyên tử}: Chỉ khi Cố vấn dịch vụ gọi endpoint \texttt{POST /api/ai/suggestions/\{id\}/approve}, hệ thống mới mở giao dịch \texttt{BEGIN IMMEDIATE}, kiểm tra số lượng tồn kho khả dụng của mã phụ tùng được đề xuất, tạo bản ghi đặt giữ kho (\texttt{inventory\_reservations}), thêm dòng hạng mục vào \texttt{ro\_line\_items} và chuyển trạng thái đề xuất sang \texttt{ACCEPTED}.
-  \item \textbf{Khóa chỉnh sửa sau khi quyết toán}: Khi phiếu RO đã chuyển sang trạng thái \texttt{INVOICED} hoặc \texttt{CLOSED} (đã xuất hóa đơn tài chính), mọi yêu cầu thêm/xóa phụ tùng hoặc sửa đổi đơn giá trên RO đều bị chặn với mã lỗi HTTP 400 Bad Request nhằm bảo toàn số liệu kế toán.
-  \item \textbf{Tự động giải phóng tồn kho khi hủy phiếu}: Nếu một phiếu RO chuyển sang trạng thái \texttt{CANCELLED}, toàn bộ số lượng phụ tùng đang đặt giữ (\texttt{RESERVED}) của phiếu đó được tự động giải phóng về kho khả dụng trong cùng một giao dịch CSDL.
+  \item \textbf{Lộ trình chuyển trạng thái chống nhảy cóc (\texttt{CHUYEN\_TRANG\_THAI})}:
+  \begin{itemize}[noitemsep,topsep=1pt]
+    \item Từ \texttt{RECEIVED} chỉ được chuyển sang \texttt{INSPECTING} hoặc \texttt{CANCELLED}.
+    \item Từ \texttt{INSPECTING} chỉ được chuyển sang \texttt{ESTIMATING} hoặc \texttt{CANCELLED}.
+    \item Từ \texttt{ESTIMATING} được chuyển sang \texttt{REPAIRING}, quay lại \texttt{INSPECTING} hoặc hủy (\texttt{CANCELLED}).
+    \item Từ \texttt{REPAIRING} được chuyển sang \texttt{COMPLETED} (khi đã có ít nhất 1 hạng mục) hoặc quay lại \texttt{INSPECTING} khi phát sinh hạng mục cần kiểm tra lại.
+    \item Hai trạng thái \texttt{COMPLETED} và \texttt{CANCELLED} là trạng thái đóng (\texttt{[]}), đồng thời khóa hoàn toàn việc thêm/gỡ hạng mục (\texttt{TRANG\_THAI\_KHOA\_HANG\_MUC}).
+  \end{itemize}
+  \item \textbf{Khóa hạng mục khi đã phát hành hóa đơn}: Hàm \texttt{\_khoa\_hang\_muc} kiểm tra nếu phiếu đã có bản ghi trong bảng \texttt{invoices} thì chặn mọi thao tác thêm hoặc gỡ hạng mục để tổng tiền hạng mục và tổng tiền hóa đơn không bao giờ lệch nhau.
+  \item \textbf{Tự động hoàn trả phụ tùng về kho khi gỡ hạng mục hoặc hủy phiếu}: Khi gỡ một dòng phụ tùng hoặc chuyển phiếu sang \texttt{CANCELLED}, hệ thống tự động gọi \texttt{ghi\_giao\_dich(..., +qty, 'RETURN')} trong cùng một giao dịch \texttt{BEGIN IMMEDIATE} để cộng trả lại \texttt{parts.stock} và ghi dòng đối ứng vào \texttt{stock\_transactions}.
+  \item \textbf{Duyệt kết quả AI đúng một lần (Human Review)}: Kết quả AI sinh ra luôn ở trạng thái \texttt{PENDING}; chỉ tài khoản có quyền \texttt{ai.review} (\texttt{MANAGER}) mới được chuyển sang \texttt{APPROVED} hoặc \texttt{REJECTED}, và khi đã duyệt thì hệ thống chặn duyệt lại lần thứ hai.
 \end{enumerate}
 
 \section{Kết luận chương}
 
-Chương 3 đã đặc tả chi tiết 14 yêu cầu chức năng, 6 yêu cầu phi chức năng, cơ chế phân quyền RBAC kết hợp cô lập phạm vi bản ghi Kỹ thuật viên (NFR01) và máy trạng thái duyệt đề xuất AI Human-in-the-loop, làm cơ sở cho thiết kế kiến trúc hệ thống ở Chương 4.
+Chương 3 đã đặc tả đầy đủ 4 vai trò nhân sự, 14 yêu cầu chức năng, 6 yêu cầu phi chức năng, cơ chế cô lập phiếu của Kỹ thuật viên (\texttt{duoc\_gan\_cong}) và máy trạng thái 6 bước của Phiếu sửa chữa. Đây là cơ sở trực tiếp cho thiết kế kiến trúc và cơ sở dữ liệu ở Chương 4.

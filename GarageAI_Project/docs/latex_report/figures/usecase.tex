@@ -1,43 +1,52 @@
 \resizebox{0.98\textwidth}{!}{%
 \begin{tikzpicture}[
-  font=\sffamily,
-  actor/.style={rectangle, rounded corners=3pt, draw=black, line width=0.7pt, fill=black!10, text width=2.8cm, minimum height=0.95cm, align=center, font=\sffamily\scriptsize\bfseries, inner sep=3pt},
-  uc/.style={rectangle, rounded corners=8pt, draw=black, line width=0.65pt, fill=white, text width=4.0cm, minimum height=0.68cm, align=center, font=\sffamily\scriptsize, inner sep=3pt},
-  aiuc/.style={rectangle, rounded corners=8pt, draw=black, line width=0.75pt, fill=black!8, text width=4.0cm, minimum height=0.68cm, align=center, font=\sffamily\scriptsize\bfseries, inner sep=3pt},
-  arr/.style={-{Latex[length=2mm,width=1.4mm]}, line width=0.55pt, draw=black}
+    font=\sffamily\scriptsize,
+    >=Latex,
+    uc/.style={rectangle, draw=diagblueline, line width=0.8pt, fill=diagbluefill, rounded corners=4pt, text width=6.8cm, align=center, inner sep=4.5pt},
+    ucai/.style={rectangle, draw=diaggreenline, line width=0.8pt, fill=diaggreenfill, rounded corners=4pt, text width=6.8cm, align=center, inner sep=4.5pt},
+    rolebox/.style={rectangle, draw=navy, line width=0.9pt, fill=diagamberfill, rounded corners=4pt, text width=2.7cm, align=center, font=\sffamily\scriptsize\bfseries, inner sep=5pt},
+    assoc/.style={-Latex, line width=0.8pt, diagslateline}
 ]
-  \draw[rounded corners=5pt, line width=0.8pt, draw=black] (-2.9,-3.7) rectangle (7.8,3.8);
-  \node[font=\sffamily\footnotesize\bfseries, fill=white, inner sep=3pt] at (2.45, 3.8) {RANH GIỚI NGHIỆP VỤ GARAGETOOLS AI (ĐỀ TÀI 80277)};
 
-  \node[uc] (uc1) at (-0.5, 2.7) {UC01: Quản lý Khách hàng \& Xe (VIN)};
-  \node[uc] (uc2) at (-0.5, 1.55) {UC02: Đặt lịch hẹn \& Tiếp nhận xe};
-  \node[uc] (uc3) at (-0.5, 0.4) {UC03: Lập \& Điều phối Phiếu sửa chữa (RO)};
-  \node[uc] (uc4) at (-0.5, -0.75) {UC04: Quản lý Kho \& Đặt giữ phụ tùng};
-  \node[uc] (uc5) at (-0.5, -1.9) {UC05: Xuất Hóa đơn, Thu tiền \& Công nợ};
-  \node[uc] (uc6) at (-0.5, -3.05) {UC06: Thống kê KPI \& Sao lưu CSDL};
+% Xếp chồng 8 Use Case bằng below=0.22cm of ... (tuyệt đối không bao giờ đè nhau)
+\node[uc] (uc1) {\textbf{UC01:} Quản lý Khách hàng, Phương tiện \& Lịch hẹn};
+\node[uc, below=0.22cm of uc1] (uc2) {\textbf{UC02:} Tiếp nhận xe (\texttt{intake\_records}) \& Mở phiếu sửa chữa};
+\node[uc, below=0.22cm of uc2] (uc3) {\textbf{UC03:} Lập, Duyệt \& Áp dụng Báo giá (\texttt{quotations})};
+\node[uc, below=0.22cm of uc3] (uc4) {\textbf{UC04:} Thực thi sửa chữa \& Xuất kho phụ tùng qua Sổ cái};
+\node[uc, below=0.22cm of uc4] (uc5) {\textbf{UC05:} Nghiệm thu hoàn thành \& Kích hoạt Bảo hành};
+\node[uc, below=0.22cm of uc5] (uc6) {\textbf{UC06:} Phát hành Hóa đơn \& Ghi nhận Thanh toán};
+\node[ucai, below=0.22cm of uc6] (uc7) {\textbf{UC07:} Chạy Trợ lý AI (AI01 \texttt{history}, AI02 \texttt{explain}, AI03 \texttt{quote})};
+\node[ucai, below=0.22cm of uc7] (uc8) {\textbf{UC08:} Kiểm duyệt kết quả AI (\texttt{ai.review}: Duyệt / Từ chối)};
 
-  \node[aiuc] (ai1) at (4.9, 2.5) {AI01: Chẩn đoán triệu chứng kỹ thuật};
-  \node[aiuc] (ai2) at (4.9, 1.15) {AI02: Đề xuất hạng mục \& phụ tùng};
-  \node[aiuc] (ai3) at (4.9, -0.2) {AI03: Tóm tắt tiến độ sửa chữa RO};
-  \node[aiuc] (ai4) at (4.9, -1.55) {AI04: Cảnh báo bảo dưỡng định kỳ};
-  \node[uc] (hitl) at (4.9, -2.9) {HITL: Duyệt / Từ chối đề xuất AI};
+% Tiêu đề biên hệ thống nằm phía trên uc1
+\node[above=0.25cm of uc1, font=\sffamily\bfseries\footnotesize, text=navy] (title) {Ranh giới Hệ thống GarageTools AI (16 màn hình -- 21 bảng CSDL)};
 
-  \node[actor] (sa) at (-5.2, 2.0) {Cố vấn dịch vụ\\(Service Advisor)};
-  \node[actor] (ktv) at (-5.2, -0.2) {Kỹ thuật viên\\(Technician)};
-  \node[actor] (kt) at (-5.2, -2.4) {Kế toán / Quản lý\\(Accountant / Admin)};
+\begin{scope}[on background layer]
+    \node[fit=(title)(uc1)(uc8), draw=diagslateline, line width=0.9pt, fill=diagslatefill!45, dashed, rounded corners=7pt, inner sep=8pt] (boundary) {};
+\end{scope}
 
-  \draw[arr] (sa.east) -- (uc1.west);
-  \draw[arr] (sa.east) -- (uc2.west);
-  \draw[arr] (sa.east) -- (uc3.west);
-  \draw[arr] (ktv.east) -- (uc3.west);
-  \draw[arr] (ktv.east) -- (uc4.west);
-  \draw[arr] (kt.east) -- (uc5.west);
-  \draw[arr] (kt.east) -- (uc6.west);
+% 4 Vai trò đặt bên trái và bên phải biên hệ thống
+\node[rolebox, left=1.3cm of uc2] (mgr) {Quản lý\\(\texttt{MANAGER})\\TK: \texttt{quan\_ly}};
+\node[rolebox, left=1.3cm of uc6] (rec) {Lễ tân\\(\texttt{RECEPTIONIST})\\TK: \texttt{le\_tan}};
+\node[rolebox, fill=diagpurplefill, draw=diagpurpleline, right=1.3cm of uc4] (tec) {Kỹ thuật viên\\(\texttt{TECHNICIAN})\\TK: \texttt{ky\_thuat\_vien}};
+\node[rolebox, fill=diagpurplefill, draw=diagpurpleline, right=1.3cm of uc6] (cas) {Thu ngân\\(\texttt{CASHIER})\\TK: \texttt{thu\_ngan}};
 
-  \draw[arr, dashed] (uc3.east) -- (ai1.west);
-  \draw[arr, dashed] (uc3.east) -- (ai2.west);
-  \draw[arr, dashed] (uc3.east) -- (ai3.west);
-  \draw[arr, dashed] (uc1.east) -- (ai4.west);
-  \draw[arr] (hitl.east) -- ++(0.35, 0) |- (ai2.east);
+\draw[assoc] (mgr.east) -- (uc1.west);
+\draw[assoc] (mgr.east) -- (uc3.west);
+\draw[assoc] (mgr.east) -- (uc5.west);
+\draw[assoc] (mgr.east) -- (uc7.west);
+\draw[assoc] (mgr.east) -- (uc8.west);
+
+\draw[assoc] (rec.east) -- (uc1.west);
+\draw[assoc] (rec.east) -- (uc2.west);
+\draw[assoc] (rec.east) -- (uc3.west);
+\draw[assoc] (rec.east) -- (uc5.west);
+\draw[assoc] (rec.east) -- (uc7.west);
+
+\draw[assoc] (tec.west) -- (uc4.east);
+\draw[assoc] (tec.west) -- (uc7.east);
+
+\draw[assoc] (cas.west) -- (uc6.east);
+
 \end{tikzpicture}%
 }

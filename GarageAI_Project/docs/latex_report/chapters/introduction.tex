@@ -1,34 +1,29 @@
-\chapter*{LỜI MỞ ĐẦU}
-\addcontentsline{toc}{chapter}{LỜI MỞ ĐẦU}
+\chapter*{MỞ ĐẦU}
+\addcontentsline{toc}{chapter}{MỞ ĐẦU}
 
-\section*{Lý do chọn đề tài}
+\textbf{1. Tính cấp thiết của đề tài}
 
-Tại Việt Nam, sự gia tăng nhanh chóng của lượng phương tiện ô tô cá nhân và thương mại đặt ra áp lực lớn lên hệ thống các xưởng dịch vụ bảo dưỡng, sửa chữa (Garage). Một quy trình dịch vụ ô tô tiêu chuẩn đòi hỏi sự phối hợp chặt chẽ giữa nhiều bộ phận: từ đặt lịch hẹn, tiếp nhận xe, chẩn đoán kỹ thuật, lập báo giá, kiểm tra và đặt giữ phụ tùng trong kho, điều phối kỹ thuật viên, kiểm tra chất lượng (QC) cho đến quyết toán hóa đơn, theo dõi công nợ và nhắc lịch bảo dưỡng định kỳ. Khi các nghiệp vụ này vận hành rời rạc trên sổ sách hoặc bảng tính thủ công, xưởng dịch vụ thường xuyên gặp phải tình trạng thất thoát phụ tùng, báo giá sai lệch so với tồn kho thực tế, chồng chéo lịch cầu nâng và chậm trễ thông tin tới khách hàng.
+Tại các xưởng sửa chữa và bảo dưỡng ô tô (garage) vừa và nhỏ hiện nay, việc quản lý phương tiện ra vào xưởng, theo dõi phụ tùng xuất kho, lập báo giá và thu tiền phần lớn vẫn dựa vào sổ tay, bảng tính Excel rời rạc hoặc trao đổi qua tin nhắn. Cách làm thủ công này thường dẫn tới bốn rủi ro lớn: (1) lệch tồn kho và xuất âm kho khi hai nhân viên cùng lấy một phụ tùng hoặc khi hủy phiếu mà quên cộng trả lại hàng; (2) sai lệch lịch sử tài chính khi sửa giá dịch vụ trong danh mục làm thay đổi cả tổng tiền của những hóa đơn cũ; (3) mất nhiều thời gian lục tìm lịch sử sửa chữa của xe qua các lần vào xưởng và giải thích kỹ thuật cho khách hàng; và (4) thiếu phân quyền rõ ràng giữa Quản lý, Lễ tân, Kỹ thuật viên và Thu ngân.
 
-Sự phát triển của các mô hình ngôn ngữ lớn (LLMs) mang lại cơ hội hỗ trợ đắc lực cho cố vấn dịch vụ và kỹ thuật viên trong việc phân tích triệu chứng hư hỏng và tra cứu định mức phụ tùng. Tuy nhiên, nếu tích hợp AI thiếu kiểm soát vào môi trường kỹ thuật ô tô, hiện tượng ảo giác (hallucination) có thể dẫn tới việc gợi ý sai mã phụ tùng không có trong kho, bịa đặt đơn giá hoặc tự ý thay đổi phiếu sửa chữa khi chưa có sự phê duyệt của con người.
+Sự phổ biến của các Mô hình Ngôn ngữ Lớn (LLM) mang lại khả năng hỗ trợ tóm tắt lịch sử xe, giải thích dịch vụ và soạn thảo báo giá nháp bằng tiếng Việt rất tự nhiên. Tuy nhiên, nếu gọi LLM một cách tự do thiếu kiểm soát, mô hình dễ rơi vào hiện tượng “ảo giác” (\textit{hallucination}): tự bịa tên phụ tùng không có trong phiếu, tự cộng sai tổng tiền hoặc nguy hiểm hơn là tự suy đoán bệnh xe khi Kỹ thuật viên chưa tháo kiểm thực tế. Từ thực tiễn đó, nhóm lựa chọn thực hiện đề tài \textbf{“Hệ thống quản lý garage sửa chữa ô tô có tích hợp AI (GarageTools AI -- Mã đề tài 80277)”} với nguyên tắc cốt lõi: \textbf{AI chỉ trình bày văn bản tư vấn ở trạng thái chờ duyệt (\texttt{PENDING}), không tự quyết định tiền và luôn có con người kiểm duyệt (\textit{Human Review})}.
 
-Đề tài \textbf{“Hệ thống quản trị xưởng dịch vụ ô tô tích hợp trợ lý trí tuệ nhân tạo (GarageTools AI -- Mã đề tài 80277)”} được thực hiện nhằm giải quyết đồng bộ bài toán quản trị nghiệp vụ xưởng dịch vụ và tích hợp AI có trách nhiệm. Hệ thống kết hợp kiến trúc giao dịch cơ sở dữ liệu nguyên tử với cơ chế phê duyệt Human-in-the-loop (HITL) bắt buộc, bảo đảm AI đóng vai trò trợ lý tham vấn dựa trên dữ liệu tồn kho và lịch sử sửa chữa thực tế của xưởng.
+\textbf{2. Mục tiêu của đề tài}
 
-\section*{Mục đích và cấu trúc của Báo cáo}
-
-Báo cáo tổng kết toàn diện quá trình phân tích, thiết kế, hiện thực hóa mã nguồn, kiểm thử đối kháng và đánh giá định lượng của dự án GarageTools AI. Tài liệu được tổ chức thành 8 chương và 3 phụ lục:
-\begin{enumerate}[noitemsep,topsep=2pt]
-  \item \textbf{Chương 1 -- Tổng quan đề tài và bối cảnh ứng dụng}: Phân tích bài toán thực tế tại xưởng dịch vụ ô tô, các bên liên quan, ranh giới hệ thống và 5 mục tiêu kỹ thuật định lượng.
-  \item \textbf{Chương 2 -- Cơ sở kỹ thuật và lựa chọn công nghệ}: Trình bày nền tảng FastAPI, React 19, SQLite (WAL mode kết hợp khóa giao dịch \texttt{BEGIN IMMEDIATE}), kiến trúc Đa nhà cung cấp AI (Groq, Gemini, OpenAI) và kho khóa mã hóa BYOK.
-  \item \textbf{Chương 3 -- Phân tích yêu cầu hệ thống và kiểm soát phân quyền}: Đặc tả 14 yêu cầu chức năng (FR01--FR14), 6 yêu cầu phi chức năng (NFR01--NFR06), ma trận RBAC 4 vai trò kết hợp cô lập dữ liệu Kỹ thuật viên (Record-level NFR01) và máy trạng thái RO / HITL.
-  \item \textbf{Chương 4 -- Thiết kế kiến trúc, dữ liệu và tích hợp AI}: Thiết kế kiến trúc C4 Container, lược đồ ERD 21 bảng chuẩn hóa 3NF, luồng RAG Context Builder và quá trình tối ưu hóa Prompt qua 3 phiên bản (\texttt{v1.0}, \texttt{v2.0}, \texttt{v3.2}).
-  \item \textbf{Chương 5 -- Hiện thực hóa hệ thống}: Chi tiết cài đặt Backend, giao diện người dùng Precision Industrial Light Mode và động cơ AI Smart Fallback khử ảo giác tồn kho.
-  \item \textbf{Chương 6 -- Kiểm thử thực nghiệm và đối kháng}: Báo cáo kết quả 217 ca kiểm thử tự động (\texttt{pytest} và \texttt{vitest}) cùng 35 kịch bản UAT đạt tỷ lệ vượt qua 100\%.
-  \item \textbf{Chương 7 -- Đánh giá định lượng hệ thống AI và kinh tế vận hành}: Phân tích kết quả đo lường trên 320 mẫu thử nghiệm (Schema Valid 100\%, Grounding Score 96.4\%), độ trễ P50/P95 và bài toán chi phí token.
-  \item \textbf{Chương 8 -- Kết luận và giới hạn đã biết}: Tổng kết các đóng góp của đồ án, đánh giá khách quan các giới hạn kỹ thuật hiện tại và lộ trình phát triển tiếp theo.
-\end{enumerate}
-
-\section*{Đóng góp kỹ thuật và phương pháp tiếp cận thực chứng}
-
-Dự án GarageTools AI áp dụng phương pháp nghiên cứu khoa học thiết kế (Design Science Research Methodology), tập trung vào bốn đóng góp kỹ thuật cốt lõi:
+Đề tài hướng tới xây dựng một hệ thống phần mềm hoàn chỉnh đáp ứng 4 mục tiêu cụ thể:
 \begin{itemize}[noitemsep,topsep=2pt]
-  \item \textbf{Quản lý giao dịch kho nguyên tử chống tranh chấp}: Sử dụng cơ chế khóa giao dịch \texttt{BEGIN IMMEDIATE} kết hợp kiểm soát đặt giữ phụ tùng (\texttt{reserved\_quantity}), ngăn chặn hiện tượng xuất âm kho khi nhiều cố vấn dịch vụ thao tác đồng thời.
-  \item \textbf{Phân quyền đa tầng và cô lập phạm vi bản ghi (Record-level Scope)}: Bảo đảm Kỹ thuật viên chỉ truy cập và cập nhật đúng các phiếu sửa chữa được phân công trực tiếp, loại bỏ lỗ hổng leo quyền ngang IDOR.
-  \item \textbf{Kiến trúc RAG nối đất dữ liệu kho và quy trình duyệt HITL}: Mọi gợi ý chẩn đoán (AI01) và đề xuất phụ tùng (AI02) đều được đối chiếu trực tiếp với danh mục SKU tồn kho thực tế và bắt buộc qua bước phê duyệt của Cố vấn dịch vụ trước khi ghi nhận vào phiếu sửa chữa.
-  \item \textbf{Đa nhà cung cấp LLM kèm bảo mật khóa BYOK và Smart Fallback}: Cho phép chuyển đổi linh hoạt giữa Groq, Google Gemini, OpenAI và bộ suy diễn dự phòng nội bộ, duy trì độ sẵn sàng 100\% ngay cả khi mất kết nối mạng ngoại vi.
+  \item \textbf{Quản lý khép kín quy trình nghiệp vụ garage trên CSDL 21 bảng}: Bao phủ trọn vẹn từ Đặt lịch hẹn (\texttt{appointments}) $\rightarrow$ Tiếp nhận xe (\texttt{intake\_records}) $\rightarrow$ Phiếu sửa chữa 6 trạng thái (\texttt{repair\_orders}) $\rightarrow$ Báo giá chính thức (\texttt{quotations}) $\rightarrow$ Sổ cái tồn kho (\texttt{stock\_transactions}) $\rightarrow$ Nghiệm thu $\rightarrow$ Hóa đơn (\texttt{invoices}) \& Thanh toán (\texttt{payments}) $\rightarrow$ Bảo hành (\texttt{warranties}).
+  \item \textbf{Bảo vệ tuyệt đối tiền tệ, tồn kho và phân quyền}: Lưu toàn bộ cột tiền bằng số nguyên \texttt{INTEGER} (đồng VNĐ), chốt cứng đơn giá \texttt{unit\_price} lúc thêm hạng mục, bọc giao dịch trong khối \texttt{BEGIN IMMEDIATE} giữ bất biến $\texttt{parts.stock} = \sum \texttt{stock\_transactions.qty}$, kết hợp phân quyền 4 vai trò (\texttt{security\_matrix.py}) và cô lập Kỹ thuật viên theo phiếu được phân công (\texttt{duoc\_gan\_cong}).
+  \item \textbf{Tích hợp 3 chức năng AI bám sát CSDL kèm Human Review}: Xây dựng \texttt{app/ai\_gateway.py} hỗ trợ 7 cấu hình nhà cung cấp (\texttt{mock}, \texttt{groq}, \texttt{openrouter}, \texttt{gemini}, \texttt{openai}, \texttt{9router}, \texttt{custom}) cho 3 tác vụ: Tóm tắt lịch sử sửa chữa (AI01 -- \texttt{history}), Giải thích dịch vụ (AI02 -- \texttt{explain}) và Báo giá nháp JSON có lọc khớp giá CSDL (AI03 -- \texttt{quote}).
+  \item \textbf{Kiểm chứng tự động 100\%}: Đạt tuyệt đối \textbf{226/226} ca kiểm thử tự động Backend (\texttt{tests/run\_all.py}), \textbf{31/31} ca Smoke (\texttt{scripts/smoke.ps1}), \textbf{32/32} ca E2E (\texttt{scripts/e2e.ps1}) và \textbf{35/35} ca UAT (\texttt{USER\_ACCEPTANCE\_TEST.md}).
 \end{itemize}
+
+\textbf{3. Đối tượng và phạm vi thực hiện}
+
+\begin{itemize}[noitemsep,topsep=2pt]
+  \item \textbf{Đối tượng nghiên cứu}: Quy trình vận hành xưởng sửa chữa ô tô độc lập; kỹ thuật đảm bảo toàn vẹn giao dịch trên SQLite 3 (chế độ WAL + \texttt{BEGIN IMMEDIATE}); kỹ thuật thiết kế Prompt tách rời mã nguồn (\texttt{config/prompts/*.txt}) và lọc hậu kiểm kết quả JSON từ LLM.
+  \item \textbf{Phạm vi sản phẩm}: Backend Python FastAPI (\texttt{GarageAI\_Project/app/}), Frontend React 19 + TanStack Start 16 màn hình (\texttt{frontend/}) kèm giao diện Jinja2, CSDL 21 bảng và bộ kịch bản Docker Compose, kiểm thử, sao lưu/khôi phục.
+\end{itemize}
+
+\textbf{4. Bố cục báo cáo}
+
+Ngoài phần Mở đầu, Danh mục từ viết tắt và 3 Phụ lục, nội dung báo cáo gồm 8 chương: \textbf{Chương 1} giới thiệu bài toán và định hướng giải pháp; \textbf{Chương 2} khảo sát giải pháp và lựa chọn công nghệ; \textbf{Chương 3} phân tích yêu cầu hệ thống, phân quyền RBAC và máy trạng thái; \textbf{Chương 4} thiết kế kiến trúc 4 tầng, CSDL 21 bảng và quy trình xử lý AI; \textbf{Chương 5} trình bày chi tiết hiện thực hóa hệ thống; \textbf{Chương 6} trình bày kết quả kiểm thử tự động và kiểm thử đối kháng; \textbf{Chương 7} đánh giá thực nghiệm 3 vòng cải tiến Prompt, độ trễ mô hình thật và chi phí vận hành; \textbf{Chương 8} tổng kết kết quả, thẳng thắn chỉ ra các giới hạn hiện tại và hướng phát triển.

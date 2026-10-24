@@ -1,28 +1,37 @@
-\resizebox{0.98\textwidth}{!}{%
+\resizebox{\textwidth}{!}{%
 \begin{tikzpicture}[
-  font=\sffamily,
-  part/.style={rectangle, rounded corners=2pt, draw=black, line width=0.7pt, fill=black!10, text width=2.6cm, minimum height=0.75cm, align=center, font=\sffamily\scriptsize\bfseries, inner sep=3pt},
-  msg/.style={-{Latex[length=2mm,width=1.5mm]}, line width=0.6pt, draw=black},
-  ret/.style={-{Latex[length=2mm,width=1.5mm]}, line width=0.6pt, draw=black, dashed},
-  lbl/.style={font=\sffamily\scriptsize, fill=white, inner sep=1.5pt}
+    font=\sffamily\scriptsize,
+    >=Latex,
+    part/.style={rectangle, draw=diagblueline, line width=0.9pt, fill=diagbluefill, rounded corners=4pt, text width=2.7cm, minimum height=0.95cm, align=center, font=\sffamily\scriptsize\bfseries, inner sep=4pt},
+    msg/.style={-Latex, line width=0.8pt, navy},
+    ret/.style={-Latex, dashed, line width=0.8pt, diaggreenline}
 ]
-  \node[part] (user) at (0, 0) {Cố vấn / KTV};
-  \node[part] (api) at (4.4, 0) {FastAPI + RBAC};
-  \node[part] (rag) at (8.8, 0) {RAG + AI Router};
-  \node[part] (db) at (13.2, 0) {SQLite WAL DB};
 
-  \foreach \x in {0, 4.4, 8.8, 13.2} {
-    \draw[line width=0.5pt, dashed, draw=black!60] (\x, -0.4) -- (\x, -5.8);
-  }
+\node[part] (p1) at (0,0) {Lễ tân / KTV\\(\texttt{le\_tan} / \texttt{ky\_thuat\_vien})};
+\node[part, fill=diagamberfill, draw=diagamberline] (p2) at (3.8,0) {Quản lý Xưởng\\(\texttt{quan\_ly})};
+\node[part, fill=diagpurplefill, draw=diagpurpleline] (p3) at (7.8,0) {FastAPI Backend\\(\texttt{app/services/})};
+\node[part, fill=diaggreenfill, draw=diaggreenline] (p4) at (12.0,0) {AI Gateway\\(\texttt{ai\_gateway.py})};
+\node[part, fill=diagslatefill, draw=diagslateline] (p5) at (16.0,0) {SQLite WAL\\(\texttt{garage.db})};
 
-  \draw[msg] (0, -0.9) -- node[lbl, above]{1. POST /api/ai/ro-copilot (JWT, ro\_id)} (4.4, -0.9);
-  \draw[msg] (4.4, -1.55) -- node[lbl, above]{2. Kiểm tra RBAC \& Quyền sở hữu RO (NFR01)} (13.2, -1.55);
-  \draw[ret] (13.2, -2.2) -- node[lbl, above]{3. Trả về ngữ cảnh RO + Tồn kho khả dụng} (8.8, -2.2);
-  \draw[msg] (8.8, -2.75) -- (9.6, -2.75) -- (9.6, -3.2) -- (8.8, -3.2);
-  \node[lbl, anchor=west] at (9.65, -2.97) {4. Gọi LLM (Prompt v3.2) / Smart Fallback};
-  \draw[msg] (8.8, -3.75) -- node[lbl, above]{5. Lưu đề xuất trạng thái PENDING + Audit Log} (13.2, -3.75);
-  \draw[ret] (4.4, -4.35) -- node[lbl, above]{6. Hiển thị gợi ý kèm nhãn [Đề xuất bởi AI]} (0, -4.35);
-  \draw[msg] (0, -4.95) -- node[lbl, above]{7. Cố vấn nhấn Duyệt: POST /approve-suggestion} (4.4, -4.95);
-  \draw[msg] (4.4, -5.55) -- node[lbl, above]{8. BEGIN IMMEDIATE: Giữ kho \& Thêm dòng RO} (13.2, -5.55);
+\foreach \x in {0, 3.8, 7.8, 12.0, 16.0} {
+    \draw[dashed, diagslateline!70] (\x,-0.5) -- (\x,-8.2);
+}
+
+\draw[msg] (0,-1.0) -- node[above, fill=white, inner sep=1.5pt]{1. Mở Phiếu sửa chữa (\texttt{RECEIVED}) + Biên bản tiếp nhận} (7.8,-1.0);
+\draw[msg] (7.8,-1.5) -- node[above, fill=white, inner sep=1.5pt]{2. \texttt{INSERT repair\_orders, intake\_records}} (16.0,-1.5);
+
+\draw[msg] (0,-2.2) -- node[above, fill=white, inner sep=1.5pt]{3. Kiểm tra (\texttt{INSPECTING}) \& Báo giá (\texttt{ESTIMATING})} (7.8,-2.2);
+\draw[msg] (0,-2.8) -- node[above, fill=white, inner sep=1.5pt]{4. Gọi AI03 \texttt{POST /api/ai/quote} (Báo giá nháp)} (7.8,-2.8);
+\draw[msg] (7.8,-3.3) -- node[above, fill=white, inner sep=1.5pt]{5. Đọc CSDL + Gọi LLM + Lọc giá} (12.0,-3.3);
+\draw[ret] (12.0,-3.9) -- node[above, fill=white, inner sep=1.5pt]{6. Lưu \texttt{ai\_results (PENDING)}} (16.0,-3.9);
+
+\draw[msg] (3.8,-4.6) -- node[above, fill=white, inner sep=1.5pt]{7. Quản lý duyệt AI (\texttt{APPROVED})} (7.8,-4.6);
+\draw[msg] (3.8,-5.2) -- node[above, fill=white, inner sep=1.5pt]{8. Duyệt \& Áp dụng Báo giá 1 lần} (7.8,-5.2);
+\draw[msg] (7.8,-5.8) -- node[above, fill=white, inner sep=1.5pt]{9. \texttt{BEGIN IMMEDIATE}: Trừ kho + Ghi \texttt{stock\_transactions (USAGE)}} (16.0,-5.8);
+
+\draw[msg] (0,-6.5) -- node[above, fill=white, inner sep=1.5pt]{10. KTV được gán (\texttt{duoc\_gan\_cong}) sửa chữa (\texttt{REPAIRING})} (7.8,-6.5);
+\draw[msg] (3.8,-7.1) -- node[above, fill=white, inner sep=1.5pt]{11. Nghiệm thu hoàn thành (\texttt{COMPLETED})} (7.8,-7.1);
+\draw[msg] (7.8,-7.7) -- node[above, fill=white, inner sep=1.5pt]{12. Xuất \texttt{invoices}, thu \texttt{payments (paid <= total)} \& cấp \texttt{warranties}} (16.0,-7.7);
+
 \end{tikzpicture}%
 }

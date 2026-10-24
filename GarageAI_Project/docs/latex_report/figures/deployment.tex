@@ -1,37 +1,42 @@
-\resizebox{0.96\textwidth}{!}{%
+\resizebox{0.98\textwidth}{!}{%
 \begin{tikzpicture}[
-  font=\sffamily,
-  nodebox/.style={rectangle, rounded corners=3pt, draw=black, line width=0.7pt, fill=white, text width=3.9cm, minimum height=1.35cm, align=center, font=\sffamily\scriptsize, inner sep=4pt},
-  headnode/.style={rectangle, rounded corners=3pt, draw=black, line width=0.8pt, fill=black!10, text width=3.9cm, minimum height=1.35cm, align=center, font=\sffamily\scriptsize, inner sep=4pt},
-  arr/.style={-{Latex[length=2mm,width=1.4mm]}, line width=0.6pt, draw=black},
-  lbl/.style={font=\sffamily\scriptsize, fill=white, inner sep=1.5pt}
+    font=\sffamily\footnotesize,
+    >=Latex,
+    nodebox/.style={rectangle, draw=diagblueline, line width=0.9pt, fill=diagbluefill, rounded corners=5pt, text width=4.1cm, align=center, inner sep=6pt},
+    arr/.style={-Latex, line width=0.9pt, diagblueline}
 ]
-  \node[headnode] (client) at (0, 0) {
-    \textbf{\footnotesize Máy trạm Xưởng / Cố vấn}\\[2pt]
-    Trình duyệt Web (Chrome / Edge)\\
-    Cổng dịch vụ Frontend :3000
-  };
 
-  \node[headnode] (docker) at (6.2, 0) {
-    \textbf{\footnotesize Máy chủ Ứng dụng (Docker)}\\[2pt]
-    Uvicorn + FastAPI (:8000)\\
-    Healthcheck \& Backup Scheduler
-  };
+\node[nodebox] (client) {
+\textbf{Máy trạm tại Xưởng}\\
+Trình duyệt Chrome / Edge\\
+React 19 SPA (\texttt{:3000} / \texttt{:5173})\\
+Kết nối API \texttt{/api/*}
+};
 
-  \node[nodebox] (vol) at (12.0, 1.0) {
-    \textbf{\footnotesize Persistent Volume}\\[2pt]
-    SQLite WAL (\texttt{garage\_v2.db})\\
-    Snapshots (\texttt{backups/*.sqlite})
-  };
+\node[nodebox, fill=diaggreenfill, draw=diaggreenline, right=1.8cm of client] (docker) {
+\textbf{Máy chủ / Docker Compose}\\
+Container \texttt{garageai-web}\\
+Python 3.11 + Uvicorn (\texttt{8010:8000})\\
+Healthcheck: \texttt{/healthz} \& \texttt{/readyz}
+};
 
-  \node[nodebox, dashed] (ext) at (12.0, -1.0) {
-    \textbf{\footnotesize Cloud LLM Gateway}\\[2pt]
-    Groq / Gemini / OpenAI\\
-    (Kết nối TLS 1.3 có kiểm soát)
-  };
+\node[nodebox, fill=diagslatefill, draw=diagslateline, right=1.8cm of docker, yshift=1.35cm] (storage) {
+\textbf{Lưu trữ Bền vững (Disk)}\\
+\texttt{database/garage.db} (WAL)\\
+\texttt{backups/*.db} (\texttt{backup.ps1})\\
+\texttt{config/prompts/*.txt}
+};
 
-  \draw[arr, <->] (client.east) -- node[lbl, above]{HTTP / REST} (docker.west);
-  \draw[arr, <->] (docker.east) -- (vol.west);
-  \draw[arr, <->] (docker.east) -- (ext.west);
+\node[nodebox, fill=diagamberfill, draw=diagamberline, below=0.55cm of storage] (cloud) {
+\textbf{Cổng Đám mây LLM API}\\
+Groq (\texttt{openai/gpt-oss-120b})\\
+Gemini / OpenRouter / OpenAI\\
+HTTPS (TLS 1.3, Timeout 15s)
+};
+
+\draw[arr, <->] (client.east) -- node[above, font=\scriptsize]{HTTP + CSRF} (docker.west);
+\draw[arr, <->, diagslateline] ([yshift=0.45cm]docker.east) -- (storage.west);
+\draw[arr, <->, dashed, diagamberline] ([yshift=-0.45cm]docker.east) -- (cloud.west);
+
 \end{tikzpicture}%
 }

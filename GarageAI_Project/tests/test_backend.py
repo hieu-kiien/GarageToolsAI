@@ -19,6 +19,7 @@ BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if BASE not in sys.path:
     sys.path.insert(0, BASE)
 os.environ.setdefault('APP_ENV', 'test')
+os.environ.setdefault('AI_PROVIDER', 'mock')
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 
@@ -536,9 +537,11 @@ class TestAI(CoSoDichChung):
     def test_ba_chuc_nang_sinh_ket_qua_pending(self):
         self.dang_nhap('le_tan')
         for duong_danh, du_lieu in (('/ai/history', {'vehicle_id': '1'}),
+                                    ('/ai/history', {'vehicle_id': '6'}),
                                     ('/ai/explain', {'service_id': '1'}),
+                                    ('/ai/explain', {'service_id': '7'}),
                                     ('/ai/quote', {'repair_order_id': '10'})):
-            with self.subTest(duong_danh=duong_danh):
+            with self.subTest(duong_danh=duong_danh, du_lieu=du_lieu):
                 truoc = len(self.q('SELECT id FROM ai_results'))
                 r = self.post(duong_danh, du_lieu)
                 self.assertLess(r.status_code, 500)
@@ -546,6 +549,8 @@ class TestAI(CoSoDichChung):
                 kq = self.q1('SELECT * FROM ai_results ORDER BY id DESC LIMIT 1')
                 self.assertEqual(kq['review_status'], 'PENDING')
                 self.assertIsNone(kq['reviewed_by'])
+                if du_lieu == {'service_id': '7'}:
+                    self.assertIn('Danh mục chưa có mô tả cho dịch vụ này', kq['output_text'])
 
     def test_ai_khong_tao_hang_muc_hoac_hoa_don(self):
         truoc_hang = len(self.q('SELECT id FROM repair_order_items'))

@@ -1,92 +1,70 @@
-\resizebox{0.98\textwidth}{!}{%
-\begin{tikzpicture}[
-  font=\sffamily\scriptsize,
-  >=Latex,
-  frame/.style={draw=black!80,fill=white,rounded corners=3pt,line width=0.8pt},
-  panel/.style={draw=black!65,fill=white,rounded corners=2pt},
-  card/.style={draw=black!60,fill=black!3,rounded corners=2pt},
-  btn/.style={draw=black!85,fill=black!6,rounded corners=2pt,inner sep=3pt,font=\sffamily\bfseries\scriptsize},
-  btn_dark/.style={draw=black,fill=black!16,text=black,rounded corners=2pt,inner sep=3pt,font=\sffamily\bfseries\scriptsize}
-]
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[font=\sffamily\scriptsize]
+% Outer Window
+\draw[thick, navy!80, rounded corners=4pt, fill=slate!5] (0,0) rectangle (15.6,8.2);
+% Top Bar
+\draw[fill=navy, draw=navy] (0,7.4) rectangle (15.6,8.2);
+\node[white, anchor=west, font=\sffamily\bfseries\footnotesize] at (0.3,7.8) {GARAGE AI --- HỆ THỐNG QUẢN LÝ XƯỞNG DỊCH VỤ Ô TÔ \& TRỢ LÝ AI};
+\node[white, anchor=east] at (15.3,7.8) {Vai trò: Quản lý (quan\_ly) | Phiên: Active | [Đăng xuất]};
 
-\draw[draw=black!85,fill=white,rounded corners=4pt,line width=0.9pt] (0, 0) rectangle (15.6, 8.4);
+% Sidebar
+\draw[fill=navy!8, draw=navy!30] (0,0) rectangle (3.1,7.4);
+\node[anchor=west, font=\bfseries, navy] at (0.2,6.9) {ĐIỀU HƯỚNG (16 MÀN)};
+\node[anchor=west, navy!90] at (0.2,6.3) {1. Tổng quan Dashboard};
+\node[anchor=west, navy!90] at (0.2,5.8) {2. Khách hàng \& Xe};
+\node[anchor=west, navy!90] at (0.2,5.3) {3. Lịch hẹn \& Tiếp nhận};
+\draw[fill=teal!20, draw=teal!80, rounded corners=2pt] (0.1,4.55) rectangle (3.0,5.0);
+\node[anchor=west, font=\bfseries, teal!90!black] at (0.2,4.78) {4. Phiếu sửa chữa \#10};
+\node[anchor=west, navy!90] at (0.2,4.2) {5. Báo giá \& Hóa đơn};
+\node[anchor=west, navy!90] at (0.2,3.7) {6. Kho \& Thẻ kho bất biến};
+\node[anchor=west, navy!90] at (0.2,3.2) {7. Bảo hành sau sửa chữa};
+\node[anchor=west, navy!90] at (0.2,2.7) {8. Trợ lý AI \& Kiểm duyệt};
+\node[anchor=west, navy!90] at (0.2,2.2) {9. Cửa hàng \& Quản trị};
 
-\draw[draw=black!85,fill=black!12,rounded corners=3pt] (0, 7.65) rectangle (15.6, 8.4);
-\node[font=\sffamily\bfseries\footnotesize,text=black,anchor=west] at (0.35, 8.02) {KHÔNG GIAN LÀM VIỆC GARAGETOOLS AI};
-\node[font=\sffamily\scriptsize,text=black,anchor=east] at (15.25, 8.02) {Tài khoản: Cố vấn dịch vụ (advisor01)};
+% Main Content Area - Left Column (RO Detail)
+\draw[fill=white, draw=navy!30, rounded corners=3pt] (3.3,3.8) rectangle (10.3,7.2);
+\node[anchor=west, font=\bfseries\footnotesize, navy] at (3.5,6.9) {PHIẾU SỬA CHỮA \#10 --- Xe: 30C-3334 (Ford Ranger 2020)};
+\node[anchor=west, teal!80!black, font=\bfseries] at (3.5,6.4) {Trạng thái: [REPAIRING - Đang sửa chữa] | KTV phụ trách: ky\_thuat\_vien (\#3)};
+\node[anchor=west] at (3.5,5.9) {Triệu chứng: Điều hòa không mát sâu, kiểm tra lọc gió điều hòa và gas lạnh};
+\node[anchor=west] at (3.5,5.4) {Phiếu tiếp nhận: ODO 68.400 km | Nhiên liệu: 3/4 bình | Trầy xước cản sau nhẹ};
+\node[anchor=west, font=\bfseries, navy] at (3.5,4.8) {Chuyển trạng thái hợp lệ: [COMPLETED - Hoàn thành \& Nghiệm thu] [CANCELLED - Hủy]};
+\node[anchor=west, slate] at (3.5,4.2) {Ghi chú nghiệm thu bắt buộc (\texttt{acceptance\_note}) khi chuyển sang COMPLETED.};
 
-\draw[frame] (0.25, 0.25) rectangle (3.50, 7.45);
-\node[font=\sffamily\bfseries\scriptsize,text=black,anchor=west] at (0.45, 7.05) {ĐIỀU HƯỚNG};
-\node[anchor=west,font=\sffamily\scriptsize] at (0.45, 6.50) {1. Bảng điều khiển};
-\node[anchor=west,font=\sffamily\scriptsize] at (0.45, 5.95) {2. Lịch hẹn xưởng};
-\node[anchor=west,font=\sffamily\bfseries\scriptsize] at (0.45, 5.40) {3. Phiếu RO};
-\node[anchor=west,font=\sffamily\scriptsize] at (0.45, 4.85) {4. Kho phụ tùng};
-\node[anchor=west,font=\sffamily\scriptsize] at (0.45, 4.30) {5. Hóa đơn \& Thu};
-\node[anchor=west,font=\sffamily\scriptsize] at (0.45, 3.75) {6. Trợ lý AI};
-\node[anchor=west,font=\sffamily\scriptsize] at (0.45, 3.20) {7. Khóa BYOK};
-\draw[draw=black!35,line width=0.5pt] (0.45, 2.75) -- (3.30, 2.75);
-\node[anchor=west,font=\sffamily\scriptsize] at (0.45, 2.25) {Đề tài: 80277};
-\node[anchor=west,font=\sffamily\scriptsize] at (0.45, 1.75) {CSDL: SQLite 3NF};
-\node[anchor=west,font=\sffamily\scriptsize] at (0.45, 1.25) {AI: Đa nhà cung cấp};
+% Main Content Area - Bottom Left (Line items & Stock)
+\draw[fill=white, draw=navy!30, rounded corners=3pt] (3.3,0.2) rectangle (10.3,3.6);
+\node[anchor=west, font=\bfseries\footnotesize, navy] at (3.5,3.3) {HẠNG MỤC SỬA CHỮA (\texttt{repair\_order\_items}) \& ĐỒNG BỘ TỒN KHO};
+\draw[navy!40] (3.5,2.95) -- (10.1,2.95);
+\node[anchor=west, font=\bfseries] at (3.5,2.7) {Loại | Tên hạng mục | SL | Đơn giá | Thành tiền | Trạng thái kho};
+\node[anchor=west] at (3.5,2.2) {SERVICE | Bảo dưỡng điều hòa tổng quát | 1 | 450.000 đ | 450.000 đ | Không trừ kho};
+\node[anchor=west] at (3.5,1.7) {PART | Lọc gió điều hòa than hoạt tính | 1 | 280.000 đ | 280.000 đ | USAGE (-1) OK};
+\draw[navy!40] (3.5,1.35) -- (10.1,1.35);
+\node[anchor=west, font=\bfseries, navy] at (3.5,0.95) {Tổng cộng phiếu (\texttt{total}): 730.000 đ | Hóa đơn: Chưa phát hành | Đã thu: 0 đ};
+\node[anchor=west, teal!80!black] at (3.5,0.45) {[+ Thêm công dịch vụ] [+ Xuất phụ tùng từ kho] [Đồng bộ từ Báo giá APPROVED]};
 
-\node[font=\sffamily\bfseries\footnotesize,text=black,anchor=west] at (3.75, 7.15) {Phiếu RO: \#RO-2026-0104 (Xe: 30H-889.25)};
-\node[btn_dark,anchor=east] at (15.35, 7.15) {Trạng thái: DIAGNOSING};
+% Right Panel - AI Assistant & Human Review
+\draw[fill=amber!6, draw=amber!70, rounded corners=3pt] (10.5,0.2) rectangle (15.4,7.2);
+\node[anchor=west, font=\bfseries\footnotesize, amber!90!black] at (10.7,6.9) {TRỢ LÝ AI \& HUMAN REVIEW};
+\node[anchor=west] at (10.7,6.4) {Provider: \texttt{groq} (\texttt{gpt-oss-120b})};
+\draw[fill=white, draw=navy!30, rounded corners=2pt] (10.7,4.9) rectangle (15.2,6.1);
+\node[anchor=west, font=\bfseries, navy] at (10.85,5.8) {[AI01] Tóm tắt lịch sử xe 30C-3334};
+\node[anchor=west] at (10.85,5.4) {1. Tổng quan: 2 lần sửa trước};
+\node[anchor=west] at (10.85,5.08) {2. Hạng mục: Bảo dưỡng phanh...};
 
-\node[card, minimum width=2.7cm, minimum height=1.15cm, align=left, inner sep=4pt] at (5.10, 6.15) {
-  {\scriptsize Tạm tính RO}\\[3pt]
-  \textbf{\footnotesize 4.850.000đ}
-};
+\draw[fill=white, draw=navy!30, rounded corners=2pt] (10.7,3.4) rectangle (15.2,4.7);
+\node[anchor=west, font=\bfseries, navy] at (10.85,4.4) {[AI02] Giải thích dịch vụ cho khách};
+\node[anchor=west] at (10.85,4.0) {1. Dịch vụ là gì | 2. Vì sao cần};
+\node[anchor=west] at (10.85,3.6) {3. Lưu ý sau sửa chữa (rõ ràng)};
 
-\node[card, minimum width=2.7cm, minimum height=1.15cm, align=left, inner sep=4pt] at (8.00, 6.15) {
-  {\scriptsize Giữ kho (Reserved)}\\[3pt]
-  \textbf{\footnotesize 03 Phụ tùng}
-};
+\draw[fill=white, draw=navy!30, rounded corners=2pt] (10.7,1.6) rectangle (15.2,3.2);
+\node[anchor=west, font=\bfseries, navy] at (10.85,2.9) {[AI03] Báo giá nháp (Hậu kiểm JSON)};
+\node[anchor=west] at (10.85,2.5) {Khớp 2/2 dòng; Total: 730.000 đ};
+\node[anchor=west, amber!90!black, font=\bfseries] at (10.85,2.1) {Trạng thái: PENDING REVIEW};
+\node[anchor=west] at (10.85,1.75) {Latency: 2.46s | Lưu \texttt{ai\_results}};
 
-\node[card, minimum width=2.7cm, minimum height=1.15cm, align=left, inner sep=4pt] at (10.95, 6.15) {
-  {\scriptsize Đề xuất AI (HITL)}\\[3pt]
-  \textbf{\footnotesize 02 Chờ duyệt}
-};
-
-\node[card, minimum width=2.7cm, minimum height=1.15cm, align=left, inner sep=4pt] at (13.95, 6.15) {
-  {\scriptsize Mức ODO hiện tại}\\[3pt]
-  \textbf{\footnotesize 62.400 km}
-};
-
-\draw[panel] (3.75, 0.25) rectangle (9.35, 5.35);
-\node[font=\sffamily\bfseries\scriptsize,text=black,anchor=west] at (3.95, 5.02) {DANH MỤC CÔNG VIỆC \& PHỤ TÙNG};
-\draw[draw=black!35,line width=0.5pt] (3.75, 4.75) -- (9.35, 4.75);
-
-\node[font=\sffamily\scriptsize,anchor=west] at (3.95, 4.38) {\textbf{1. Má phanh trước (BP-TOY-01)}};
-\node[font=\sffamily\scriptsize,anchor=west] at (3.95, 3.98) {SL: 01 bộ | Tồn: 14 | 1.850.000đ};
-\draw[draw=black!20,line width=0.4pt] (3.95, 3.68) -- (9.15, 3.68);
-
-\node[font=\sffamily\scriptsize,anchor=west] at (3.95, 3.30) {\textbf{2. Dầu phanh DOT4 (BF-DOT4)}};
-\node[font=\sffamily\scriptsize,anchor=west] at (3.95, 2.90) {SL: 02 bình | Tồn: 28 | 450.000đ};
-\draw[draw=black!20,line width=0.4pt] (3.95, 2.60) -- (9.15, 2.60);
-
-\node[font=\sffamily\scriptsize,anchor=west] at (3.95, 2.22) {\textbf{3. Công bảo dưỡng cụm phanh}};
-\node[font=\sffamily\scriptsize,anchor=west] at (3.95, 1.82) {Định mức: 1.5h | KTV: tech01};
-\draw[draw=black!20,line width=0.4pt] (3.95, 1.52) -- (9.15, 1.52);
-
-\node[font=\sffamily\scriptsize,anchor=west] at (3.95, 1.12) {\textbf{4. Kiểm tra cảm biến tốc độ ABS}};
-\node[font=\sffamily\scriptsize,anchor=west] at (3.95, 0.72) {Trạng thái: Đã khóa giữ kho nguyên tử};
-
-\draw[panel,fill=black!2] (9.60, 0.25) rectangle (15.35, 5.35);
-\node[font=\sffamily\bfseries\scriptsize,text=black,anchor=west] at (9.80, 5.02) {TRỢ LÝ AI COPILOT \& DUYỆT HITL};
-\draw[draw=black!35,line width=0.5pt] (9.60, 4.75) -- (15.35, 4.75);
-
-\node[font=\sffamily\scriptsize,anchor=west] at (9.80, 4.38) {Tác vụ: AI01 + AI02 | Tin cậy: 0.89};
-\node[font=\sffamily\scriptsize,anchor=west] at (9.80, 3.98) {Đối chiếu RAG SKU: Đạt (0 ảo giác)};
-
-\draw[draw=black!50,fill=white,rounded corners=2pt] (9.80, 1.30) rectangle (15.15, 3.68);
-\node[font=\sffamily\scriptsize,anchor=north west] at (9.95, 3.55) {\textbf{Đề xuất AI (Prompt v3.2):}};
-\node[font=\sffamily\scriptsize,anchor=north west] at (9.95, 3.00) {- Mòn má phanh trước vượt giới hạn};
-\node[font=\sffamily\scriptsize,anchor=north west] at (9.95, 2.48) {- Gợi ý SKU: BP-TOY-01 (Tồn: 14)};
-\node[font=\sffamily\scriptsize,anchor=south west] at (9.95, 1.42) {Độ trễ: 0.84s | Chờ Cố vấn duyệt};
-
-\node[btn_dark,anchor=west] at (9.80, 0.72) {Phê duyệt};
-\node[btn,anchor=west] at (11.75, 0.72) {Chỉnh sửa};
-\node[btn,anchor=east] at (15.15, 0.72) {Từ chối};
+\draw[fill=teal!80!black, rounded corners=2pt] (10.7,0.45) rectangle (12.85,1.25);
+\node[white, font=\bfseries] at (11.77,0.85) {[Duyệt APPROVED]};
+\draw[fill=crimson, rounded corners=2pt] (13.05,0.45) rectangle (15.2,1.25);
+\node[white, font=\bfseries] at (14.12,0.85) {[Từ chối REJECTED]};
 
 \end{tikzpicture}%
 }

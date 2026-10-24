@@ -19,6 +19,24 @@ __pycache__/
 venv/
 .pytest_cache/
 
+# --- Node / Frontend Build ---
+node_modules/
+frontend/node_modules/
+frontend/.output/
+frontend/.wrangler/
+frontend/dist/
+
+# --- LaTeX Build Artifacts ---
+*.aux
+*.lof
+*.lot
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+GarageAI_Project/docs/latex_report/main.pdf
+
 # --- Hệ điều hành & IDE ---
 .DS_Store
 Thumbs.db

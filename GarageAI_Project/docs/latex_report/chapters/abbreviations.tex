@@ -1,60 +1,43 @@
 \chapter*{DANH MỤC TỪ VIẾT TẮT}
 \addcontentsline{toc}{chapter}{DANH MỤC TỪ VIẾT TẮT}
 
-\begin{spacing}{1.0}
-\footnotesize
-\renewcommand{\arraystretch}{1.08}
-\noindent\begin{tabularx}{\textwidth}{|L{2.3cm}|L{5.4cm}|Y|}
+\vspace{-4pt}
+{\footnotesize
+\renewcommand{\arraystretch}{1.05}
+\noindent
+\begin{tabularx}{\textwidth}{|L{2.5cm}|L{4.6cm}|Y|}
 \hline
-\thead{Từ viết tắt} & \thead{Thuật ngữ tiếng Anh} & \thead{Giải nghĩa tiếng Việt}\\
+\rowcolor{diagslatefill}\thead{Từ viết tắt} & \thead{Thuật ngữ tiếng Anh} & \thead{Ý nghĩa tiếng Việt và ngữ cảnh trong hệ thống}\\
 \hline
-ACID & Atomicity, Consistency, Isolation, Durability & Bốn thuộc tính bảo đảm toàn vẹn giao dịch cơ sở dữ liệu.\\
+ACID & Atomicity, Consistency, Isolation, Durability & Bốn tính chất bảo đảm an toàn giao dịch CSDL (thực thi qua khối \texttt{BEGIN IMMEDIATE} trên SQLite WAL). \\
 \hline
-AI & Artificial Intelligence & Trí tuệ nhân tạo.\\
+API & Application Programming Interface & Giao diện lập trình ứng dụng (14 mô-đun JSON tại \texttt{app/routes/api/} và 7 mô-đun HTML Jinja2 tại \texttt{app/routes/}). \\
 \hline
-API & Application Programming Interface & Giao diện lập trình ứng dụng.\\
+CSRF & Cross-Site Request Forgery & Chống giả mạo yêu cầu liên trang qua cơ chế Double-Submit Cookie (\texttt{garage\_csrf} + \texttt{X-CSRF-Token}). \\
 \hline
-BYOK & Bring Your Own Key & Cơ chế cho phép người dùng tự cấu hình khóa API cá nhân.\\
+ERD & Entity-Relationship Diagram & Sơ đồ thực thể liên kết (21 bảng chuẩn 3NF, gồm 17 bảng nghiệp vụ lõi và 4 bảng mở rộng \texttt{shop\_*}). \\
 \hline
-CRUD & Create, Read, Update, Delete & Bốn thao tác dữ liệu cơ bản: Tạo mới, Đọc, Cập nhật, Xóa.\\
+HMAC & Hash-based Message Auth Code & Mã xác thực thông điệp SHA-256 dùng để ký phiên đăng nhập trên cookie \texttt{garage\_session}. \\
 \hline
-CSDL & Database & Cơ sở dữ liệu.\\
+IDOR & Insecure Direct Object Reference & Lỗ hổng truy cập trái phép bản ghi ngang hàng; được chặn bởi hàm \texttt{duoc\_gan\_cong} (\texttt{technician\_id == user.id}). \\
 \hline
-ERD & Entity Relationship Diagram & Sơ đồ thực thể liên kết biểu diễn cấu trúc dữ liệu quan hệ.\\
+LLM & Large Language Model & Mô hình ngôn ngữ lớn (\texttt{openai/gpt-oss-120b} trên Groq, \texttt{gemini-2.0-flash}, OpenRouter, OpenAI \texttt{gpt-4o-mini}). \\
 \hline
-HITL & Human-in-the-Loop & Cơ chế kiểm soát có con người thẩm định và phê duyệt.\\
+ODO & Odometer & Số công-tơ-mét đo tổng quãng đường xe đã di chuyển (\texttt{vehicles.odometer} và \texttt{odometer\_at\_intake}, đơn vị: km). \\
 \hline
-IDOR & Insecure Direct Object Reference & Lỗ hổng tham chiếu đối tượng trực tiếp không an toàn.\\
+RBAC & Role-Based Access Control & Phân quyền theo 4 vai trò trong \texttt{security\_matrix.py}: \texttt{MANAGER}, \texttt{RECEPTIONIST}, \texttt{TECHNICIAN}, \texttt{CASHIER}. \\
 \hline
-JSON & JavaScript Object Notation & Định dạng trao đổi dữ liệu văn bản có cấu trúc nhẹ.\\
+RO & Repair Order & Phiếu sửa chữa (\texttt{repair\_orders}), vận hành qua máy trạng thái 6 bước từ \texttt{RECEIVED} đến \texttt{COMPLETED} hoặc \texttt{CANCELLED}. \\
 \hline
-JWT & JSON Web Token & Chuẩn mã thông báo xác thực phiên làm việc có chữ ký số.\\
+SKU & Stock Keeping Unit & Mã định danh mặt hàng phụ tùng trong kho (\texttt{parts.sku}). \\
 \hline
-KPI & Key Performance Indicator & Chỉ số đo lường và đánh giá hiệu quả hoạt động cốt lõi.\\
+SPA / SSR & Single-Page App / Server-Side Rendering & Giao diện kép kết hợp React 19 + TanStack Start (\texttt{frontend/}) và Jinja2 SSR (\texttt{app/templates/}). \\
 \hline
-KTV & Technician & Kỹ thuật viên trực tiếp chẩn đoán và sửa chữa phương tiện.\\
+UAT & User Acceptance Testing & Kiểm thử chấp nhận người dùng (35 ca nghiệm thu theo 4 vai trò tại \texttt{USER\_ACCEPTANCE\_TEST.md}). \\
 \hline
-LLM & Large Language Model & Mô hình ngôn ngữ lớn.\\
+VIN & Vehicle Identification Number & Số khung định danh phương tiện (\texttt{vehicles.vin}, ràng buộc \texttt{UNIQUE}). \\
 \hline
-RAG & Retrieval-Augmented Generation & Kỹ thuật sinh văn bản tăng cường bằng truy xuất dữ liệu thực tế.\\
-\hline
-RBAC & Role-Based Access Control & Cơ chế kiểm soát truy cập dựa trên vai trò người dùng.\\
-\hline
-REST & Representational State Transfer & Kiến trúc giao tiếp dịch vụ web tiêu chuẩn qua giao thức HTTP.\\
-\hline
-RO & Repair Order & Phiếu sửa chữa (Lệnh sửa chữa phương tiện tại xưởng dịch vụ).\\
-\hline
-SKU & Stock Keeping Unit & Mã định danh duy nhất quản lý từng mặt hàng phụ tùng tồn kho.\\
-\hline
-SPA & Single Page Application & Ứng dụng web trang đơn phản hồi tức thời trên trình duyệt.\\
-\hline
-SSRF & Server-Side Request Forgery & Lỗ hổng giả mạo yêu cầu phía máy chủ.\\
-\hline
-UAT & User Acceptance Testing & Kiểm thử chấp nhận người dùng theo kịch bản nghiệp vụ.\\
-\hline
-VIN & Vehicle Identification Number & Số khung định danh duy nhất của phương tiện cơ giới (17 ký tự).\\
-\hline
-WAL & Write-Ahead Logging & Cơ chế ghi nhật ký trước giúp tăng hiệu năng đọc/ghi đồng thời.\\
+WAL & Write-Ahead Logging & Chế độ ghi nhật ký trước của SQLite 3 giúp đọc/ghi đồng thời ổn định và sao lưu nóng an toàn (\texttt{scripts/backup.ps1}). \\
 \hline
 \end{tabularx}
-\end{spacing}
+}

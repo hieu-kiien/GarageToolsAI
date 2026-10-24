@@ -214,9 +214,11 @@ def giai_thich_dich_vu(service_id):
     if dv is None:
         raise KhongTimThay('Không tìm thấy dịch vụ số %s.' % service_id)
 
-    user = get_settings().render_prompt(get_settings().load_prompt('explain.txt'),
-                                  service='Tên dịch vụ: %s\nMô tả trong danh mục: %s'
-                                          % (dv['name'], dv['description'] or '(danh mục chưa có mô tả)'))
+    gia_niemyet = format(dv['price'], ',').replace(',', '.')
+    user = get_settings().render_prompt(
+        get_settings().load_prompt('explain.txt'),
+        service='Tên dịch vụ: %s\nĐơn giá niêm yết: %s đồng\nMô tả trong danh mục: %s'
+                % (dv['name'], gia_niemyet, dv['description'] or '(danh mục chưa có mô tả)'))
     out = goi(get_settings().load_prompt('system.txt'), user)
 
     if out is None:                       # chế độ mock
@@ -228,7 +230,7 @@ def giai_thich_dich_vu(service_id):
             out = ('1. Dịch vụ là gì: %s\n'
                    '2. Hạng mục đang ghi nhận: %s\n'
                    '3. Khách cần lưu ý: Chi phí dự kiến %s đồng'
-                   % (dv['description'], dv['name'], format(dv['price'], ',').replace(',', '.')))
+                   % (dv['description'], dv['name'], gia_niemyet))
 
     return AiResult(kind='explain', repair_order_id=None,
                     input_json=json.dumps(_lay_input(user), ensure_ascii=False),
@@ -260,6 +262,23 @@ def bao_gia_nhap(order_id):
         ' WHERE i.repair_order_id = ?', (order_id,))
 
     backend_total = db.tong_phieu(order_id)
+
+    # Nếu phiếu chưa có hạng mục trực tiếp nhưng đang có báo giá nháp/chờ duyệt
+    # thì lấy danh sách hạng mục từ báo giá đó để tư vấn cho khách.
+    if not items:
+        bg = db.fetch_one(
+            "SELECT id FROM quotations WHERE repair_order_id = ?"
+            " AND status IN ('DRAFT', 'SENT', 'APPROVED') ORDER BY id DESC LIMIT 1",
+            (order_id,))
+        if bg:
+            items = db.fetch_all(
+                'SELECT i.id, COALESCE(s.name, pt.name) AS ten, i.qty, i.unit_price,'
+                '       i.unit_price * i.qty AS subtotal'
+                ' FROM quotation_items i'
+                ' LEFT JOIN services s ON s.id = i.service_id'
+                ' LEFT JOIN parts pt ON pt.id = i.part_id'
+                ' WHERE i.quotation_id = ?', (bg['id'],))
+            backend_total = sum(int(i['subtotal']) for i in items)
 
     if not items:
         return AiResult(kind='quote', repair_order_id=order_id,

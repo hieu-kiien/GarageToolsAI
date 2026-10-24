@@ -1,1261 +1,1684 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thuyết trình Đồ án AIA331 — Nhóm 23 — GarageTools AI</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GarageTools AI — Báo cáo Dự án Học phần AIA331 (Nhóm 23 - ICTU)</title>
 
-    <!-- Reveal.js 5.1 Official CDN -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/white.css" id="theme">
+  <!-- Font Be Vietnam Pro (Thiết kế chuyên biệt cho tiếng Việt) & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
 
-    <!-- Google Fonts: Be Vietnam Pro & JetBrains Mono -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+  <!-- Reveal.js 5 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
 
-    <!-- Lucide Icons & Chart.js -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      /* Bảng màu đồng bộ ICTU Royal Blue & Deep Navy */
+      --ictu-blue: #0054A6;
+      --brand-700: #1D4ED8;
+      --brand-600: #2563EB;
+      --brand-500: #3B82F6;
+      --brand-100: #DBEAFE;
+      --brand-50: #EFF6FF;
 
-    <style>
-        :root {
-            --r-main-font: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, sans-serif;
-            --r-heading-font: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, sans-serif;
-            --r-code-font: 'JetBrains Mono', monospace;
-            --r-main-color: #0F172A;
-            --r-heading-color: #0F172A;
-            --r-background-color: #F8FAFC;
-            --primary: #2563EB;
-            --primary-dark: #1D4ED8;
-            --sky: #0284C7;
-            --emerald: #059669;
-            --amber: #D97706;
-            --rose: #E11D48;
-            --violet: #7C3AED;
-        }
+      --navy-950: #070D1F;
+      --navy-900: #0B132B;
+      --navy-800: #152244;
+      --navy-700: #1E293B;
 
-        body {
-            background: #F4F7FB;
-            overflow: hidden;
-            font-family: var(--r-main-font);
-        }
+      --ink-900: #0F172A;
+      --ink-700: #334155;
+      --ink-500: #64748B;
+      --ink-400: #94A3B8;
 
-        /* =====================================================================
-           HIỆU ỨNG NỀN AURORA MÀU SÁNG TƯƠI TẮN (ANIMATED MESH BACKGROUND)
-           ===================================================================== */
-        .aurora-bg {
-            position: fixed;
-            inset: 0;
-            z-index: 0;
-            pointer-events: none;
-            overflow: hidden;
-            background:
-                radial-gradient(circle at 12% 18%, rgba(56, 189, 248, 0.18), transparent 38%),
-                radial-gradient(circle at 88% 15%, rgba(99, 102, 241, 0.15), transparent 36%),
-                radial-gradient(circle at 80% 85%, rgba(16, 185, 129, 0.14), transparent 38%),
-                radial-gradient(circle at 18% 85%, rgba(245, 158, 11, 0.12), transparent 35%),
-                linear-gradient(180deg, #F8FAFC 0%, #EFF6FF 100%);
-        }
+      --surface-white: #FFFFFF;
+      --surface-soft: #F8FAFC;
+      --surface-muted: #F1F5F9;
 
-        .aurora-blob {
-            position: absolute;
-            border-radius: 50%;
-            filter: blur(70px);
-            opacity: 0.55;
-            animation: floatBlob 16s infinite alternate ease-in-out;
-        }
-        .blob-1 { width: 420px; height: 420px; background: #BAE6FD; top: -100px; left: -80px; }
-        .blob-2 { width: 380px; height: 380px; background: #C7D2FE; bottom: -90px; right: -60px; animation-delay: -5s; }
-        .blob-3 { width: 300px; height: 300px; background: #A7F3D0; top: 40%; left: 55%; animation-delay: -10s; }
+      --border-light: #E2E8F0;
+      --border-strong: #CBD5E1;
 
-        @keyframes floatBlob {
-            0% { transform: translate(0, 0) scale(1); }
-            100% { transform: translate(40px, -30px) scale(1.12); }
-        }
+      --ok-bg: #ECFDF5;
+      --ok-text: #047857;
+      --ok-border: #A7F3D0;
 
-        /* Lưới chấm bi trang trí nhẹ nhàng */
-        .dot-pattern {
-            position: fixed;
-            inset: 0;
-            z-index: 0;
-            pointer-events: none;
-            background-image: radial-gradient(rgba(37, 99, 235, 0.12) 1px, transparent 1px);
-            background-size: 28px 28px;
-            mask-image: radial-gradient(ellipse at center, black 60%, transparent 100%);
-        }
+      --radius-xl: 18px;
+      --radius-lg: 14px;
+      --radius-md: 10px;
 
-        /* =====================================================================
-           REVEAL.JS OVERRIDES CHO BỐ CỤC HIỆN ĐẠI
-           ===================================================================== */
-        .reveal {
-            z-index: 1;
-        }
+      --shadow-card: 0 6px 24px -4px rgba(15, 23, 42, 0.06), 0 2px 6px -1px rgba(15, 23, 42, 0.03);
+      --shadow-screen: 0 20px 45px -10px rgba(15, 23, 42, 0.16), 0 6px 16px -4px rgba(15, 23, 42, 0.08);
+      --shadow-dark: 0 24px 50px -12px rgba(0, 0, 0, 0.45);
+    }
 
-        .reveal .slides {
-            text-align: left;
-        }
+    * {
+      box-sizing: border-box;
+    }
 
-        .reveal .slides section {
-            padding: 10px 20px;
-            box-sizing: border-box;
-        }
+    body {
+      margin: 0;
+      font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--surface-white);
+      color: var(--ink-900);
+      -webkit-font-smoothing: antialiased;
+    }
 
-        .reveal h1, .reveal h2, .reveal h3, .reveal h4 {
-            text-transform: none;
-            font-family: var(--r-heading-font);
-            letter-spacing: -0.02em;
-            margin: 0;
-        }
+    .reveal {
+      font-family: 'Be Vietnam Pro', sans-serif;
+      color: var(--ink-900);
+      background: var(--surface-white);
+    }
 
-        /* Thanh tiến trình của Reveal.js */
-        .reveal .progress {
-            height: 5px;
-            background: rgba(37, 99, 235, 0.12);
-        }
-        .reveal .progress span {
-            background: linear-gradient(90deg, #2563EB, #06B6D4, #10B981);
-        }
+    .reveal .slides {
+      text-align: left;
+    }
 
-        .reveal .slide-number {
-            background: rgba(255, 255, 255, 0.9);
-            color: #1E293B;
-            border: 1px solid #CBD5E1;
-            border-radius: 999px;
-            padding: 5px 14px;
-            font-family: var(--r-main-font);
-            font-weight: 700;
-            font-size: 13px;
-            bottom: 18px;
-            right: 85px;
-            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
-        }
+    .reveal .slides section {
+      padding: 0;
+      height: 100%;
+    }
 
-        /* =====================================================================
-           THÀNH PHẦN GIAO DIỆN TRANG TRÍ (CARDS, BADGES, GRADIENTS)
-           ===================================================================== */
-        .slide-shell {
-            display: flex;
-            flex-direction: column;
-            gap: 18px;
-            width: 100%;
-        }
+    /* =====================================================
+       KHUNG SLIDE SÁNG (LIGHT SLIDE) & TỐI (DARK SLIDE)
+       ===================================================== */
+    .slide-light {
+      width: 100%;
+      height: 100%;
+      padding: 28px 46px 24px 46px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      background-color: var(--surface-white);
+      background-image:
+        radial-gradient(circle at 96% 4%, rgba(37, 99, 235, 0.05) 0%, transparent 38%),
+        linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
+    }
 
-        .slide-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            border-bottom: 2px solid rgba(37, 99, 235, 0.12);
-            padding-bottom: 12px;
-        }
+    .slide-dark {
+      width: 100%;
+      height: 100%;
+      padding: 32px 48px 26px 48px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      background-color: var(--navy-900);
+      background-image:
+        radial-gradient(circle at 88% 14%, rgba(37, 99, 235, 0.28) 0%, transparent 45%),
+        radial-gradient(circle at 10% 90%, rgba(14, 165, 233, 0.14) 0%, transparent 40%),
+        linear-gradient(135deg, #070D1F 0%, #0B132B 55%, #111F42 100%);
+      color: #FFFFFF;
+    }
 
-        .kicker-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 7px;
-            padding: 5px 14px;
-            border-radius: 999px;
-            font-size: 13px;
-            font-weight: 700;
-            background: linear-gradient(135deg, rgba(37, 99, 235, 0.12), rgba(2, 132, 199, 0.12));
-            color: var(--primary);
-            border: 1px solid rgba(37, 99, 235, 0.25);
-            margin-bottom: 8px;
-        }
+    /* =====================================================
+       THANH ĐẦU TRANG (TOP HEADER BAR CÓ LOGO ICTU)
+       ===================================================== */
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding-bottom: 14px;
+      border-bottom: 1.5px solid var(--border-light);
+      flex-shrink: 0;
+    }
 
-        .title-gradient {
-            font-size: 36px !important;
-            font-weight: 800 !important;
-            line-height: 1.18 !important;
-            background: linear-gradient(135deg, #0F172A 0%, #1E3A8A 55%, #0284C7 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
+    .slide-dark .top-bar {
+      border-bottom-color: rgba(255, 255, 255, 0.14);
+    }
 
-        .phase-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 14px;
-            border-radius: 12px;
-            font-size: 13px;
-            font-weight: 700;
-            background: #FFFFFF;
-            border: 1px solid #E2E8F0;
-            color: #475569;
-            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
-            white-space: nowrap;
-        }
+    .top-bar-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
 
-        /* Thẻ kính sáng (Light Glassmorphism Cards) */
-        .glass-card {
-            background: rgba(255, 255, 255, 0.88);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(226, 232, 240, 0.95);
-            border-radius: 18px;
-            padding: 22px 24px;
-            box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.06), 0 2px 6px rgba(15, 23, 42, 0.03);
-            transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.28s ease, border-color 0.28s ease;
-            position: relative;
-            overflow: hidden;
-        }
+    .ictu-logo-chip {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: #FFFFFF;
+      padding: 3px;
+      box-shadow: 0 2px 10px rgba(0, 84, 166, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      border: 1.5px solid var(--brand-100);
+    }
 
-        .glass-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 18px 38px -8px rgba(37, 99, 235, 0.14);
-            border-color: rgba(37, 99, 235, 0.35);
-        }
+    .ictu-logo-chip img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      margin: 0 !important;
+      border-radius: 50%;
+    }
 
-        .glass-card::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, #2563EB, #38BDF8);
-        }
+    .section-tag {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--brand-600);
+      margin-bottom: 3px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
 
-        .glass-card.emerald::before { background: linear-gradient(90deg, #059669, #34D399); }
-        .glass-card.amber::before { background: linear-gradient(90deg, #D97706, #FBBF24); }
-        .glass-card.rose::before { background: linear-gradient(90deg, #E11D48, #FB7185); }
-        .glass-card.violet::before { background: linear-gradient(90deg, #7C3AED, #A78BFA); }
+    .slide-dark .section-tag {
+      color: #60A5FA;
+    }
 
-        .icon-box {
-            width: 42px;
-            height: 42px;
-            border-radius: 12px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            background: #EFF6FF;
-            color: #2563EB;
-            flex-shrink: 0;
-        }
-        .icon-box.emerald { background: #ECFDF5; color: #059669; }
-        .icon-box.amber { background: #FFFBEB; color: #D97706; }
-        .icon-box.rose { background: #FFF1F2; color: #E11D48; }
-        .icon-box.violet { background: #F5F3FF; color: #7C3AED; }
+    .slide-heading {
+      font-size: 30px !important;
+      font-weight: 800 !important;
+      line-height: 1.18 !important;
+      letter-spacing: -0.02em !important;
+      color: var(--ink-900) !important;
+      margin: 0 !important;
+    }
 
-        .card-head {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 12px;
-        }
+    .slide-dark .slide-heading {
+      color: #FFFFFF !important;
+    }
 
-        .card-head h3 {
-            font-size: 19px !important;
-            font-weight: 800 !important;
-            color: #0F172A;
-        }
+    .page-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 15px;
+      border-radius: 999px;
+      background: var(--surface-soft);
+      border: 1px solid var(--border-strong);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--ink-700);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
 
-        .feature-list {
-            list-style: none !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
+    .page-badge span {
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--brand-700);
+    }
 
-        .feature-list li {
-            font-size: 15.5px;
-            line-height: 1.5;
-            color: #334155;
-            display: flex;
-            align-items: flex-start;
-            gap: 9px;
-        }
+    .slide-dark .page-badge {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.18);
+      color: #E2E8F0;
+    }
 
-        .feature-list li i {
-            color: var(--primary);
-            width: 18px;
-            height: 18px;
-            flex-shrink: 0;
-            margin-top: 3px;
-        }
+    .slide-dark .page-badge span {
+      color: #60A5FA;
+    }
 
-        .code-chip {
-            font-family: var(--r-code-font);
-            font-size: 0.86em;
-            background: #EFF6FF;
-            color: #1D4ED8;
-            padding: 2px 7px;
-            border-radius: 6px;
-            border: 1px solid #BFDBFE;
-            font-weight: 600;
-        }
+    /* =====================================================
+       PHẦN THÂN SLIDE & CHÂN TRANG
+       ===================================================== */
+    .slide-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 18px;
+      min-height: 0;
+      padding: 10px 0;
+    }
 
-        /* =====================================================================
-           KHUNG TRÌNH DUYỆT MACBOOK HIỂN THỊ ẢNH THẬT & TƯƠNG TÁC
-           ===================================================================== */
-        .browser-mockup {
-            background: #FFFFFF;
-            border: 1px solid #CBD5E1;
-            border-radius: 16px;
-            box-shadow: 0 20px 45px -10px rgba(15, 23, 42, 0.14);
-            overflow: hidden;
-            cursor: zoom-in;
-            transition: transform 0.25s ease;
-        }
-        .browser-mockup:hover {
-            transform: scale(1.01);
-        }
+    .bottom-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 10px;
+      border-top: 1px solid var(--border-light);
+      font-size: 12.5px;
+      color: var(--ink-500);
+      font-weight: 500;
+      flex-shrink: 0;
+    }
 
-        .browser-bar {
-            background: #F1F5F9;
-            border-bottom: 1px solid #E2E8F0;
-            padding: 9px 14px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+    .slide-dark .bottom-bar {
+      border-top-color: rgba(255, 255, 255, 0.12);
+      color: #94A3B8;
+    }
 
-        .browser-dots {
-            display: flex;
-            gap: 6px;
-        }
-        .browser-dots span {
-            width: 11px;
-            height: 11px;
-            border-radius: 50%;
-        }
-        .dot-r { background: #FB7185; }
-        .dot-y { background: #FBBF24; }
-        .dot-g { background: #34D399; }
+    /* =====================================================
+       BỐ CỤC CHIA CỘT THOÁNG ĐÃNG
+       ===================================================== */
+    /* Bố cục Trình diễn Giao diện: 33% Chữ lớn bên trái - 67% Ảnh lớn bên phải */
+    .showcase-layout {
+      display: grid;
+      grid-template-columns: 34fr 66fr;
+      gap: 26px;
+      align-items: center;
+      height: 100%;
+    }
 
-        .browser-url {
-            flex: 1;
-            background: #FFFFFF;
-            border: 1px solid #E2E8F0;
-            border-radius: 6px;
-            padding: 3px 12px;
-            font-family: var(--r-code-font);
-            font-size: 11.5px;
-            color: #64748B;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
+    .hero-layout {
+      display: grid;
+      grid-template-columns: 43fr 57fr;
+      gap: 28px;
+      align-items: center;
+      height: 100%;
+    }
 
-        .browser-body {
-            background: #F8FAFC;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-        }
+    .cols-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 22px;
+    }
 
-        .browser-body img {
-            width: 100%;
-            height: auto;
-            max-height: 360px;
-            object-fit: contain;
-            margin: 0 !important;
-            transition: opacity 0.2s ease;
-        }
+    .cols-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+    }
 
-        /* Các nút bấm chuyển màn hình tương tác */
-        .interactive-pills {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-bottom: 10px;
-        }
+    .cols-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 22px;
+    }
 
-        .screen-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 7px 14px;
-            border-radius: 999px;
-            border: 1px solid #CBD5E1;
-            background: #FFFFFF;
-            color: #475569;
-            font-family: var(--r-main-font);
-            font-size: 13px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            box-shadow: 0 2px 5px rgba(15, 23, 42, 0.04);
-        }
+    /* =====================================================
+       CÁC THẺ NỘI DUNG (CARDS) CHỮ LỚN, THOÁNG
+       ===================================================== */
+    .feature-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
 
-        .screen-pill:hover {
-            border-color: var(--primary);
-            color: var(--primary);
-            transform: translateY(-1px);
-        }
+    .point-item {
+      background: var(--surface-soft);
+      border: 1px solid var(--border-light);
+      border-left: 4px solid var(--brand-600);
+      border-radius: var(--radius-lg);
+      padding: 16px 20px;
+      box-shadow: var(--shadow-card);
+    }
 
-        .screen-pill.active {
-            background: linear-gradient(135deg, #2563EB, #0284C7);
-            color: #FFFFFF;
-            border-color: transparent;
-            box-shadow: 0 6px 16px rgba(37, 99, 235, 0.28);
-        }
+    .point-title {
+      font-size: 18.5px !important;
+      font-weight: 700 !important;
+      color: var(--ink-900) !important;
+      margin: 0 0 6px 0 !important;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      line-height: 1.3 !important;
+    }
 
-        /* =====================================================================
-           SƠ ĐỒ DÒNG CHẢY ĐỘNG (ANIMATED WORKFLOW PIPELINE)
-           ===================================================================== */
-        .pipeline-row {
-            display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            gap: 10px;
-            position: relative;
-        }
+    .point-desc {
+      font-size: 15.5px;
+      line-height: 1.52;
+      color: var(--ink-700);
+      margin: 0;
+    }
 
-        .pipe-node {
-            background: #FFFFFF;
-            border: 1.5px solid #CBD5E1;
-            border-radius: 14px;
-            padding: 12px 10px;
-            text-align: center;
-            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
-            position: relative;
-            transition: all 0.2s ease;
-        }
+    .pillar-card {
+      background: var(--surface-white);
+      border: 1.5px solid var(--border-light);
+      border-radius: var(--radius-xl);
+      padding: 24px 24px;
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
 
-        .pipe-node:hover {
-            transform: translateY(-3px);
-            border-color: var(--primary);
-        }
+    .pillar-card.highlight {
+      border-color: var(--brand-600);
+      background: linear-gradient(180deg, #FFFFFF 0%, #F0F7FF 100%);
+    }
 
-        .pipe-step {
-            font-family: var(--r-code-font);
-            font-size: 11px;
-            font-weight: 700;
-            color: var(--primary);
-            background: #EFF6FF;
-            padding: 2px 8px;
-            border-radius: 999px;
-            display: inline-block;
-            margin-bottom: 4px;
-        }
+    .pillar-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: var(--brand-50);
+      border: 1px solid var(--brand-100);
+      color: var(--brand-700);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 18px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
 
-        .pipe-title {
-            font-size: 14px;
-            font-weight: 800;
-            color: #0F172A;
-        }
+    .pillar-card.highlight .pillar-icon {
+      background: var(--brand-600);
+      border-color: var(--brand-600);
+      color: #FFFFFF;
+    }
 
-        .pipe-sub {
-            font-size: 11.5px;
-            color: #64748B;
-            margin-top: 3px;
-            line-height: 1.3;
-        }
+    .pillar-title {
+      font-size: 21px !important;
+      font-weight: 800 !important;
+      color: var(--ink-900) !important;
+      margin: 0 !important;
+      line-height: 1.25 !important;
+    }
 
-        /* Ô KPI Đếm số tự động */
-        .kpi-grid-4 {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 16px;
-        }
+    .pillar-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 11px;
+    }
 
-        .kpi-stat {
-            background: rgba(255, 255, 255, 0.92);
-            border: 1px solid #E2E8F0;
-            border-radius: 16px;
-            padding: 16px 18px;
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            box-shadow: 0 8px 24px -4px rgba(15, 23, 42, 0.06);
-        }
+    .pillar-list li {
+      position: relative;
+      padding-left: 18px;
+      font-size: 16px;
+      line-height: 1.52;
+      color: var(--ink-700);
+    }
 
-        .kpi-num {
-            font-size: 28px;
-            font-weight: 900;
-            color: #0F172A;
-            line-height: 1.05;
-        }
+    .pillar-list li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 9px;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--brand-600);
+    }
 
-        .kpi-lbl {
-            font-size: 13px;
-            color: #64748B;
-            font-weight: 600;
-            margin-top: 3px;
-        }
+    .pillar-list li strong {
+      color: var(--ink-900);
+    }
 
-        /* Lightbox phóng to ảnh khi click */
-        .zoom-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(15, 23, 42, 0.88);
-            backdrop-filter: blur(8px);
-            z-index: 9999;
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 24px;
-            cursor: zoom-out;
-        }
-        .zoom-overlay.open {
-            display: flex;
-            animation: fadeIn 0.2s ease;
-        }
-        .zoom-overlay img {
-            max-width: 92vw;
-            max-height: 84vh;
-            border-radius: 14px;
-            background: #fff;
-            padding: 6px;
-            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
-        }
-        .zoom-caption {
-            color: #FFFFFF;
-            font-size: 16px;
-            font-weight: 700;
-            margin-top: 14px;
-            background: rgba(37, 99, 235, 0.9);
-            padding: 6px 18px;
-            border-radius: 999px;
-        }
+    /* Dark Cards (Dùng trên Slide nền tối) */
+    .dark-card {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: var(--radius-xl);
+      padding: 22px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      backdrop-filter: blur(8px);
+    }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: scale(0.96); }
-            to { opacity: 1; transform: scale(1); }
-        }
-    </style>
+    .dark-card.highlight {
+      background: rgba(37, 99, 235, 0.18);
+      border: 1.5px solid #60A5FA;
+    }
+
+    .dark-card h3 {
+      font-size: 21px !important;
+      font-weight: 800 !important;
+      color: #FFFFFF !important;
+      margin: 0 !important;
+    }
+
+    .dark-card p,
+    .dark-card li {
+      font-size: 15.5px;
+      line-height: 1.52;
+      color: #E2E8F0;
+    }
+
+    /* =====================================================
+       KHUNG ẢNH CHỤP MÀN HÌNH LỚN (1 BIG SCREENSHOT)
+       ===================================================== */
+    .browser-showcase {
+      background: var(--surface-white);
+      border: 1.5px solid var(--border-strong);
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      box-shadow: var(--shadow-screen);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .slide-dark .browser-showcase {
+      border-color: rgba(255, 255, 255, 0.22);
+      box-shadow: var(--shadow-dark);
+    }
+
+    .browser-topbar {
+      background: var(--navy-900);
+      color: #F8FAFC;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .slide-dark .browser-topbar {
+      background: #050914;
+    }
+
+    .browser-dots {
+      display: inline-flex;
+      gap: 6px;
+      margin-right: 10px;
+    }
+
+    .browser-dots i {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .browser-dots i:nth-child(1) { background: #EF4444; }
+    .browser-dots i:nth-child(2) { background: #F59E0B; }
+    .browser-dots i:nth-child(3) { background: #10B981; }
+
+    .zoom-hint {
+      font-size: 11.5px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.12);
+      color: #93C5FD;
+    }
+
+    .browser-body {
+      width: 100%;
+      background: #F1F5F9;
+      overflow: hidden;
+      cursor: zoom-in;
+      position: relative;
+    }
+
+    .browser-body img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: top center;
+      margin: 0 !important;
+      max-width: none !important;
+      max-height: none !important;
+      transition: transform 0.25s ease;
+    }
+
+    .browser-body:hover img {
+      transform: scale(1.012);
+    }
+
+    /* =====================================================
+       SƠ ĐỒ QUY TRÌNH NGANG & CHỐT NGUYÊN TẮC
+       ===================================================== */
+    .flow-steps-6 {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 12px;
+    }
+
+    .flow-node {
+      background: var(--surface-soft);
+      border: 1px solid var(--border-strong);
+      border-top: 4px solid var(--brand-600);
+      border-radius: var(--radius-md);
+      padding: 10px 12px;
+    }
+
+    .flow-node.cancel {
+      border-top-color: #475569;
+      background: #F1F5F9;
+    }
+
+    .flow-node-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--brand-700);
+    }
+
+    .flow-node-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--ink-900);
+      margin: 2px 0;
+    }
+
+    .flow-node-sub {
+      font-size: 12.5px;
+      color: var(--ink-700);
+      line-height: 1.35;
+    }
+
+    .banner-quote {
+      background: var(--navy-900);
+      color: #FFFFFF;
+      border-radius: var(--radius-xl);
+      padding: 18px 26px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      box-shadow: var(--shadow-card);
+    }
+
+    /* =====================================================
+       CON SỐ THỰC NGHIỆM LỚN (BIG METRICS)
+       ===================================================== */
+    .big-metric-card {
+      background: var(--surface-soft);
+      border: 1.5px solid var(--border-light);
+      border-radius: var(--radius-xl);
+      padding: 18px 20px;
+      text-align: center;
+      box-shadow: var(--shadow-card);
+    }
+
+    .big-metric-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 36px;
+      font-weight: 800;
+      color: var(--brand-700);
+      line-height: 1.1;
+    }
+
+    .big-metric-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--ink-900);
+      margin-top: 6px;
+    }
+
+    .big-metric-sub {
+      font-size: 13px;
+      color: var(--ink-500);
+      margin-top: 2px;
+    }
+
+    /* Thanh biểu đồ thời gian phản hồi */
+    .latency-row {
+      display: grid;
+      grid-template-columns: 230px 1fr 72px;
+      align-items: center;
+      gap: 12px;
+      font-size: 14.5px;
+      margin-bottom: 10px;
+    }
+
+    .latency-name {
+      font-weight: 600;
+      color: var(--ink-900);
+    }
+
+    .latency-bar-bg {
+      height: 12px;
+      background: var(--surface-muted);
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid var(--border-light);
+    }
+
+    .latency-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--brand-700), var(--brand-500));
+      border-radius: 999px;
+    }
+
+    .latency-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 14.5px;
+      color: var(--brand-700);
+      text-align: right;
+    }
+
+    /* Badges */
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 12.5px;
+      font-weight: 700;
+    }
+
+    .pill-blue {
+      background: var(--brand-50);
+      color: var(--brand-700);
+      border: 1px solid var(--brand-100);
+    }
+
+    .pill-green {
+      background: var(--ok-bg);
+      color: var(--ok-text);
+      border: 1px solid var(--ok-border);
+    }
+
+    /* Lightbox phóng to ảnh */
+    .lightbox-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(7, 13, 31, 0.90);
+      z-index: 9999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 28px;
+      cursor: zoom-out;
+    }
+
+    .lightbox-overlay.active {
+      display: flex;
+    }
+
+    .lightbox-box {
+      max-width: 94vw;
+      max-height: 90vh;
+      background: #FFFFFF;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.55);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .lightbox-head {
+      background: var(--navy-900);
+      color: #FFFFFF;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .lightbox-body {
+      overflow: auto;
+      max-height: calc(90vh - 48px);
+      background: #F8FAFC;
+    }
+
+    .lightbox-body img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+  </style>
 </head>
 <body>
 
-    <!-- Nền Aurora Màu Sáng Tươi Tắn -->
-    <div class="aurora-bg">
-        <div class="aurora-blob blob-1"></div>
-        <div class="aurora-blob blob-2"></div>
-        <div class="aurora-blob blob-3"></div>
-    </div>
-    <div class="dot-pattern"></div>
+  <div class="reveal">
+    <div class="slides">
 
-    <!-- REVEAL.JS PRESENTATION -->
-    <div class="reveal">
-        <div class="slides">
-
-            <!-- =========================================================
-                 SLIDE 1: TRANG BÌA (0:00 - 0:45)
-                 ========================================================= -->
-            <section data-transition="zoom">
-                <div class="slide-shell">
-                    <!-- Header Trường -->
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <div style="display:flex; align-items:center; gap:14px;">
-                            <img src="./GarageAI_Project/docs/latex_report/logo_ictu.png" alt="ICTU" style="height:54px; width:auto; margin:0; border-radius:10px; background:#fff; padding:4px; box-shadow:0 4px 12px rgba(0,0,0,0.06);" onerror="this.style.display='none'">
-                            <div>
-                                <div style="font-size:13px; font-weight:800; color:#1D4ED8; letter-spacing:0.5px;">TRƯỜNG ĐẠI HỌC CÔNG NGHỆ THÔNG TIN & TRUYỀN THÔNG — ĐHTN</div>
-                                <div style="font-size:13.5px; color:#64748B; font-weight:600;">Học phần: Ứng dụng Trí tuệ Nhân tạo (AIA331) · Mã đề tài: 80277</div>
-                            </div>
-                        </div>
-                        <span class="phase-badge">
-                            <i data-lucide="sparkles" style="width:16px;height:16px;color:#2563EB;"></i>
-                            Báo cáo Bảo vệ Đồ án · Nhóm 23
-                        </span>
-                    </div>
-
-                    <!-- Hero Split -->
-                    <div style="display:grid; grid-template-columns:1.1fr 1.1fr; gap:28px; align-items:center; margin-top:4px;">
-                        <div style="display:flex; flex-direction:column; gap:16px;">
-                            <div>
-                                <div class="kicker-pill">
-                                    <i data-lucide="car-front" style="width:15px;height:15px;"></i>
-                                    Hệ thống Quản trị Xưởng Dịch vụ Ô tô & AI
-                                </div>
-                                <h1 style="font-size:44px !important; font-weight:900 !important; line-height:1.12 !important; color:#0F172A;">
-                                    GARAGETOOLS <span style="background:linear-gradient(135deg,#2563EB,#06B6D4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">AI</span>
-                                </h1>
-                            </div>
-
-                            <p style="font-size:17px; line-height:1.58; color:#475569; margin:0;">
-                                Quản lý khép kín từ <strong>Đặt lịch → Tiếp nhận → Báo giá → Sổ cái Kho → Sửa chữa → Nghiệm thu → Hóa đơn → Bảo hành</strong>, kết hợp <strong>3 Trợ lý AI (AI01, AI02, AI03)</strong> có kiểm soát qua <strong>Human Review</strong>.
-                            </p>
-
-                            <div class="glass-card" style="padding:16px 20px;">
-                                <div style="display:grid; grid-template-columns:1.2fr 1fr; gap:12px;">
-                                    <div>
-                                        <div style="font-size:11.5px; font-weight:800; color:#64748B; text-transform:uppercase;">Sinh viên thực hiện (Nhóm 23)</div>
-                                        <div style="font-size:15.5px; font-weight:800; color:#0F172A; margin-top:4px;">1. Nguyễn Đức Dũng <span style="color:#2563EB;font-size:13px;">(Trưởng nhóm)</span></div>
-                                        <div style="font-size:15.5px; font-weight:800; color:#0F172A;">2. Đồng Quốc Khánh</div>
-                                    </div>
-                                    <div style="border-left:1px solid #E2E8F0; padding-left:14px;">
-                                        <div style="font-size:11.5px; font-weight:800; color:#64748B; text-transform:uppercase;">Giảng viên hướng dẫn</div>
-                                        <div style="font-size:16.5px; font-weight:800; color:#1D4ED8; margin-top:6px;">TS. Nguyễn Tuấn Anh</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Khung trình duyệt ảnh thật -->
-                        <div class="browser-mockup" onclick="zoomImage('./GarageAI_Project/screenshots/02_dashboard.png', 'Giao diện Tổng quan Xưởng (React 19 + TanStack Start)')">
-                            <div class="browser-bar">
-                                <div class="browser-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
-                                <div class="browser-url">
-                                    <span>http://localhost:3000/ — GarageTools AI (React 19)</span>
-                                    <span style="color:#2563EB;font-weight:700;">Bấm phóng to 🔍</span>
-                                </div>
-                            </div>
-                            <div class="browser-body">
-                                <img src="./GarageAI_Project/screenshots/02_dashboard.png" alt="Dashboard">
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 4 Ô Số liệu tự động đếm -->
-                    <div class="kpi-grid-4">
-                        <div class="kpi-stat">
-                            <div class="icon-box"><i data-lucide="database"></i></div>
-                            <div>
-                                <div class="kpi-num"><span class="count-up" data-target="21">21</span> bảng</div>
-                                <div class="kpi-lbl">CSDL SQLite WAL · 37 chỉ mục</div>
-                            </div>
-                        </div>
-                        <div class="kpi-stat">
-                            <div class="icon-box emerald"><i data-lucide="layout-dashboard"></i></div>
-                            <div>
-                                <div class="kpi-num"><span class="count-up" data-target="16">16</span> màn hình</div>
-                                <div class="kpi-lbl">React 19 + 4 Vai trò RBAC</div>
-                            </div>
-                        </div>
-                        <div class="kpi-stat">
-                            <div class="icon-box violet"><i data-lucide="bot"></i></div>
-                            <div>
-                                <div class="kpi-num"><span class="count-up" data-target="3">3</span> trợ lý AI</div>
-                                <div class="kpi-lbl">Đa Provider + Human Review</div>
-                            </div>
-                        </div>
-                        <div class="kpi-stat">
-                            <div class="icon-box amber"><i data-lucide="shield-check"></i></div>
-                            <div>
-                                <div class="kpi-num"><span class="count-up" data-target="226">226</span>/226</div>
-                                <div class="kpi-lbl">Ca Kiểm thử Tự động (100%)</div>
-                            </div>
-                        </div>
-                    </div>
+      <!-- =================================================================
+           SLIDE 01 [DARK HERO]: TRANG BÌA DỰ ÁN KẾT THÚC HỌC PHẦN (CÓ LOGO ICTU)
+           ================================================================= -->
+      <section>
+        <div class="slide-dark">
+          <!-- Header Trang Bìa với Logo Trường ICTU trang trọng -->
+          <div class="top-bar">
+            <div class="top-bar-left">
+              <div class="ictu-logo-chip" style="width: 62px; height: 62px;">
+                <img src="GarageAI_Project/docs/latex_report/logo_ictu.png" alt="Logo ICTU">
+              </div>
+              <div>
+                <div style="font-size: 13px; font-weight: 700; letter-spacing: 0.06em; color: #93C5FD; text-transform: uppercase;">
+                  ĐẠI HỌC THÁI NGUYÊN · TRƯỜNG ĐẠI HỌC CÔNG NGHỆ THÔNG TIN VÀ TRUYỀN THÔNG
                 </div>
-            </section>
-
-            <!-- =========================================================
-                 SLIDE 2: ĐẶT VẤN ĐỀ & RANH GIỚI AI (KT1) (0:45 - 1:40)
-                 ========================================================= -->
-            <section data-transition="slide">
-                <div class="slide-shell">
-                    <div class="slide-top">
-                        <div>
-                            <div class="kicker-pill"><i data-lucide="compass" style="width:15px;height:15px;"></i> 01 · Đặt vấn đề & Giai đoạn KT1</div>
-                            <h2 class="title-gradient">Thực trạng Quản lý Xưởng & Vì sao cần "Rào chắn" cho AI?</h2>
-                        </div>
-                        <span class="phase-badge">Cột mốc 1: KT1 · Phân tích & Thiết kế</span>
-                    </div>
-
-                    <div style="display:grid; grid-template-columns:1fr 1.1fr; gap:24px;">
-                        <!-- Cột trái: 3 Nỗi đau -->
-                        <div class="glass-card rose">
-                            <div class="card-head">
-                                <div class="icon-box rose"><i data-lucide="alert-triangle"></i></div>
-                                <h3>3 Rủi ro lớn tại Garage khi thiếu kiểm soát</h3>
-                            </div>
-                            <ul class="feature-list">
-                                <li class="fragment fade-up">
-                                    <i data-lucide="package-x" style="color:#E11D48;"></i>
-                                    <div><strong>Lệch tồn kho & xuất âm kho:</strong> Hai nhân viên cùng lấy phụ tùng cuối cùng gây âm kho; hủy phiếu quên hoàn kho; không đối soát được lịch sử xuất/nhập.</div>
-                                </li>
-                                <li class="fragment fade-up">
-                                    <i data-lucide="history" style="color:#E11D48;"></i>
-                                    <div><strong>Sai lệch lịch sử tài chính:</strong> Nếu lưu giá kiểu tra động từ danh mục, một lần đổi giá dịch vụ sẽ làm thay đổi tổng tiền của cả những hóa đơn đã thu trong quá khứ.</div>
-                                </li>
-                                <li class="fragment fade-up">
-                                    <i data-lucide="brain-circuit" style="color:#E11D48;"></i>
-                                    <div><strong>Ảo giác AI (Hallucination):</strong> Gọi LLM tự do dễ dẫn tới <em>tự bịa phụ tùng lạ</em>, <em>tự tính sai tổng tiền</em>, hoặc <em>chẩn đoán mò bệnh xe</em> gây nguy hiểm.</div>
-                                </li>
-                            </ul>
-                        </div>
-
-                        <!-- Cột phải: Quyết định ở KT1 -->
-                        <div class="glass-card">
-                            <div class="card-head">
-                                <div class="icon-box"><i data-lucide="check-check"></i></div>
-                                <h3>Quyết định Kiểm chứng của Nhóm ở KT1</h3>
-                            </div>
-                            <p style="font-size:14.5px; color:#64748B; margin:0 0 12px 0;">
-                                Nhóm áp dụng nguyên tắc: <strong>"AI dùng để sinh phương án — Con người kiểm chứng và quyết định"</strong>:
-                            </p>
-                            <ul class="feature-list">
-                                <li class="fragment fade-up">
-                                    <i data-lucide="ban" style="color:#D97706;"></i>
-                                    <div><strong>Bác bỏ gợi ý "AI tự chẩn đoán lỗi xe":</strong> Do rủi ro kỹ thuật cao và nằm ngoài dữ liệu kiểm chứng được. Chỉ giữ <strong>AI01, AI02, AI03</strong> bám sát 100% CSDL.</div>
-                                </li>
-                                <li class="fragment fade-up">
-                                    <i data-lucide="layers" style="color:#059669;"></i>
-                                    <div><strong>Chuẩn hóa Lược đồ & Luồng phiếu:</strong> Gộp tiền công vào đơn giá dịch vụ (<span class="code-chip">services.price</span>); bổ sung nhánh <span class="code-chip">CANCELLED</span> tự hoàn kho và vòng lặp kiểm tra lại.</div>
-                                </li>
-                                <li class="fragment fade-up">
-                                    <i data-lucide="shield-alert" style="color:#2563EB;"></i>
-                                    <div><strong>Nguyên tắc vàng xuyên suốt:</strong> <em>"AI chỉ trình bày văn bản tư vấn ở trạng thái Chờ duyệt (PENDING) — AI tuyệt đối không tự quyết định tiền."</em></div>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
+                <div style="font-size: 15px; font-weight: 600; color: #E2E8F0; margin-top: 2px;">
+                  Khoa Công nghệ Thông tin · Học phần Ứng dụng Trí tuệ Nhân tạo (AIA331)
                 </div>
-            </section>
+              </div>
+            </div>
+            <div class="page-badge">Báo cáo Dự án Học phần · <span>Đề tài 80277</span></div>
+          </div>
 
-            <!-- =========================================================
-                 SLIDE 3: KIẾN TRÚC & PHÂN QUYỀN RBAC (1:40 - 2:35)
-                 ========================================================= -->
-            <section data-transition="slide">
-                <div class="slide-shell">
-                    <div class="slide-top">
-                        <div>
-                            <div class="kicker-pill"><i data-lucide="layers" style="width:15px;height:15px;"></i> 02 · Kiến trúc Hệ thống & Bảo mật</div>
-                            <h2 class="title-gradient">Kiến trúc 4 Tầng Độc lập & Phân quyền 4 Vai trò (RBAC)</h2>
-                        </div>
-                        <span class="phase-badge">FastAPI + React 19 + SQLite WAL</span>
-                    </div>
-
-                    <!-- Sơ đồ 4 tầng ngang -->
-                    <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:14px;">
-                        <div class="glass-card" style="padding:16px 18px;">
-                            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
-                                <div class="icon-box"><i data-lucide="monitor"></i></div>
-                                <strong style="font-size:16px;color:#0F172A;">1. Giao diện Web</strong>
-                            </div>
-                            <div style="font-size:13.5px;color:#475569;line-height:1.45;">
-                                <strong>React 19 + TanStack Start</strong> (16 màn hình kết nối <span class="code-chip">/api/*</span>) + Giao diện Jinja2 tích hợp sẵn.
-                            </div>
-                        </div>
-
-                        <div class="glass-card emerald" style="padding:16px 18px;">
-                            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
-                                <div class="icon-box emerald"><i data-lucide="lock"></i></div>
-                                <strong style="font-size:16px;color:#0F172A;">2. Bảo mật & Phiên</strong>
-                            </div>
-                            <div style="font-size:13.5px;color:#475569;line-height:1.45;">
-                                Mật khẩu băm <strong>Argon2id</strong>, Cookie ký HMAC + cột <span class="code-chip">auth_version</span> hủy phiên tức thì, <strong>CSRF Token</strong> 2 lớp.
-                            </div>
-                        </div>
-
-                        <div class="glass-card violet" style="padding:16px 18px;">
-                            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
-                                <div class="icon-box violet"><i data-lucide="cpu"></i></div>
-                                <strong style="font-size:16px;color:#0F172A;">3. Dịch vụ & AI</strong>
-                            </div>
-                            <div style="font-size:13.5px;color:#475569;line-height:1.45;">
-                                11 module nghiệp vụ tại <span class="code-chip">services/</span> & lớp trung gian <span class="code-chip">ai_gateway.py</span> hỗ trợ 7 providers.
-                            </div>
-                        </div>
-
-                        <div class="glass-card amber" style="padding:16px 18px;">
-                            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
-                                <div class="icon-box amber"><i data-lucide="hard-drive"></i></div>
-                                <strong style="font-size:16px;color:#0F172A;">4. SQLite 3 (WAL)</strong>
-                            </div>
-                            <div style="font-size:13.5px;color:#475569;line-height:1.45;">
-                                <strong>21 bảng</strong> (17 bảng lõi + 4 bảng mở rộng), 37 chỉ mục, <span class="code-chip">foreign_keys=ON</span>, auto-migrate <span class="code-chip">001→005</span>.
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 4 Vai trò RBAC -->
-                    <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:14px;">
-                        <div class="glass-card fragment fade-up" style="padding:18px;">
-                            <span class="kicker-pill" style="margin-bottom:6px;">MANAGER · quan_ly</span>
-                            <h3 style="font-size:18px !important;font-weight:800 !important;">Quản lý Xưởng</h3>
-                            <p style="font-size:13.5px;color:#475569;margin-top:6px;line-height:1.45;">
-                                Toàn quyền điều hành, danh mục, nhân sự, duyệt báo giá, lập hóa đơn và <strong>duyệt kết quả AI (<span class="code-chip">ai.review</span>)</strong>.
-                            </p>
-                        </div>
-
-                        <div class="glass-card emerald fragment fade-up" style="padding:18px;">
-                            <span class="kicker-pill" style="margin-bottom:6px;color:#059669;background:#ECFDF5;border-color:#A7F3D0;">RECEPTIONIST · le_tan</span>
-                            <h3 style="font-size:18px !important;font-weight:800 !important;">Lễ tân Dịch vụ</h3>
-                            <p style="font-size:13.5px;color:#475569;margin-top:6px;line-height:1.45;">
-                                Tiếp nhận xe, đặt lịch, lập báo giá nháp, kho, bảo hành, chạy AI01–AI03. <strong>Bị chặn duyệt AI & duyệt báo giá.</strong>
-                            </p>
-                        </div>
-
-                        <div class="glass-card amber fragment fade-up" style="padding:18px;">
-                            <span class="kicker-pill" style="margin-bottom:6px;color:#D97706;background:#FFFBEB;border-color:#FDE68A;">TECHNICIAN · ky_thuat_vien</span>
-                            <h3 style="font-size:18px !important;font-weight:800 !important;">Kỹ thuật viên</h3>
-                            <p style="font-size:13.5px;color:#475569;margin-top:6px;line-height:1.45;">
-                                Thêm hạng mục, ghi nhật ký, đổi trạng thái sửa chữa. <strong>Cô lập theo phiếu: chỉ sửa được phiếu giao cho mình.</strong>
-                            </p>
-                        </div>
-
-                        <div class="glass-card rose fragment fade-up" style="padding:18px;">
-                            <span class="kicker-pill" style="margin-bottom:6px;color:#E11D48;background:#FFF1F2;border-color:#FECDD3;">CASHIER · thu_ngan</span>
-                            <h3 style="font-size:18px !important;font-weight:800 !important;">Thu ngân</h3>
-                            <p style="font-size:13.5px;color:#475569;margin-top:6px;line-height:1.45;">
-                                Xem hóa đơn, ghi nhận thu tiền từng phần/thu đủ, hủy khoản thu nhầm. <strong>Bị chặn sửa phiếu & chặn chạy AI.</strong>
-                            </p>
-                        </div>
-                    </div>
+          <!-- Nội dung Hero Chia 2 Cột -->
+          <div class="slide-content">
+            <div class="hero-layout">
+              <!-- Cột trái: Tên đề tài & Thông tin nhóm -->
+              <div style="display: flex; flex-direction: column; gap: 20px;">
+                <div>
+                  <span class="pill" style="background: rgba(59, 130, 246, 0.2); color: #93C5FD; border: 1px solid rgba(96, 165, 250, 0.4); margin-bottom: 14px;">
+                    Sản phẩm Phần mềm Web &amp; Trợ lý Trí tuệ Nhân tạo
+                  </span>
+                  <h1 style="font-size: 40px !important; font-weight: 800 !important; line-height: 1.18 !important; color: #FFFFFF !important; margin: 0 0 12px 0 !important; letter-spacing: -0.02em !important;">
+                    Hệ thống Quản lý Xưởng Dịch vụ Ô tô &amp; Trợ lý AI
+                  </h1>
+                  <p style="font-size: 17px; line-height: 1.55; color: #CBD5E1; margin: 0;">
+                    Số hóa khép kín quy trình từ tiếp nhận xe, lập báo giá, xuất kho phụ tùng đến hóa đơn — kết hợp Trợ lý AI tư vấn có kiểm duyệt.
+                  </p>
                 </div>
-            </section>
 
-            <!-- =========================================================
-                 SLIDE 4: 4 CHỐT CHẶN TOÀN VẸN DỮ LIỆU (KT2 & KT3 REVIEW) (2:35 - 3:45)
-                 ========================================================= -->
-            <section data-transition="convex">
-                <div class="slide-shell">
-                    <div class="slide-top">
-                        <div>
-                            <div class="kicker-pill"><i data-lucide="shield" style="width:15px;height:15px;"></i> 03 · Điểm nhấn Kỹ thuật CSDL (KT2 & KT3 AI Review)</div>
-                            <h2 class="title-gradient">4 Chốt chặn Bảo vệ Tuyệt đối Tiền tệ & Tồn kho</h2>
-                        </div>
-                        <span class="phase-badge">Cột mốc 2 & 3: KT2 Lập trình · KT3 Review Code</span>
-                    </div>
-
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
-                        <div class="glass-card emerald fragment fade-up">
-                            <div class="card-head">
-                                <div class="icon-box emerald"><i data-lucide="coins"></i></div>
-                                <h3>1. Tiền tệ Nguyên (INTEGER) & Chốt giá Lịch sử</h3>
-                            </div>
-                            <ul class="feature-list">
-                                <li><i data-lucide="check-circle-2"></i><div><strong>Sửa lỗi AI dùng số thực <span class="code-chip">FLOAT</span>:</strong> Chuyển toàn bộ cột tiền sang số nguyên <span class="code-chip">INTEGER</span> (tính bằng đồng), loại bỏ 100% sai số làm tròn.</div></li>
-                                <li><i data-lucide="check-circle-2"></i><div><strong>Chốt cứng <span class="code-chip">unit_price</span> từ CSDL:</strong> Bỏ qua mọi mức giá từ trình duyệt gửi lên; chốt giá ngay lúc thêm hạng mục. Đổi giá danh mục không làm thay đổi hóa đơn cũ.</div></li>
-                            </ul>
-                        </div>
-
-                        <div class="glass-card fragment fade-up">
-                            <div class="card-head">
-                                <div class="icon-box"><i data-lucide="git-Fork"></i></div>
-                                <h3>2. Ràng buộc CHECK XOR (Dịch vụ ⊕ Phụ tùng)</h3>
-                            </div>
-                            <ul class="feature-list">
-                                <li><i data-lucide="check-circle-2"></i><div><strong>Phát hiện từ đợt AI Review (KT3-09):</strong> Ngăn chặn trường hợp một dòng hạng mục vừa rỗng cả hai hoặc vừa có cả Dịch vụ lẫn Phụ tùng.</div></li>
-                                <li><i data-lucide="check-circle-2"></i><div><strong>Áp dụng trên cả 3 bảng:</strong> <span class="code-chip">repair_order_items</span>, <span class="code-chip">quotation_items</span> và <span class="code-chip">warranties</span> đều bắt buộc đúng 1 trong 2 khóa ngoại.</div></li>
-                            </ul>
-                        </div>
-
-                        <div class="glass-card amber fragment fade-up">
-                            <div class="card-head">
-                                <div class="icon-box amber"><i data-lucide="book-open-check"></i></div>
-                                <h3>3. Sổ cái Tồn kho Bất biến (Stock Ledger)</h3>
-                            </div>
-                            <ul class="feature-list">
-                                <li><i data-lucide="check-circle-2"></i><div>Mọi thay đổi <span class="code-chip">parts.stock</span> bắt buộc đi qua <span class="code-chip">stock_transactions</span> theo 4 lý do: <span class="code-chip">RECEIPT</span>, <span class="code-chip">USAGE</span>, <span class="code-chip">RETURN</span>, <span class="code-chip">ADJUSTMENT</span>.</div></li>
-                                <li><i data-lucide="check-circle-2"></i><div><strong>Bất biến:</strong> <span class="code-chip">parts.stock == SUM(ledger.qty)</span>. Khi gỡ hạng mục hoặc hủy phiếu, hệ thống tự động hoàn kho (<span class="code-chip">RETURN</span>).</div></li>
-                            </ul>
-                        </div>
-
-                        <div class="glass-card rose fragment fade-up">
-                            <div class="card-head">
-                                <div class="icon-box rose"><i data-lucide="zap"></i></div>
-                                <h3>4. Khóa Nguyên tử <span class="code-chip">BEGIN IMMEDIATE</span></h3>
-                            </div>
-                            <ul class="feature-list">
-                                <li><i data-lucide="check-circle-2"></i><div><strong>Chống xuất âm kho khi 2 người bấm cùng lúc:</strong> Kiểm tra ngay trong SQL: <span class="code-chip">UPDATE parts SET stock = stock + ? WHERE id = ? AND stock + ? &gt;= 0</span>.</div></li>
-                                <li><i data-lucide="check-circle-2"></i><div><strong>Chống thu tiền vượt nợ:</strong> <span class="code-chip">UPDATE invoices SET paid = paid + ? WHERE id = ? AND total - paid &gt;= ?</span> (vượt nợ chặn ngay HTTP 409).</div></li>
-                            </ul>
-                        </div>
-                    </div>
+                <!-- Khung thông tin Giảng viên & Nhóm -->
+                <div class="dark-card" style="padding: 18px 22px; gap: 10px;">
+                  <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.12); padding-bottom: 10px;">
+                    <span style="color: #94A3B8; font-size: 15px;">Giảng viên hướng dẫn:</span>
+                    <strong style="color: #FFFFFF; font-size: 16px;">TS. Nguyễn Tuấn Anh</strong>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.12); padding-bottom: 10px;">
+                    <span style="color: #94A3B8; font-size: 15px;">Nhóm thực hiện:</span>
+                    <strong style="color: #60A5FA; font-size: 16px;">Nhóm 23</strong>
+                  </div>
+                  <div style="display: flex; justify-content: space-between;">
+                    <span style="color: #94A3B8; font-size: 15px;">Sinh viên thực hiện:</span>
+                    <strong style="color: #FFFFFF; font-size: 15.5px;">Nguyễn Đức Dũng · Đồng Quốc Khánh</strong>
+                  </div>
                 </div>
-            </section>
+              </div>
 
-            <!-- =========================================================
-                 SLIDE 5: QUY TRÌNH 6 TRẠNG THÁI & TRẢI NGHIỆM 16 MÀN HÌNH (3:45 - 4:50)
-                 ========================================================= -->
-            <section data-transition="slide">
-                <div class="slide-shell">
-                    <div class="slide-top">
-                        <div>
-                            <div class="kicker-pill"><i data-lucide="workflow" style="width:15px;height:15px;"></i> 04 · Vòng đời Phiếu sửa chữa & Giao diện Thực tế</div>
-                            <h2 class="title-gradient">Quy trình Khép kín 6 Trạng thái & 16 Màn hình React 19</h2>
-                        </div>
-                        <span class="phase-badge">Bấm chọn các nút bên dưới để xem từng màn hình 👇</span>
-                    </div>
-
-                    <!-- Dòng chảy 6 trạng thái -->
-                    <div class="pipeline-row">
-                        <div class="pipe-node">
-                            <span class="pipe-step">1. RECEIVED</span>
-                            <div class="pipe-title">Đã tiếp nhận</div>
-                            <div class="pipe-sub">Biên bản ODO, xăng, ngoại thất</div>
-                        </div>
-                        <div class="pipe-node">
-                            <span class="pipe-step">2. INSPECTING</span>
-                            <div class="pipe-title">Đang kiểm tra</div>
-                            <div class="pipe-sub">Giao KTV & ghi nhật ký</div>
-                        </div>
-                        <div class="pipe-node">
-                            <span class="pipe-step">3. ESTIMATING</span>
-                            <div class="pipe-title">Đang báo giá</div>
-                            <div class="pipe-sub">Duyệt & áp dụng 1 lần</div>
-                        </div>
-                        <div class="pipe-node">
-                            <span class="pipe-step">4. REPAIRING</span>
-                            <div class="pipe-title">Đang sửa chữa</div>
-                            <div class="pipe-sub">Trừ kho qua Sổ cái</div>
-                        </div>
-                        <div class="pipe-node" style="border-color:#059669;background:#ECFDF5;">
-                            <span class="pipe-step" style="background:#D1FAE5;color:#059669;">5. COMPLETED</span>
-                            <div class="pipe-title">Đã hoàn thành</div>
-                            <div class="pipe-sub">Nghiệm thu → Hóa đơn → Bảo hành</div>
-                        </div>
-                        <div class="pipe-node" style="border-color:#E11D48;background:#FFF1F2;">
-                            <span class="pipe-step" style="background:#FFE4E6;color:#E11D48;">6. CANCELLED</span>
-                            <div class="pipe-title">Đã hủy phiếu</div>
-                            <div class="pipe-sub">Tự động RETURN tồn kho</div>
-                        </div>
-                    </div>
-
-                    <!-- Bộ chuyển đổi ảnh màn hình tương tác trực tiếp -->
-                    <div>
-                        <div class="interactive-pills">
-                            <button class="screen-pill active" onclick="changeDemo(this, './GarageAI_Project/screenshots/06_phuong_tien.png', 'http://localhost:3000/workflow — Bảng điều phối Kanban trực quan theo trạng thái phiếu')">
-                                1. Điều phối Kanban
-                            </button>
-                            <button class="screen-pill" onclick="changeDemo(this, './GarageAI_Project/screenshots/04_chi_tiet_phieu.png', 'http://localhost:3000/repair-orders/1 — Chi tiết phiếu, Biên bản tiếp nhận, Hạng mục & Nghiệm thu')">
-                                2. Chi tiết Phiếu & Nghiệm thu
-                            </button>
-                            <button class="screen-pill" onclick="changeDemo(this, './GarageAI_Project/screenshots/10_lich_su.png', 'http://localhost:3000/quotations — Báo giá chính thức (Duyệt & Áp dụng Idempotent đúng 1 lần)')">
-                                3. Báo giá Idempotent
-                            </button>
-                            <button class="screen-pill" onclick="changeDemo(this, './GarageAI_Project/screenshots/14_cua_hang.png', 'http://localhost:3000/inventory — Kho phụ tùng & Sổ cái xuất nhập tồn (Đối soát lệch = 0)')">
-                                4. Kho & Sổ cái
-                            </button>
-                            <button class="screen-pill" onclick="changeDemo(this, './GarageAI_Project/screenshots/18_loi_thanh_toan.png', 'http://localhost:3000/finance — Hóa đơn & Chặn HTTP 409 khi thu vượt số tiền còn phải trả')">
-                                5. Chặn Thu vượt (409)
-                            </button>
-                            <button class="screen-pill" onclick="changeDemo(this, './GarageAI_Project/screenshots/15_khong_co_quyen.png', 'http://localhost:3000/users — Kiểm soát RBAC: Kỹ thuật viên bị chặn truy cập trang Quản trị')">
-                                6. Chặn Phân quyền (403)
-                            </button>
-                        </div>
-
-                        <div class="browser-mockup" onclick="zoomImage(document.getElementById('liveDemoImg').src, document.getElementById('liveDemoUrl').textContent)">
-                            <div class="browser-bar">
-                                <div class="browser-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
-                                <div class="browser-url">
-                                    <span id="liveDemoUrl">http://localhost:3000/workflow — Bảng điều phối Kanban trực quan theo trạng thái phiếu</span>
-                                    <span style="color:#2563EB;font-weight:700;">Bấm vào ảnh để phóng to 🔍</span>
-                                </div>
-                            </div>
-                            <div class="browser-body">
-                                <img id="liveDemoImg" src="./GarageAI_Project/screenshots/06_phuong_tien.png" alt="Demo Screen" style="max-height:295px;">
-                            </div>
-                        </div>
-                    </div>
+              <!-- Cột phải: 1 Ảnh lớn màn hình Dashboard -->
+              <div class="browser-showcase">
+                <div class="browser-topbar">
+                  <div>
+                    <span class="browser-dots"><i></i><i></i><i></i></span>
+                    <span>Giao diện Bảng điều khiển Tổng quan (GarageTools AI)</span>
+                  </div>
+                  <span class="zoom-hint">Bấm vào ảnh để phóng to</span>
                 </div>
-            </section>
-
-            <!-- =========================================================
-                 SLIDE 6: 3 CHỨC NĂNG AI, CHỐNG ẢO GIÁC & HUMAN REVIEW (4:50 - 5:50)
-                 ========================================================= -->
-            <section data-transition="convex">
-                <div class="slide-shell">
-                    <div class="slide-top">
-                        <div>
-                            <div class="kicker-pill"><i data-lucide="bot" style="width:15px;height:15px;"></i> 05 · Giai đoạn KT3 — Tích hợp AI & Human-in-the-Loop</div>
-                            <h2 class="title-gradient">3 Chức năng AI, Bộ lọc Chống Ảo giác & Duyệt Human Review</h2>
-                        </div>
-                        <span class="phase-badge">Cột mốc 3: KT3 · Prompt & AI Gateway</span>
-                    </div>
-
-                    <div style="display:grid; grid-template-columns:1.15fr 1fr; gap:22px; align-items:center;">
-                        <div style="display:flex; flex-direction:column; gap:14px;">
-                            <!-- 3 Chức năng AI -->
-                            <div class="glass-card" style="padding:16px 20px;">
-                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                                    <strong style="font-size:16.5px;color:#1D4ED8;">AI01 · Tóm tắt Lịch sử Xe (<span class="code-chip">history.txt</span>)</strong>
-                                    <span class="code-chip">{{repair_history}}</span>
-                                </div>
-                                <p style="font-size:14px;color:#475569;margin:0;">Tổng hợp đúng 4 mục từ lịch sử sửa chữa thật. Xe mới báo rõ chưa có lịch sử; <strong>cấm suy đoán nguyên nhân lỗi mới</strong>.</p>
-                            </div>
-
-                            <div class="glass-card emerald" style="padding:16px 20px;">
-                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                                    <strong style="font-size:16.5px;color:#059669;">AI02 · Giải thích Dịch vụ (<span class="code-chip">explain.txt</span>)</strong>
-                                    <span class="code-chip">{{service}}</span>
-                                </div>
-                                <p style="font-size:14px;color:#475569;margin:0;">Chuyển thuật ngữ sang ngôn ngữ dễ hiểu cho chủ xe. <strong>Ca biên bắt buộc:</strong> Khi dịch vụ trống mô tả (<span class="code-chip">NULL</span>), vẫn chạy tốt, không lỗi 500.</p>
-                            </div>
-
-                            <div class="glass-card amber" style="padding:16px 20px;">
-                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                                    <strong style="font-size:16.5px;color:#D97706;">AI03 · Báo giá Nháp JSON (<span class="code-chip">quote.txt</span>)</strong>
-                                    <span class="code-chip">{{backend_total}}</span>
-                                </div>
-                                <p style="font-size:14px;color:#475569;margin:0;"><strong>Chống ảo giác tuyệt đối tại <span class="code-chip">ai_gateway.py</span>:</strong> Lọc chỉ giữ dòng khớp 100% Tên, Số lượng, Đơn giá với CSDL; nếu AI cộng sai tổng thì <strong>cưỡng bức dùng <span class="code-chip">backend_total</span></strong>; tự động Fallback sang <span class="code-chip">mock</span> khi lỗi 429/Timeout.</p>
-                            </div>
-                        </div>
-
-                        <!-- Cột phải: Human Review + Ảnh chụp thật -->
-                        <div style="display:flex; flex-direction:column; gap:12px;">
-                            <div class="glass-card violet" style="padding:16px 20px;">
-                                <div style="font-size:16px;font-weight:800;color:#6D28D9;margin-bottom:6px;">
-                                    👤 Quy trình Human Review (<span class="code-chip">ai_results</span>)
-                                </div>
-                                <div style="font-size:13.8px;color:#334155;line-height:1.5;">
-                                    • Mọi kết quả AI mới sinh ra luôn ở trạng thái <strong><span class="code-chip">PENDING</span> (Chờ duyệt)</strong>.<br>
-                                    • Chỉ <strong>Quản lý (<span class="code-chip">ai.review</span>)</strong> mới được duyệt <span class="code-chip">APPROVED</span> / <span class="code-chip">REJECTED</span> (ghi đủ người duyệt, giờ duyệt và <strong>chặn duyệt lại lần 2</strong>).
-                                </div>
-                            </div>
-
-                            <div class="browser-mockup" onclick="zoomImage('./GarageAI_Project/screenshots/13_duyet_ai.png', 'Màn hình Hàng đợi Duyệt kết quả AI (Human-in-the-Loop)')">
-                                <div class="browser-bar">
-                                    <div class="browser-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
-                                    <div class="browser-url">
-                                        <span>http://localhost:3000/ai-review — Hàng đợi Human Review</span>
-                                        <span style="color:#2563EB;font-weight:700;">Phóng to 🔍</span>
-                                    </div>
-                                </div>
-                                <div class="browser-body">
-                                    <img src="./GarageAI_Project/screenshots/13_duyet_ai.png" alt="Duyệt AI" style="max-height:215px;">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                <div class="browser-body" style="height: 415px;" onclick="openLightbox('GarageAI_Project/screenshots/02_dashboard.png', 'Giao diện Tổng quan Hệ thống GarageTools AI')">
+                  <img src="GarageAI_Project/screenshots/02_dashboard.png" alt="Màn hình Tổng quan GarageTools AI">
                 </div>
-            </section>
+              </div>
+            </div>
+          </div>
 
-            <!-- =========================================================
-                 SLIDE 7: THỰC NGHIỆM MÔ HÌNH THẬT & KIỂM THỬ CUỐI KỲ (5:50 - 6:30)
-                 ========================================================= -->
-            <section data-transition="slide">
-                <div class="slide-shell">
-                    <div class="slide-top">
-                        <div>
-                            <div class="kicker-pill"><i data-lucide="bar-chart-3" style="width:15px;height:15px;"></i> 06 · Giai đoạn Cuối kỳ (CK) — Thực nghiệm & Kiểm thử</div>
-                            <h2 class="title-gradient">Đo Độ trễ Mô hình Thật (Groq) & 4 Tầng Kiểm thử Đạt 100%</h2>
-                        </div>
-                        <span class="phase-badge">Cột mốc 4: Cuối kỳ (CK) · 54/54 Tiêu chí</span>
-                    </div>
-
-                    <div style="display:grid; grid-template-columns:1fr 1.15fr; gap:22px;">
-                        <!-- Biểu đồ 1: Độ trễ Groq -->
-                        <div class="glass-card">
-                            <div class="card-head">
-                                <div class="icon-box"><i data-lucide="gauge"></i></div>
-                                <h3>Độ trễ trên Groq (<span class="code-chip">openai/gpt-oss-120b</span>)</h3>
-                            </div>
-                            <p style="font-size:13.5px;color:#64748B;margin:0 0 10px 0;">
-                                Đo thực nghiệm qua HTTP thật — tất cả đều <strong>nhanh hơn 2.5–4 lần</strong> so với trần yêu cầu Cuối kỳ (<span class="code-chip">CK-07 &lt; 10 giây</span>):
-                            </p>
-                            <div style="height:220px; position:relative;">
-                                <canvas id="groqLatencyChart"></canvas>
-                            </div>
-                        </div>
-
-                        <!-- Biểu đồ 2: Hệ thống Kiểm thử -->
-                        <div class="glass-card emerald">
-                            <div class="card-head">
-                                <div class="icon-box emerald"><i data-lucide="check-Check"></i></div>
-                                <h3>Tổng hợp Kiểm thử Tự động & Vận hành Thực tế</h3>
-                            </div>
-                            <p style="font-size:13.5px;color:#64748B;margin:0 0 10px 0;">
-                                Chạy tự động qua <span class="code-chip">tests/run_all.py</span>, <span class="code-chip">smoke.ps1</span>, <span class="code-chip">e2e.ps1</span> (đối soát sổ cái kho lệch = 0) & GitHub Actions CI:
-                            </p>
-                            <div style="height:220px; position:relative;">
-                                <canvas id="testSuiteChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- =========================================================
-                 SLIDE 8: GIỚI HẠN HIỆN TẠI, HƯỚNG PHÁT TRIỂN & LỜI CẢM ƠN (6:30 - 7:00)
-                 ========================================================= -->
-            <section data-transition="zoom">
-                <div class="slide-shell">
-                    <div class="slide-top">
-                        <div>
-                            <div class="kicker-pill"><i data-lucide="rocket" style="width:15px;height:15px;"></i> 07 · Đánh giá Khách quan & Kết luận Đồ án</div>
-                            <h2 class="title-gradient">Các Vấn đề Chưa Xử lý, Hướng Mở rộng & Tổng kết</h2>
-                        </div>
-                        <span class="phase-badge">Nhóm 23 · GarageTools AI</span>
-                    </div>
-
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
-                        <div class="glass-card amber">
-                            <div class="card-head">
-                                <div class="icon-box amber"><i data-lucide="Sliders"></i></div>
-                                <h3>Giới hạn Hiện tại (Chủ đích An toàn)</h3>
-                            </div>
-                            <ul class="feature-list">
-                                <li><i data-lucide="circle-dot" style="color:#D97706;"></i><div><strong>Duyệt AI03 dừng ở văn bản tư vấn (<span class="code-chip">ai_results</span>):</strong> Chưa tự động tạo bản ghi sang bảng <span class="code-chip">quotations</span> để tách bạch tuyệt đối dữ liệu AI và chứng từ tài chính.</div></li>
-                                <li><i data-lucide="circle-dot" style="color:#D97706;"></i><div><strong>Trừ kho trực tiếp (<span class="code-chip">USAGE</span>):</strong> Chưa tách bước <em>"Giữ kho tạm thời (Soft Reservation)"</em> trong lúc báo giá đang gửi chờ khách duyệt (<span class="code-chip">SENT</span>).</div></li>
-                                <li><i data-lucide="circle-dot" style="color:#D97706;"></i><div><strong>Quy mô 1 Xưởng độc lập:</strong> SQLite WAL + <span class="code-chip">BEGIN IMMEDIATE</span> khóa ghi mức toàn file, tối ưu cho 1 garage (5–30 người) nhưng chưa dành cho chuỗi đa chi nhánh.</div></li>
-                            </ul>
-                        </div>
-
-                        <div class="glass-card">
-                            <div class="card-head">
-                                <div class="icon-box"><i data-lucide="sparkles"></i></div>
-                                <h3>Lộ trình Phát triển Tiếp theo</h3>
-                            </div>
-                            <ul class="feature-list">
-                                <li><i data-lucide="arrow-up-right"></i><div><strong>Nâng cấp Đa chi nhánh & Bất đồng bộ:</strong> Chuyển sang <strong>PostgreSQL</strong> (<span class="code-chip">SELECT ... FOR UPDATE</span>) và đưa lời gọi AI vào hàng đợi nền (Background Queue / SSE).</div></li>
-                                <li><i data-lucide="arrow-up-right"></i><div><strong>Kết nối Phần cứng OBD-II & Vision AI:</strong> Đọc tự động mã lỗi từ cổng <strong>OBD-II</strong> trên xe và dùng mô hình thị giác phân tích ảnh chụp vết trầy xước lúc tiếp nhận.</div></li>
-                                <li><i data-lucide="arrow-up-right"></i><div><strong>Tích hợp Thanh toán & Thuế:</strong> Tách cột thuế VAT/chiết khấu, kết nối Webhook gạch nợ <strong>VietQR</strong> và Hóa đơn điện tử.</div></li>
-                            </ul>
-                        </div>
-                    </div>
-
-                    <!-- Banner Cảm ơn Trang trọng -->
-                    <div class="glass-card emerald" style="padding:18px 28px; text-align:center; background:linear-gradient(135deg, rgba(255,255,255,0.95), rgba(236,253,245,0.95));">
-                        <div style="font-size:24px; font-weight:900; color:#0F172A;">
-                            Xin trân trọng cảm ơn Thầy/Cô và các bạn đã lắng nghe!
-                        </div>
-                        <div style="font-size:15px; color:#475569; margin-top:4px; font-weight:600;">
-                            Nhóm 23 (Nguyễn Đức Dũng & Đồng Quốc Khánh) xin phép được lắng nghe câu hỏi từ Hội đồng ạ.
-                        </div>
-                    </div>
-                </div>
-            </section>
-
+          <div class="bottom-bar">
+            <span><strong>GarageTools AI</strong> · Trường Đại học Công nghệ Thông tin và Truyền thông (ICTU)</span>
+            <span>Slide 01 / 12 · Dùng phím <strong>→</strong> hoặc <strong>Space</strong> để trình chiếu</span>
+          </div>
         </div>
+      </section>
+
+      <!-- =================================================================
+           SLIDE 02 [LIGHT]: BỐI CẢNH THỰC TẾ & BÀI TOÁN ĐẶT RA
+           ================================================================= -->
+      <section>
+        <div class="slide-light">
+          <div class="top-bar">
+            <div class="top-bar-left">
+              <div class="ictu-logo-chip">
+                <img src="GarageAI_Project/docs/latex_report/logo_ictu.png" alt="ICTU">
+              </div>
+              <div>
+                <div class="section-tag">PHẦN 1 · BỐI CẢNH &amp; ĐẶT VẤN ĐỀ</div>
+                <h2 class="slide-heading">3 Bài toán Thực tế tại Xưởng Dịch vụ Ô tô</h2>
+              </div>
+            </div>
+            <div class="page-badge">Slide <span>02 / 12</span></div>
+          </div>
+
+          <div class="slide-content">
+            <div class="cols-3">
+              <div class="pillar-card">
+                <div class="pillar-icon">01</div>
+                <h3 class="pillar-title">Lệch tồn kho &amp; Nhảy giá cũ</h3>
+                <ul class="pillar-list">
+                  <li><strong>Dễ lệch kho:</strong> Hủy phiếu sửa chữa giữa chừng nhưng quên cộng trả lại phụ tùng vào kho.</li>
+                  <li><strong>Sai hóa đơn cũ:</strong> Khi cập nhật bảng giá mới, các phiếu sửa chữa cũ bị nhảy lại tổng tiền.</li>
+                </ul>
+              </div>
+
+              <div class="pillar-card">
+                <div class="pillar-icon">02</div>
+                <h3 class="pillar-title">Tốn thời gian Tra cứu &amp; Tư vấn</h3>
+                <ul class="pillar-list">
+                  <li><strong>Lịch sử xe dài:</strong> Khó nắm nhanh xe từng sửa lỗi gì và phụ tùng nào còn đang trong hạn bảo hành.</li>
+                  <li><strong>Khách hàng băn khoăn:</strong> Tốn thời gian giải thích vì sao cần thay phụ tùng và chi phí gồm những gì.</li>
+                </ul>
+              </div>
+
+              <div class="pillar-card highlight">
+                <div class="pillar-icon">03</div>
+                <h3 class="pillar-title">Rủi ro Ảo giác khi dùng AI</h3>
+                <ul class="pillar-list">
+                  <li><strong>Tự bịa hạng mục &amp; đơn giá:</strong> AI tạo sinh tự do dễ gợi ý phụ tùng ngoài danh mục hoặc sai giá niêm yết.</li>
+                  <li><strong>Cộng nhầm tiền:</strong> Mô hình ngôn ngữ dễ tính nhẩm sai tổng tiền báo giá nếu không có thuật toán kiểm soát.</li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- Thanh chốt nguyên tắc -->
+            <div class="banner-quote">
+              <div>
+                <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #60A5FA; margin-bottom: 4px;">
+                  Nguyên tắc thiết kế cốt lõi của Nhóm 23
+                </div>
+                <div style="font-size: 18px; font-weight: 700; line-height: 1.4;">
+                  “Cơ sở dữ liệu quyết định tuyệt đối Tiền tệ &amp; Tồn kho — Trợ lý AI chỉ tư vấn nháp và bắt buộc qua bước Con người kiểm duyệt.”
+                </div>
+              </div>
+              <span class="pill" style="background: #2563EB; color: #FFFFFF; white-space: nowrap; padding: 8px 16px; font-size: 14px;">
+                AI Tư vấn · Con người Quyết định
+              </span>
+            </div>
+          </div>
+
+          <div class="bottom-bar">
+            <span><strong>GarageTools AI</strong> · Xác định rõ ranh giới giữa Nghiệp vụ lõi và Trợ lý AI</span>
+            <span>Nhóm 23 · Học phần AIA331</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           SLIDE 03 [LIGHT]: PHÂN QUYỀN 4 VAI TRÒ & KIẾN TRÚC TỔNG THỂ
+           ================================================================= -->
+      <section>
+        <div class="slide-light">
+          <div class="top-bar">
+            <div class="top-bar-left">
+              <div class="ictu-logo-chip">
+                <img src="GarageAI_Project/docs/latex_report/logo_ictu.png" alt="ICTU">
+              </div>
+              <div>
+                <div class="section-tag">PHẦN 2 · TỔNG QUAN GIẢI PHÁP</div>
+                <h2 class="slide-heading">Phân quyền 4 Vai trò Nhân sự &amp; Kiến trúc Hệ thống</h2>
+              </div>
+            </div>
+            <div class="page-badge">Slide <span>03 / 12</span></div>
+          </div>
+
+          <div class="slide-content">
+            <!-- 4 Vai trò -->
+            <div class="cols-4">
+              <div class="pillar-card" style="padding: 20px;">
+                <span class="pill pill-blue" style="align-self: flex-start;">Vai trò 01</span>
+                <h3 class="pillar-title" style="font-size: 19px !important;">Quản lý Xưởng</h3>
+                <ul class="pillar-list">
+                  <li>Quản trị bảng giá dịch vụ, phụ tùng và nhân sự.</li>
+                  <li>Điều chỉnh kho và <strong>phê duyệt kết quả AI</strong>.</li>
+                </ul>
+              </div>
+
+              <div class="pillar-card" style="padding: 20px;">
+                <span class="pill pill-blue" style="align-self: flex-start;">Vai trò 02</span>
+                <h3 class="pillar-title" style="font-size: 19px !important;">Lễ tân / Cố vấn</h3>
+                <ul class="pillar-list">
+                  <li>Tiếp nhận khách, lập phiếu sửa chữa và báo giá.</li>
+                  <li>Dùng AI tóm tắt lịch sử xe và tư vấn khách.</li>
+                </ul>
+              </div>
+
+              <div class="pillar-card highlight" style="padding: 20px;">
+                <span class="pill pill-green" style="align-self: flex-start;">Vai trò 03 · Cô lập dữ liệu</span>
+                <h3 class="pillar-title" style="font-size: 19px !important;">Kỹ thuật viên</h3>
+                <ul class="pillar-list">
+                  <li><strong>Chỉ nhìn thấy và thao tác trên đúng phiếu được giao cho mình.</strong></li>
+                  <li>Cập nhật chẩn đoán và tiến độ sửa chữa.</li>
+                </ul>
+              </div>
+
+              <div class="pillar-card" style="padding: 20px;">
+                <span class="pill pill-blue" style="align-self: flex-start;">Vai trò 04</span>
+                <h3 class="pillar-title" style="font-size: 19px !important;">Thu ngân</h3>
+                <ul class="pillar-list">
+                  <li>Phát hành hóa đơn và áp dụng giảm giá.</li>
+                  <li>Ghi nhận thanh toán và theo dõi công nợ.</li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- Thanh Kiến trúc 4 Tầng -->
+            <div style="background: var(--surface-soft); border: 1.5px solid var(--border-light); border-radius: var(--radius-xl); padding: 18px 22px;">
+              <div style="font-size: 14px; font-weight: 800; color: var(--brand-700); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px;">
+                Kiến trúc Hệ thống 4 Tầng Độc lập
+              </div>
+              <div class="cols-4" style="gap: 14px;">
+                <div style="background: #FFFFFF; border: 1px solid var(--border-strong); border-radius: 10px; padding: 12px 14px;">
+                  <div style="font-size: 12px; font-weight: 700; color: var(--ink-500);">TẦNG 1 · GIAO DIỆN</div>
+                  <div style="font-size: 16px; font-weight: 800; color: var(--ink-900); margin: 3px 0;">React 18 + TypeScript</div>
+                  <div style="font-size: 13.5px; color: var(--ink-700);">16 màn hình tiếng Việt hiển thị theo quyền.</div>
+                </div>
+                <div style="background: #FFFFFF; border: 1px solid var(--border-strong); border-radius: 10px; padding: 12px 14px;">
+                  <div style="font-size: 12px; font-weight: 700; color: var(--ink-500);">TẦNG 2 · BẢO MẬT</div>
+                  <div style="font-size: 16px; font-weight: 800; color: var(--ink-900); margin: 3px 0;">Xác thực &amp; Phân quyền</div>
+                  <div style="font-size: 13.5px; color: var(--ink-700);">Băm mật khẩu Argon2id &amp; kiểm tra quyền 2 lớp.</div>
+                </div>
+                <div style="background: #FFFFFF; border: 1px solid var(--border-strong); border-radius: 10px; padding: 12px 14px;">
+                  <div style="font-size: 12px; font-weight: 700; color: var(--ink-500);">TẦNG 3 · NGHIỆP VỤ</div>
+                  <div style="font-size: 16px; font-weight: 800; color: var(--ink-900); margin: 3px 0;">Dịch vụ Lõi &amp; Cổng AI</div>
+                  <div style="font-size: 13.5px; color: var(--ink-700);">Xử lý giao dịch kho, hóa đơn &amp; lọc kết quả AI.</div>
+                </div>
+                <div style="background: #FFFFFF; border: 1px solid var(--border-strong); border-radius: 10px; padding: 12px 14px;">
+                  <div style="font-size: 12px; font-weight: 700; color: var(--ink-500);">TẦNG 4 · DỮ LIỆU</div>
+                  <div style="font-size: 16px; font-weight: 800; color: var(--ink-900); margin: 3px 0;">CSDL Quan hệ (21 Bảng)</div>
+                  <div style="font-size: 13.5px; color: var(--ink-700);">Chuẩn 3NF, lưu sổ cái kho &amp; nhật ký kiểm toán.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bottom-bar">
+            <span><strong>GarageTools AI</strong> · Phân quyền bám sát vị trí công việc thực tế tại xưởng</span>
+            <span>Nhóm 23 · Học phần AIA331</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           SLIDE 04 [LIGHT - 1 BIG SCREENSHOT]: QUY TRÌNH PHIẾU SỬA CHỮA 6 TRẠNG THÁI
+           ================================================================= -->
+      <section>
+        <div class="slide-light">
+          <div class="top-bar">
+            <div class="top-bar-left">
+              <div class="ictu-logo-chip">
+                <img src="GarageAI_Project/docs/latex_report/logo_ictu.png" alt="ICTU">
+              </div>
+              <div>
+                <div class="section-tag">PHẦN 3 · NGHIỆP VỤ LÕI &amp; GIAO DIỆN SẢN PHẨM</div>
+                <h2 class="slide-heading">Luồng Vận hành Phiếu sửa chữa 6 Trạng thái</h2>
+              </div>
+            </div>
+            <div class="page-badge">Slide <span>04 / 12</span></div>
+          </div>
+
+          <div class="slide-content">
+            <!-- Sơ đồ 6 bước ngang ngắn gọn -->
+            <div class="flow-steps-6">
+              <div class="flow-node">
+                <div class="flow-node-num">BƯỚC 01</div>
+                <div class="flow-node-title">Tiếp nhận</div>
+                <div class="flow-node-sub">Nhận xe &amp; ghi yêu cầu</div>
+              </div>
+              <div class="flow-node">
+                <div class="flow-node-num">BƯỚC 02</div>
+                <div class="flow-node-title">Kiểm tra</div>
+                <div class="flow-node-sub">Chẩn đoán kỹ thuật</div>
+              </div>
+              <div class="flow-node">
+                <div class="flow-node-num">BƯỚC 03</div>
+                <div class="flow-node-title">Báo giá</div>
+                <div class="flow-node-sub">Chờ khách xác nhận</div>
+              </div>
+              <div class="flow-node">
+                <div class="flow-node-num">BƯỚC 04</div>
+                <div class="flow-node-title">Đang sửa</div>
+                <div class="flow-node-sub">Xuất phụ tùng &amp; thi công</div>
+              </div>
+              <div class="flow-node">
+                <div class="flow-node-num">BƯỚC 05</div>
+                <div class="flow-node-title">Hoàn thành</div>
+                <div class="flow-node-sub">Nghiệm thu bàn giao</div>
+              </div>
+              <div class="flow-node cancel">
+                <div class="flow-node-num" style="color: #475569;">NHÁNH RẼ</div>
+                <div class="flow-node-title">Đã hủy</div>
+                <div class="flow-node-sub"><strong>Tự động hoàn kho 100%</strong></div>
+              </div>
+            </div>
+
+            <!-- 33% Chữ lớn bên trái - 67% Ảnh lớn bên phải -->
+            <div class="showcase-layout">
+              <div class="feature-stack">
+                <div class="point-item">
+                  <h3 class="point-title">Kiểm soát nghiệm thu chặt</h3>
+                  <p class="point-desc">Phiếu chỉ được phép chuyển sang <strong>Hoàn thành</strong> khi đã có tối thiểu 1 hạng mục dịch vụ hoặc phụ tùng.</p>
+                </div>
+                <div class="point-item">
+                  <h3 class="point-title">Tự động hoàn kho khi hủy</h3>
+                  <p class="point-desc">Nếu hủy phiếu đã xuất phụ tùng, hệ thống tự động cộng trả đủ số lượng về kho; chặn hủy nếu phiếu đã thu tiền.</p>
+                </div>
+              </div>
+
+              <div class="browser-showcase">
+                <div class="browser-topbar">
+                  <div>
+                    <span class="browser-dots"><i></i><i></i><i></i></span>
+                    <span>Màn hình Quản lý &amp; Bộ lọc Phiếu sửa chữa theo 6 trạng thái</span>
+                  </div>
+                  <span class="zoom-hint">Bấm để phóng to</span>
+                </div>
+                <div class="browser-body" style="height: 365px;" onclick="openLightbox('GarageAI_Project/screenshots/03_phieu_sua_chua.png', 'Màn hình Quản lý danh sách Phiếu sửa chữa')">
+                  <img src="GarageAI_Project/screenshots/03_phieu_sua_chua.png" alt="Danh sách phiếu sửa chữa">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bottom-bar">
+            <span><strong>GarageTools AI</strong> · Theo dõi tiến độ toàn xưởng theo thời gian thực</span>
+            <span>Nhóm 23 · Học phần AIA331</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           SLIDE 05 [LIGHT - 1 BIG SCREENSHOT]: CHI TIẾT PHIẾU & BIÊN BẢN TIẾP NHẬN
+           ================================================================= -->
+      <section>
+        <div class="slide-light">
+          <div class="top-bar">
+            <div class="top-bar-left">
+              <div class="ictu-logo-chip">
+                <img src="GarageAI_Project/docs/latex_report/logo_ictu.png" alt="ICTU">
+              </div>
+              <div>
+                <div class="section-tag">PHẦN 3 · NGHIỆP VỤ LÕI &amp; GIAO DIỆN SẢN PHẨM</div>
+                <h2 class="slide-heading">Chi tiết Phiếu sửa chữa &amp; Biên bản Tiếp nhận Xe</h2>
+              </div>
+            </div>
+            <div class="page-badge">Slide <span>05 / 12</span></div>
+          </div>
+
+          <div class="slide-content">
+            <div class="showcase-layout">
+              <!-- Cột trái: 3 ý lớn, thoáng -->
+              <div class="feature-stack">
+                <div class="point-item">
+                  <h3 class="point-title">1. Chốt cứng đơn giá lịch sử</h3>
+                  <p class="point-desc">
+                    Ngay khi thêm dịch vụ hoặc phụ tùng vào phiếu, đơn giá hiện tại được khóa cứng để hóa đơn cũ không bị nhảy giá về sau.
+                  </p>
+                </div>
+
+                <div class="point-item">
+                  <h3 class="point-title">2. Biên bản tiếp nhận minh bạch</h3>
+                  <p class="point-desc">
+                    Lưu đầy đủ số công-tơ-mét (ODO), mức nhiên liệu, tình trạng thân vỏ và tư trang khách gửi lại xưởng.
+                  </p>
+                </div>
+
+                <div class="point-item">
+                  <h3 class="point-title">3. Nhật ký chuyển trạng thái</h3>
+                  <p class="point-desc">
+                    Ghi vết tự động ai là người chuyển bước, vào thời gian nào để phục vụ tra cứu trách nhiệm.
+                  </p>
+                </div>
+              </div>
+
+              <!-- Cột phải: 1 Ảnh lớn màn hình Chi tiết phiếu -->
+              <div class="browser-showcase">
+                <div class="browser-topbar">
+                  <div>
+                    <span class="browser-dots"><i></i><i></i><i></i></span>
+                    <span>Màn hình Chi tiết Phiếu sửa chữa #1 · Toyota Vios (30A-123.45)</span>
+                  </div>
+                  <span class="zoom-hint">Bấm để phóng to</span>
+                </div>
+                <div class="browser-body" style="height: 455px;" onclick="openLightbox('GarageAI_Project/screenshots/04_chi_tiet_phieu.png', 'Màn hình Chi tiết Phiếu sửa chữa, Hạng mục và Biên bản tiếp nhận')">
+                  <img src="GarageAI_Project/screenshots/04_chi_tiet_phieu.png" alt="Chi tiết phiếu sửa chữa">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bottom-bar">
+            <span><strong>GarageTools AI</strong> · Tập trung toàn bộ thông tin hạng mục, báo giá, biên bản và hóa đơn trên 1 màn hình</span>
+            <span>Nhóm 23 · Học phần AIA331</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           SLIDE 06 [LIGHT - 1 BIG SCREENSHOT]: SỔ CÁI KHO PHỤ TÙNG & BÁO GIÁ
+           ================================================================= -->
+      <section>
+        <div class="slide-light">
+          <div class="top-bar">
+            <div class="top-bar-left">
+              <div class="ictu-logo-chip">
+                <img src="GarageAI_Project/docs/latex_report/logo_ictu.png" alt="ICTU">
+              </div>
+              <div>
+                <div class="section-tag">PHẦN 3 · NGHIỆP VỤ LÕI &amp; GIAO DIỆN SẢN PHẨM</div>
+                <h2 class="slide-heading">Sổ cái Kho phụ tùng Đối soát Thời gian thực</h2>
+              </div>
+            </div>
+            <div class="page-badge">Slide <span>06 / 12</span></div>
+          </div>
+
+          <div class="slide-content">
+            <div class="showcase-layout">
+              <!-- Cột trái: 3 nguyên tắc kho & báo giá -->
+              <div class="feature-stack">
+                <div class="point-item">
+                  <h3 class="point-title">1. Đối soát tồn kho (Lệch sổ = 0)</h3>
+                  <p class="point-desc">
+                    Mọi biến động <strong>Nhập (+), Xuất sửa chữa (-), Hoàn trả (+)</strong> đều ghi vào sổ cái giao dịch, đảm bảo khớp tuyệt đối với tồn thực tế.
+                  </p>
+                </div>
+
+                <div class="point-item">
+                  <h3 class="point-title">2. Báo giá áp dụng đúng 1 lần</h3>
+                  <p class="point-desc">
+                    Sau khi khách duyệt và nạp vào phiếu sửa chữa, báo giá tự khóa sang <em>Đã áp dụng</em> để chống bấm nhầm gây trừ kho 2 lần.
+                  </p>
+                </div>
+
+                <div class="point-item">
+                  <h3 class="point-title">3. Cảnh báo vật tư sắp hết</h3>
+                  <p class="point-desc">
+                    Tự động đánh dấu các phụ tùng chạm ngưỡng tồn tối thiểu để Quản lý chủ động nhập bổ sung.
+                  </p>
+                </div>
+              </div>
+
+              <!-- Cột phải: 1 Ảnh lớn màn hình Kho phụ tùng -->
+              <div class="browser-showcase">
+                <div class="browser-topbar">
+                  <div>
+                    <span class="browser-dots"><i></i><i></i><i></i></span>
+                    <span>Màn hình Kho phụ tùng &amp; Sổ cái giao dịch (Lệch sổ: 0)</span>
+                  </div>
+                  <span class="zoom-hint">Bấm để phóng to</span>
+                </div>
+                <div class="browser-body" style="height: 455px;" onclick="openLightbox('GarageAI_Project/screenshots/14_cua_hang.png', 'Màn hình Kho phụ tùng và Đối soát Sổ cái')">
+                  <img src="GarageAI_Project/screenshots/14_cua_hang.png" alt="Màn hình Kho phụ tùng">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bottom-bar">
+            <span><strong>GarageTools AI</strong> · Minh bạch hoàn toàn lịch sử xuất – nhập – hoàn trả vật tư</span>
+            <span>Nhóm 23 · Học phần AIA331</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           SLIDE 07 [LIGHT - 1 BIG SCREENSHOT]: BẢO VỆ TIỀN TỆ & CHẶN THU VƯỢT NỢ
+           ================================================================= -->
+      <section>
+        <div class="slide-light">
+          <div class="top-bar">
+            <div class="top-bar-left">
+              <div class="ictu-logo-chip">
+                <img src="GarageAI_Project/docs/latex_report/logo_ictu.png" alt="ICTU">
+              </div>
+              <div>
+                <div class="section-tag">PHẦN 4 · CÁC CHỐT CHẶN BẢO VỆ DỮ LIỆU</div>
+                <h2 class="slide-heading">Bảo vệ Toàn vẹn Tiền tệ, Công nợ &amp; Phân quyền</h2>
+              </div>
+            </div>
+            <div class="page-badge">Slide <span>07 / 12</span></div>
+          </div>
+
+          <div class="slide-content">
+            <div class="showcase-layout">
+              <!-- Cột trái: 3 chốt chặn -->
+              <div class="feature-stack">
+                <div class="point-item">
+                  <h3 class="point-title">1. Tiền tệ lưu số nguyên VNĐ</h3>
+                  <p class="point-desc">
+                    Không dùng số thực dấu phẩy động, triệt tiêu hoàn toàn lỗi làm tròn tiền lẻ trên hóa đơn và báo cáo.
+                  </p>
+                </div>
+
+                <div class="point-item">
+                  <h3 class="point-title">2. Chặn thu tiền vượt nợ phải thu</h3>
+                  <p class="point-desc">
+                    Khóa giao dịch kiểm tra công nợ tức thời: từ chối ngay nếu thu ngân nhập số tiền lớn hơn số khách còn nợ.
+                  </p>
+                </div>
+
+                <div class="point-item">
+                  <h3 class="point-title">3. Ràng buộc hạng mục rõ ràng</h3>
+                  <p class="point-desc">
+                    Mỗi dòng chi phí bắt buộc thuộc đúng 1 loại: hoặc là <strong>Dịch vụ</strong>, hoặc là <strong>Phụ tùng</strong> — không bao giờ nhập nhằng.
+                  </p>
+                </div>
+              </div>
+
+              <!-- Cột phải: 1 Ảnh lớn màn hình Chặn thu vượt nợ -->
+              <div class="browser-showcase">
+                <div class="browser-topbar">
+                  <div>
+                    <span class="browser-dots"><i></i><i></i><i></i></span>
+                    <span>Minh chứng thực tế: Hệ thống chặn giao dịch khi nhập số tiền vượt nợ còn lại</span>
+                  </div>
+                  <span class="zoom-hint">Bấm để phóng to</span>
+                </div>
+                <div class="browser-body" style="height: 455px;" onclick="openLightbox('GarageAI_Project/screenshots/18_loi_thanh_toan.png', 'Chặn thu tiền vượt quá số còn phải thu (6.100.000 đồng)')">
+                  <img src="GarageAI_Project/screenshots/18_loi_thanh_toan.png" alt="Chặn lỗi thanh toán vượt nợ">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bottom-bar">
+            <span><strong>GarageTools AI</strong> · Ngăn chặn sai sót số học và thao tác nhầm của nhân viên</span>
+            <span>Nhóm 23 · Học phần AIA331</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           SLIDE 08 [DARK FEATURE]: TRỌNG TÂM HỌC PHẦN AIA331 — 3 TRỢ LÝ AI & BỘ LỌC
+           ================================================================= -->
+      <section>
+        <div class="slide-dark">
+          <div class="top-bar">
+            <div class="top-bar-left">
+              <div class="ictu-logo-chip">
+                <img src="GarageAI_Project/docs/latex_report/logo_ictu.png" alt="ICTU">
+              </div>
+              <div>
+                <div class="section-tag">PHẦN 5 · TRỌNG TÂM HỌC PHẦN ỨNG DỤNG TRÍ TUỆ NHÂN TẠO (AIA331)</div>
+                <h2 class="slide-heading">Thiết kế 3 Chức năng Trợ lý AI &amp; Bộ lọc Chống bịa giá</h2>
+              </div>
+            </div>
+            <div class="page-badge">Slide <span>08 / 12</span></div>
+          </div>
+
+          <div class="slide-content">
+            <!-- 3 cột chức năng AI -->
+            <div class="cols-3">
+              <div class="dark-card">
+                <span class="pill" style="background: rgba(96,165,250,0.2); color: #93C5FD; align-self: flex-start;">Chức năng AI01</span>
+                <h3>Tóm tắt Lịch sử Xe</h3>
+                <p style="margin: 0;">
+                  Tổng hợp nhanh các lần sửa chữa trước, số ODO và <strong>cảnh báo rõ những hạng mục còn đang trong hạn bảo hành</strong> để tránh tính phí trùng.
+                </p>
+              </div>
+
+              <div class="dark-card">
+                <span class="pill" style="background: rgba(96,165,250,0.2); color: #93C5FD; align-self: flex-start;">Chức năng AI02</span>
+                <h3>Giải thích Dịch vụ cho Khách</h3>
+                <p style="margin: 0;">
+                  Chuyển bảng kê kỹ thuật trên phiếu thành lời tư vấn thân thiện, giải thích rõ lý do cần làm và <strong>giữ đúng tổng tiền thực tế</strong>.
+                </p>
+              </div>
+
+              <div class="dark-card highlight">
+                <span class="pill" style="background: #2563EB; color: #FFFFFF; align-self: flex-start;">Chức năng AI03 · Có bộ lọc giá</span>
+                <h3>Gợi ý Báo giá Nháp</h3>
+                <p style="margin: 0;">
+                  Phân tích mô tả triệu chứng xe để đề xuất danh sách dịch vụ &amp; phụ tùng cần kiểm tra, sau đó đi qua <strong>bộ lọc đối chiếu CSDL</strong>.
+                </p>
+              </div>
+            </div>
+
+            <!-- Sơ đồ 3 bước Bộ lọc Hậu xử lý chống ảo giác -->
+            <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.16); border-radius: var(--radius-xl); padding: 20px 24px;">
+              <div style="font-size: 13px; font-weight: 700; color: #60A5FA; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px;">
+                Cơ chế Hậu xử lý 3 Bước Chặn đứng Ảo giác Giá (Áp dụng cho AI03)
+              </div>
+              <div class="cols-3" style="gap: 16px;">
+                <div style="background: rgba(15, 23, 42, 0.75); border-left: 4px solid #60A5FA; border-radius: 10px; padding: 14px 16px;">
+                  <div style="font-size: 16px; font-weight: 800; color: #FFFFFF; margin-bottom: 4px;">Bước 1 · Lọc theo Danh mục</div>
+                  <div style="font-size: 14px; color: #CBD5E1;">Tự động loại bỏ mọi dịch vụ hoặc phụ tùng do AI tự nghĩ ra mà không có trong CSDL xưởng.</div>
+                </div>
+                <div style="background: rgba(15, 23, 42, 0.75); border-left: 4px solid #3B82F6; border-radius: 10px; padding: 14px 16px;">
+                  <div style="font-size: 16px; font-weight: 800; color: #FFFFFF; margin-bottom: 4px;">Bước 2 · Gắn lại Đơn giá CSDL</div>
+                  <div style="font-size: 14px; color: #CBD5E1;">Không dùng đơn giá do AI sinh ra; lấy lại 100% đơn giá niêm yết chuẩn từ bảng danh mục.</div>
+                </div>
+                <div style="background: rgba(15, 23, 42, 0.75); border-left: 4px solid #10B981; border-radius: 10px; padding: 14px 16px;">
+                  <div style="font-size: 16px; font-weight: 800; color: #FFFFFF; margin-bottom: 4px;">Bước 3 · Cộng lại Tổng tiền</div>
+                  <div style="font-size: 14px; color: #CBD5E1;">Tính lại thành tiền từng dòng và tổng cộng bằng thuật toán số nguyên chính xác tuyệt đối.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bottom-bar">
+            <span><strong>GarageTools AI</strong> · Kết hợp thiết kế câu lệnh (Prompt) qua 3 vòng với bộ lọc đối chiếu dữ liệu thật</span>
+            <span>Nhóm 23 · Học phần AIA331</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           SLIDE 09 [LIGHT - 1 BIG SCREENSHOT]: HÀNG CHỜ TRỢ LÝ AI (CHỜ DUYỆT)
+           ================================================================= -->
+      <section>
+        <div class="slide-light">
+          <div class="top-bar">
+            <div class="top-bar-left">
+              <div class="ictu-logo-chip">
+                <img src="GarageAI_Project/docs/latex_report/logo_ictu.png" alt="ICTU">
+              </div>
+              <div>
+                <div class="section-tag">PHẦN 5 · TRỌNG TÂM HỌC PHẦN ỨNG DỤNG AI (AIA331)</div>
+                <h2 class="slide-heading">Trung tâm AI — Cơ chế Hàng chờ “Chờ duyệt”</h2>
+              </div>
+            </div>
+            <div class="page-badge">Slide <span>09 / 12</span></div>
+          </div>
+
+          <div class="slide-content">
+            <div class="showcase-layout">
+              <!-- Cột trái -->
+              <div class="feature-stack">
+                <div class="point-item">
+                  <h3 class="point-title">1. Không tự ý ghi đè dữ liệu</h3>
+                  <p class="point-desc">
+                    Mọi kết quả AI01, AI02, AI03 mới sinh ra đều được đưa vào <strong>Hàng chờ duyệt kết quả</strong> với trạng thái <em>Chờ duyệt</em>.
+                  </p>
+                </div>
+
+                <div class="point-item">
+                  <h3 class="point-title">2. Tinh chỉnh qua 3 vòng Prompt</h3>
+                  <p class="point-desc">
+                    Câu lệnh được tách thành tệp cấu hình riêng và thử nghiệm qua 3 vòng để đảm bảo đầu ra luôn đúng định dạng tiếng Việt.
+                  </p>
+                </div>
+
+                <div class="point-item">
+                  <h3 class="point-title">3. Minh bạch thông số gọi mô hình</h3>
+                  <p class="point-desc">
+                    Hiển thị rõ nhà cung cấp AI, tên mô hình và thời gian phản hồi thực tế ngay trên từng thẻ kết quả.
+                  </p>
+                </div>
+              </div>
+
+              <!-- Cột phải: 1 Ảnh lớn màn hình Trung tâm AI Chờ duyệt -->
+              <div class="browser-showcase">
+                <div class="browser-topbar">
+                  <div>
+                    <span class="browser-dots"><i></i><i></i><i></i></span>
+                    <span>Giao diện Trung tâm AI — Kết quả mới tạo nằm ở trạng thái “Chờ duyệt”</span>
+                  </div>
+                  <span class="zoom-hint">Bấm để phóng to</span>
+                </div>
+                <div class="browser-body" style="height: 455px;" onclick="openLightbox('GarageAI_Project/screenshots/12_ai.png', 'Giao diện Trung tâm AI — Hàng chờ duyệt kết quả')">
+                  <img src="GarageAI_Project/screenshots/12_ai.png" alt="Màn hình Trung tâm AI Chờ duyệt">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bottom-bar">
+            <span><strong>GarageTools AI</strong> · Con người luôn kiểm soát đầu ra của Trí tuệ Nhân tạo</span>
+            <span>Nhóm 23 · Học phần AIA331</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           SLIDE 10 [LIGHT - 1 BIG SCREENSHOT]: KẾT QUẢ AI SAU KHI QUẢN LÝ DUYỆT
+           ================================================================= -->
+      <section>
+        <div class="slide-light">
+          <div class="top-bar">
+            <div class="top-bar-left">
+              <div class="ictu-logo-chip">
+                <img src="GarageAI_Project/docs/latex_report/logo_ictu.png" alt="ICTU">
+              </div>
+              <div>
+                <div class="section-tag">PHẦN 5 · TRỌNG TÂM HỌC PHẦN ỨNG DỤNG AI (AIA331)</div>
+                <h2 class="slide-heading">Phê duyệt Kết quả AI &amp; Lưu vết Trách nhiệm</h2>
+              </div>
+            </div>
+            <div class="page-badge">Slide <span>10 / 12</span></div>
+          </div>
+
+          <div class="slide-content">
+            <div class="showcase-layout">
+              <!-- Cột trái -->
+              <div class="feature-stack">
+                <div class="point-item">
+                  <h3 class="point-title">1. Thẩm quyền phê duyệt rõ ràng</h3>
+                  <p class="point-desc">
+                    Lễ tân và Kỹ thuật viên được phép chạy AI hỗ trợ, nhưng chỉ <strong>Quản lý xưởng</strong> mới có quyền bấm <em>Duyệt</em> hoặc <em>Từ chối</em>.
+                  </p>
+                </div>
+
+                <div class="point-item">
+                  <h3 class="point-title">2. Ghi nhận người duyệt minh bạch</h3>
+                  <p class="point-desc">
+                    Sau khi xác nhận, thẻ kết quả chuyển sang nhãn xanh <strong>Đã duyệt</strong> kèm dòng chữ <em>“Duyệt bởi Trần Thu Hà”</em>.
+                  </p>
+                </div>
+
+                <div class="point-item">
+                  <h3 class="point-title">3. Chốt chặn an toàn cuối cùng</h3>
+                  <p class="point-desc">
+                    Đảm bảo mọi thông tin tư vấn hoặc báo giá nháp gửi tới khách hàng đều đã được người có trách nhiệm kiểm tra.
+                  </p>
+                </div>
+              </div>
+
+              <!-- Cột phải: 1 Ảnh lớn màn hình Đã duyệt AI -->
+              <div class="browser-showcase">
+                <div class="browser-topbar">
+                  <div>
+                    <span class="browser-dots"><i></i><i></i><i></i></span>
+                    <span>Giao diện Trung tâm AI — Sau khi Quản lý phê duyệt (“Đã duyệt · Duyệt bởi Trần Thu Hà”)</span>
+                  </div>
+                  <span class="zoom-hint">Bấm để phóng to</span>
+                </div>
+                <div class="browser-body" style="height: 455px;" onclick="openLightbox('GarageAI_Project/screenshots/13_duyet_ai.png', 'Giao diện Trung tâm AI sau khi Quản lý đã phê duyệt')">
+                  <img src="GarageAI_Project/screenshots/13_duyet_ai.png" alt="Màn hình Trung tâm AI Đã duyệt">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bottom-bar">
+            <span><strong>GarageTools AI</strong> · Quy trình Human-in-the-Loop khép kín từ lúc tạo nháp đến khi phê duyệt</span>
+            <span>Nhóm 23 · Học phần AIA331</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           SLIDE 11 [LIGHT - BIG METRICS]: KẾT QUẢ THỰC NGHIỆM & KIỂM THỬ
+           ================================================================= -->
+      <section>
+        <div class="slide-light">
+          <div class="top-bar">
+            <div class="top-bar-left">
+              <div class="ictu-logo-chip">
+                <img src="GarageAI_Project/docs/latex_report/logo_ictu.png" alt="ICTU">
+              </div>
+              <div>
+                <div class="section-tag">PHẦN 6 · ĐÁNH GIÁ THỰC NGHIỆM &amp; KIỂM THỬ</div>
+                <h2 class="slide-heading">Kết quả Đo kiểm Độ trễ AI &amp; Kiểm thử Toàn diện</h2>
+              </div>
+            </div>
+            <div class="page-badge">Slide <span>11 / 12</span></div>
+          </div>
+
+          <div class="slide-content">
+            <!-- 4 Con số lớn nổi bật -->
+            <div class="cols-4">
+              <div class="big-metric-card">
+                <div class="big-metric-num">&lt; 4,0 giây</div>
+                <div class="big-metric-title">Độ trễ AI Thực tế</div>
+                <div class="big-metric-sub">Nhanh hơn mục tiêu 10 giây</div>
+              </div>
+              <div class="big-metric-card">
+                <div class="big-metric-num">0 VNĐ</div>
+                <div class="big-metric-title">Chi phí API Thực nghiệm</div>
+                <div class="big-metric-sub">Hỗ trợ gói Free Tier (Groq / Gemini)</div>
+              </div>
+              <div class="big-metric-card">
+                <div class="big-metric-num">226 / 226</div>
+                <div class="big-metric-title">Ca Kiểm thử Tự động</div>
+                <div class="big-metric-sub">Đạt 100% nghiệp vụ &amp; bảo mật</div>
+              </div>
+              <div class="big-metric-card">
+                <div class="big-metric-num">100%</div>
+                <div class="big-metric-title">Luồng Khép kín &amp; UAT</div>
+                <div class="big-metric-sub">Đạt 32 ca E2E &amp; 35 ca nghiệm thu</div>
+              </div>
+            </div>
+
+            <!-- 2 Khung biểu đồ & đối kháng thoáng đãng -->
+            <div class="cols-2">
+              <div class="pillar-card" style="padding: 20px 24px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <h3 class="pillar-title" style="font-size: 19px !important;">Thời gian phản hồi thực tế trên Groq API</h3>
+                  <span class="pill pill-green">Mục tiêu &lt; 10s</span>
+                </div>
+
+                <div style="margin-top: 6px;">
+                  <div class="latency-row">
+                    <span class="latency-name">AI01 · Tóm tắt lịch sử xe</span>
+                    <div class="latency-bar-bg"><div class="latency-bar-fill" style="width: 25%;"></div></div>
+                    <span class="latency-val">2,46 s</span>
+                  </div>
+                  <div class="latency-row">
+                    <span class="latency-name">AI02 · Giải thích dịch vụ</span>
+                    <div class="latency-bar-bg"><div class="latency-bar-fill" style="width: 40%;"></div></div>
+                    <span class="latency-val">3,99 s</span>
+                  </div>
+                  <div class="latency-row">
+                    <span class="latency-name">AI03 · Gợi ý báo giá nháp</span>
+                    <div class="latency-bar-bg"><div class="latency-bar-fill" style="width: 34.4%;"></div></div>
+                    <span class="latency-val">3,44 s</span>
+                  </div>
+                  <div class="latency-row" style="margin-bottom: 0;">
+                    <span class="latency-name">Dự phòng nội bộ khi mất mạng</span>
+                    <div class="latency-bar-bg"><div class="latency-bar-fill" style="width: 4%;"></div></div>
+                    <span class="latency-val">0,001 s</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="pillar-card" style="padding: 20px 24px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <h3 class="pillar-title" style="font-size: 19px !important;">Các kịch bản kiểm thử biên đã vượt qua</h3>
+                  <span class="pill pill-blue">Kiểm thử đối kháng</span>
+                </div>
+                <ul class="pillar-list">
+                  <li><strong>AI trả về dịch vụ lạ hoặc sai giá:</strong> Tự động lọc bỏ mục lạ và gắn lại đúng đơn giá CSDL.</li>
+                  <li><strong>Xuất kho vượt tồn / Thu tiền vượt nợ:</strong> Khóa giao dịch chặn ngay lập tức, giữ nguyên số dư.</li>
+                  <li><strong>Hủy phiếu đã xuất phụ tùng:</strong> Tự động hoàn trả đủ 100% số lượng phụ tùng về kho.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="bottom-bar">
+            <span><strong>GarageTools AI</strong> · Kiểm chứng bằng số liệu đo kiểm thực tế và kiểm thử tự động</span>
+            <span>Nhóm 23 · Học phần AIA331</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================
+           SLIDE 12 [DARK CLOSING]: TỔNG KẾT, HẠN CHẾ & HƯỚNG PHÁT TRIỂN
+           ================================================================= -->
+      <section>
+        <div class="slide-dark">
+          <div class="top-bar">
+            <div class="top-bar-left">
+              <div class="ictu-logo-chip">
+                <img src="GarageAI_Project/docs/latex_report/logo_ictu.png" alt="ICTU">
+              </div>
+              <div>
+                <div class="section-tag">PHẦN 7 · TỔNG KẾT, GIỚI HẠN &amp; HƯỚNG PHÁT TRIỂN</div>
+                <h2 class="slide-heading">Tổng kết Dự án &amp; Định hướng Nâng cấp Tiếp theo</h2>
+              </div>
+            </div>
+            <div class="page-badge">Slide <span>12 / 12</span></div>
+          </div>
+
+          <div class="slide-content">
+            <div class="cols-3">
+              <div class="dark-card">
+                <span class="pill" style="background: rgba(16, 185, 129, 0.2); color: #6EE7B7; align-self: flex-start;">01 · Kết quả đạt được</span>
+                <h3>Hoàn thiện &amp; Toàn vẹn</h3>
+                <ul class="pillar-list" style="color: #E2E8F0;">
+                  <li style="color: #E2E8F0;"><strong style="color:#FFF;">7 phân hệ khép kín:</strong> 16 màn hình quản lý từ đặt lịch đến hóa đơn.</li>
+                  <li style="color: #E2E8F0;"><strong style="color:#FFF;">Chính xác tuyệt đối:</strong> Không lệch tồn kho, không nhảy giá lịch sử.</li>
+                  <li style="color: #E2E8F0;"><strong style="color:#FFF;">AI an toàn:</strong> Chống bịa giá và có bước Quản lý duyệt.</li>
+                </ul>
+              </div>
+
+              <div class="dark-card">
+                <span class="pill" style="background: rgba(255, 255, 255, 0.12); color: #CBD5E1; align-self: flex-start;">02 · Giới hạn hiện tại</span>
+                <h3>Phạm vi trong học phần</h3>
+                <ul class="pillar-list">
+                  <li style="color: #E2E8F0;"><strong style="color:#FFF;">Kênh gửi khách:</strong> Chưa kết nối tự động đẩy tin nhắn qua Zalo hoặc SMS.</li>
+                  <li style="color: #E2E8F0;"><strong style="color:#FFF;">Đầu vào AI:</strong> Mới xử lý văn bản, chưa nhận diện hình ảnh vết xước xe.</li>
+                  <li style="color: #E2E8F0;"><strong style="color:#FFF;">Quy mô:</strong> Tối ưu cho 1 xưởng độc lập, chưa quản lý chuỗi nhiều chi nhánh.</li>
+                </ul>
+              </div>
+
+              <div class="dark-card highlight">
+                <span class="pill" style="background: #2563EB; color: #FFFFFF; align-self: flex-start;">03 · Hướng phát triển</span>
+                <h3>Lộ trình nâng cấp</h3>
+                <ul class="pillar-list">
+                  <li style="color: #E2E8F0;"><strong style="color:#FFF;">AI đa phương thức:</strong> Nhận diện ảnh chụp thân vỏ xe và đồng hồ taplo lúc tiếp nhận.</li>
+                  <li style="color: #E2E8F0;"><strong style="color:#FFF;">Tự động hóa Zalo OA:</strong> Gửi báo giá và nhắc lịch bảo dưỡng sau khi duyệt.</li>
+                  <li style="color: #E2E8F0;"><strong style="color:#FFF;">Quản trị đa chi nhánh:</strong> Điều chuyển phụ tùng liên xưởng.</li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- Khối Cảm ơn trang trọng -->
+            <div style="background: linear-gradient(90deg, rgba(37, 99, 235, 0.25) 0%, rgba(15, 23, 42, 0.85) 100%); border: 1.5px solid rgba(96, 165, 250, 0.4); border-radius: var(--radius-xl); padding: 20px 28px; display: flex; align-items: center; justify-content: space-between; gap: 20px;">
+              <div>
+                <div style="font-size: 22px; font-weight: 800; color: #FFFFFF;">
+                  Xin chân thành cảm ơn Thầy và các bạn đã lắng nghe phần trình bày của Nhóm 23!
+                </div>
+                <div style="font-size: 15px; color: #93C5FD; margin-top: 4px;">
+                  Nhóm rất mong nhận được ý kiến nhận xét, góp ý của Thầy để hoàn thiện hệ thống tốt hơn.
+                </div>
+              </div>
+              <div style="text-align: right; flex-shrink: 0;">
+                <span class="pill" style="background: #2563EB; color: #FFFFFF; font-size: 14px; padding: 8px 18px;">Sẵn sàng Demo Trực tiếp</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="bottom-bar">
+            <span><strong>GarageTools AI</strong> · Báo cáo Dự án Kết thúc Học phần Ứng dụng Trí tuệ Nhân tạo (AIA331)</span>
+            <span>Nhóm 23 · Nguyễn Đức Dũng · Đồng Quốc Khánh</span>
+          </div>
+        </div>
+      </section>
+
     </div>
+  </div>
 
-    <!-- Lightbox phóng to ảnh -->
-    <div class="zoom-overlay" id="zoomOverlay" onclick="closeZoom()">
-        <img id="zoomImg" src="" alt="Zoomed">
-        <div class="zoom-caption" id="zoomCap"></div>
+  <!-- Lightbox phóng to ảnh khi cần -->
+  <div id="lightbox" class="lightbox-overlay" onclick="closeLightbox()">
+    <div class="lightbox-box" onclick="event.stopPropagation()">
+      <div class="lightbox-head">
+        <span id="lightbox-title">Ảnh chụp màn hình thực tế</span>
+        <span style="cursor:pointer; font-size:14px; color:#93C5FD;" onclick="closeLightbox()">Đóng [ESC] ✕</span>
+      </div>
+      <div class="lightbox-body">
+        <img id="lightbox-img" src="" alt="Phóng to màn hình">
+      </div>
     </div>
+  </div>
 
-    <!-- Reveal.js Script -->
-    <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
-    <script>
-        // Khởi tạo Lucide Icons
-        lucide.createIcons();
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+  <script>
+    Reveal.initialize({
+      width: 1280,
+      height: 720,
+      margin: 0.015,
+      minScale: 0.2,
+      maxScale: 2.0,
+      hash: true,
+      controls: true,
+      progress: true,
+      center: false,
+      transition: 'fade',
+      transitionSpeed: 'fast',
+      backgroundTransition: 'fade'
+    });
 
-        // Khởi tạo Reveal.js
-        Reveal.initialize({
-            width: 1360,
-            height: 768,
-            margin: 0.04,
-            minScale: 0.2,
-            maxScale: 2.0,
-            hash: true,
-            center: true,
-            controls: true,
-            progress: true,
-            slideNumber: 'c/t',
-            transition: 'slide',
-            backgroundTransition: 'fade'
-        });
+    function openLightbox(src, title) {
+      const lb = document.getElementById('lightbox');
+      const img = document.getElementById('lightbox-img');
+      const ttl = document.getElementById('lightbox-title');
+      img.src = src;
+      ttl.textContent = title || 'Ảnh chụp màn hình hệ thống GarageTools AI';
+      lb.classList.add('active');
+    }
 
-        // Hiệu ứng đếm số tự động (Count-up)
-        function animateCounters() {
-            document.querySelectorAll('.count-up').forEach(el => {
-                const target = parseInt(el.getAttribute('data-target'), 10);
-                let count = 0;
-                const step = Math.max(1, Math.ceil(target / 35));
-                const timer = setInterval(() => {
-                    count += step;
-                    if (count >= target) {
-                        el.textContent = target;
-                        clearInterval(timer);
-                    } else {
-                        el.textContent = count;
-                    }
-                }, 25);
-            });
-        }
+    function closeLightbox() {
+      const lb = document.getElementById('lightbox');
+      lb.classList.remove('active');
+    }
 
-        // Chuyển đổi màn hình tương tác ở Slide 5
-        function changeDemo(btn, src, urlText) {
-            document.querySelectorAll('.screen-pill').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            const img = document.getElementById('liveDemoImg');
-            img.style.opacity = '0.3';
-            setTimeout(() => {
-                img.src = src;
-                document.getElementById('liveDemoUrl').textContent = urlText;
-                img.style.opacity = '1';
-            }, 120);
-        }
-
-        // Lightbox phóng to ảnh
-        function zoomImage(src, cap) {
-            document.getElementById('zoomImg').src = src;
-            document.getElementById('zoomCap').textContent = cap || '';
-            document.getElementById('zoomOverlay').classList.add('open');
-        }
-        function closeZoom() {
-            document.getElementById('zoomOverlay').classList.remove('open');
-        }
-
-        // Khởi tạo Biểu đồ Chart.js khi mở Slide 7
-        let chartsInitialized = false;
-        function initCharts() {
-            if (chartsInitialized || !window.Chart) return;
-            chartsInitialized = true;
-
-            new Chart(document.getElementById('groqLatencyChart'), {
-                type: 'bar',
-                data: {
-                    labels: ['Gọi thô Groq', 'AI01 · Lịch sử', 'AI03 · Báo giá', 'AI02 · Giải thích', 'Trần CK-07 (10s)'],
-                    datasets: [{
-                        label: 'Thời gian phản hồi (giây)',
-                        data: [1.20, 2.46, 2.98, 3.99, 10.0],
-                        backgroundColor: [
-                            'rgba(2, 132, 199, 0.85)',
-                            'rgba(37, 99, 235, 0.85)',
-                            'rgba(217, 119, 6, 0.85)',
-                            'rgba(5, 150, 105, 0.85)',
-                            'rgba(225, 29, 72, 0.22)'
-                        ],
-                        borderColor: ['#0284C7', '#2563EB', '#D97706', '#059669', '#E11D48'],
-                        borderWidth: 2,
-                        borderRadius: 8
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    animation: { duration: 1200, easing: 'easeOutQuart' },
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: { beginAtZero: true, max: 11, ticks: { callback: v => v + 's', color: '#475569', font: { weight: '600' } } },
-                        x: { ticks: { color: '#0F172A', font: { weight: '700', size: 11 } }, grid: { display: false } }
-                    }
-                }
-            });
-
-            new Chart(document.getElementById('testSuiteChart'), {
-                type: 'bar',
-                data: {
-                    labels: [
-                        'Web & AI Gateway (133)',
-                        'JSON API /api/* (50)',
-                        'Ràng buộc CSDL (37)',
-                        'UAT Người dùng (35)',
-                        'E2E Nghiệp vụ (32)',
-                        'Smoke HTTP (31)',
-                        'Backup/Restore (6)'
-                    ],
-                    datasets: [{
-                        label: 'Số ca ĐẠT (100% Pass)',
-                        data: [133, 50, 37, 35, 32, 31, 6],
-                        backgroundColor: 'rgba(5, 150, 105, 0.82)',
-                        borderColor: '#059669',
-                        borderWidth: 2,
-                        borderRadius: 6
-                    }]
-                },
-                options: {
-                    indexAxis: 'y',
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    animation: { duration: 1200, easing: 'easeOutQuart' },
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: { beginAtZero: true, ticks: { color: '#475569' } },
-                        y: { ticks: { color: '#0F172A', font: { weight: '700', size: 11.5 } }, grid: { display: false } }
-                    }
-                }
-            });
-        }
-
-        Reveal.on('ready', () => {
-            animateCounters();
-            initCharts();
-        });
-        Reveal.on('slidechanged', event => {
-            if (event.indexh === 0) animateCounters();
-            if (event.indexh === 6) initCharts();
-        });
-    </script>
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        closeLightbox();
+      }
+    });
+  </script>
 </body>
 </html>

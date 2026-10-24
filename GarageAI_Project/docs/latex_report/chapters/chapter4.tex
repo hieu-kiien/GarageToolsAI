@@ -1,8 +1,8 @@
 \chapter{THIẾT KẾ KIẾN TRÚC, DỮ LIỆU VÀ TÍCH HỢP AI}
 
-\section{Kiến trúc tổng thể đa tầng (C4 Container)}
+\section{Kiến trúc tổng thể 4 tầng (C4 Container)}
 
-Hệ thống GarageTools AI được thiết kế theo kiến trúc phân tầng rõ ràng (Layered Architecture), tách biệt độc lập giữa giao diện trình diễn, tầng điều phối API và bảo mật, tầng dịch vụ nghiệp vụ xưởng, tầng điều phối trí tuệ nhân tạo và tầng lưu trữ dữ liệu quan hệ. Hình~\ref{fig:g-container} minh họa sơ đồ C4 Container của hệ thống.
+Hệ thống \textbf{GarageTools AI} được tổ chức theo kiến trúc 4 tầng tách biệt rõ trách nhiệm: (1) Tầng Giao diện người dùng (\texttt{frontend/src/} chạy React 19 + TanStack Start song song cùng giao diện Jinja2 tại \texttt{app/templates/}); (2) Tầng Định tuyến \& Bảo mật (\texttt{app/main.py}, \texttt{app/core/}, \texttt{app/routes/}); (3) Tầng Dịch vụ Nghiệp vụ \& AI Gateway (\texttt{app/services/}, \texttt{app/ai\_gateway.py}, \texttt{config/prompts/}); và (4) Tầng Cơ sở dữ liệu quan hệ SQLite WAL (\texttt{garage.db}). Hình~\ref{fig:g-container} minh họa sơ đồ kiến trúc thành phần chứa của hệ thống.
 
 \begin{figure}[H]
 \centering
@@ -13,18 +13,18 @@ Hệ thống GarageTools AI được thiết kế theo kiến trúc phân tầng
 \label{fig:g-container}
 \end{figure}
 
-Mọi yêu cầu từ trình duyệt đều đi qua bộ lọc xác thực JWT và kiểm soát phân quyền trước khi chạm tới dịch vụ nghiệp vụ. Đối với các yêu cầu trợ lý AI, tầng \textbf{AI \& RAG Orchestrator} chỉ trích xuất ngữ cảnh dữ liệu đã được phép truy cập từ SQLite, kết hợp với mẫu Prompt từ \textbf{Prompt Registry} để gọi tới nhà cung cấp LLM thông qua khóa giải mã tạm thời trong bộ nhớ từ \textbf{BYOK Vault}.
+Mọi yêu cầu từ trình duyệt đều đi qua lớp kiểm tra phiên đăng nhập (\texttt{garage\_session}), đối chiếu \texttt{auth\_version}, kiểm tra CSRF token (\texttt{garage\_csrf} / \texttt{X-CSRF-Token}) và kiểm tra quyền trong \texttt{security\_matrix.py} trước khi thực thi logic tại \texttt{app/services/}.
 
-\section{Thiết kế cơ sở dữ liệu quan hệ (ERD 21 bảng chuẩn hóa 3NF)}
+\section{Thiết kế cơ sở dữ liệu quan hệ (ERD 21 bảng chuẩn 3NF)}
 
-Cơ sở dữ liệu của hệ thống bao gồm \textbf{21 bảng quan hệ} đạt chuẩn 3NF, được chia thành hai phân vùng: Phân hệ Lõi Nghiệp vụ Xưởng \& Kho (Hình~\ref{fig:g-erd-core}) và Phân hệ Tài chính, Kiểm toán \& Quản trị AI (Hình~\ref{fig:g-erd-ops}).
+Cơ sở dữ liệu của hệ thống gồm \textbf{21 bảng} (17 bảng nghiệp vụ lõi của garage và 4 bảng mở rộng cửa hàng dụng cụ \texttt{shop\_*}) cùng \textbf{37 chỉ mục (indexes)}, được định nghĩa tại \texttt{database/schema.sql} và tự động nâng cấp qua 5 bản di trú (\texttt{001} $\rightarrow$ \texttt{005}) trong \texttt{database/migrations/}. Sơ đồ ERD được chia thành hai nhóm: Phân hệ Tiếp nhận, Phiếu sửa chữa \& Sổ cái Kho (Hình~\ref{fig:g-erd-core}) và Phân hệ Người dùng, Báo giá, Hóa đơn, Bảo hành \& Kết quả AI (Hình~\ref{fig:g-erd-ops}).
 
 \begin{figure}[H]
 \centering
 \vspace{2pt}
 \input{figures/erd-core.tex}
 \vspace{2pt}
-\caption{Sơ đồ thực thể liên kết (ERD) phân hệ Tiếp nhận, Phiếu sửa chữa và Kho phụ tùng}
+\caption{Sơ đồ thực thể liên kết (ERD) phân hệ Khách hàng, Phương tiện, Phiếu sửa chữa và Sổ cái Kho}
 \label{fig:g-erd-core}
 \end{figure}
 
@@ -33,16 +33,16 @@ Cơ sở dữ liệu của hệ thống bao gồm \textbf{21 bảng quan hệ} �
 \vspace{2pt}
 \input{figures/erd-ops.tex}
 \vspace{2pt}
-\caption{Sơ đồ thực thể liên kết (ERD) phân hệ Tài chính, Kiểm toán và Quản trị AI}
+\caption{Sơ đồ thực thể liên kết (ERD) phân hệ Người dùng, Báo giá, Hóa đơn, Bảo hành và Kết quả AI}
 \label{fig:g-erd-ops}
 \end{figure}
 
-Bảng~\ref{tab:g-db-schema} đặc tả vai trò, khóa chính/khóa ngoại và các ràng buộc toàn vẹn của toàn bộ 21 bảng dữ liệu trong hệ thống.
+Bảng~\ref{tab:g-db-schema} đặc tả chính xác tên bảng, khóa chính, khóa ngoại và các ràng buộc toàn vẹn (\texttt{CHECK}, \texttt{UNIQUE}, \texttt{ON DELETE RESTRICT}) đúng như trong tệp \texttt{database/schema.sql}.
 
 \begin{small}
 \renewcommand{\arraystretch}{1.05}
-\begin{longtable}{|L{4.4cm}|L{3.0cm}|L{6.3cm}|}
-\caption{Đặc tả cấu trúc 21 bảng dữ liệu quan hệ và ràng buộc toàn vẹn}\label{tab:g-db-schema}\\
+\begin{longtable}{|L{4.2cm}|L{3.1cm}|L{6.4cm}|}
+\caption{Đặc tả cấu trúc 21 bảng dữ liệu và ràng buộc toàn vẹn trong \texttt{database/schema.sql}}\label{tab:g-db-schema}\\
 \hline
 \thead{Tên bảng} & \thead{Khóa chính \& Khóa ngoại} & \thead{Vai trò nghiệp vụ và Ràng buộc toàn vẹn (Constraints)}\\
 \hline
@@ -59,153 +59,152 @@ Bảng~\ref{tab:g-db-schema} đặc tả vai trò, khóa chính/khóa ngoại v�
 \hline
 \endlastfoot
 
-\texttt{users} & PK: \texttt{id} & Lưu tài khoản nhân sự; ràng buộc \texttt{username}, \texttt{email} duy nhất; \texttt{role} thuộc 4 vai trò chuẩn; cờ \texttt{is\_active}. \\
+1. \texttt{users} & PK: \texttt{id} & Tài khoản nhân viên; \texttt{username UNIQUE}; \texttt{role IN ('MANAGER', 'RECEPTIONIST', 'TECHNICIAN', 'CASHIER')}; \texttt{is\_active IN (0,1)}; \texttt{auth\_version >= 1}. \\
 \hline
-\texttt{customers} & PK: \texttt{id} & Hồ sơ chủ phương tiện; kiểm tra định dạng số điện thoại, phân hạng khách hàng và tổng chi tiêu tích lũy. \\
+2. \texttt{customers} & PK: \texttt{id} & Hồ sơ khách hàng; lưu \texttt{name}, \texttt{phone UNIQUE}, \texttt{email}, \texttt{address}, \texttt{created\_at}. \\
 \hline
-\texttt{vehicles} & PK: \texttt{id}; FK: \texttt{customer\_id} & Hồ sơ xe ô tô; ràng buộc duy nhất (\texttt{UNIQUE}) trên biển số \texttt{license\_plate} và số khung \texttt{vin}; \texttt{mileage} $\ge 0$. \\
+3. \texttt{vehicles} & PK: \texttt{id}; FK: \texttt{customer\_id} & Hồ sơ phương tiện; \texttt{plate UNIQUE}, \texttt{vin UNIQUE}; \texttt{year BETWEEN 1900 AND 2100}; \texttt{odometer >= 0}; \texttt{is\_active IN (0,1)}. \\
 \hline
-\texttt{appointments} & PK: \texttt{id}; FK: \texttt{customer\_id}, \texttt{vehicle\_id}, \texttt{advisor\_id} & Lịch hẹn dịch vụ theo khoang (\texttt{bay\_number}) và khung giờ; ngăn chặn đặt trùng khoang trong cùng thời điểm. \\
+4. \texttt{appointments} & PK: \texttt{id}; FK: \texttt{customer\_id}, \texttt{vehicle\_id} & Lịch hẹn dịch vụ; giữ cả \texttt{customer\_id} và \texttt{vehicle\_id} để đặt lịch nhanh; \texttt{status IN ('SCHEDULED', 'CONFIRMED', 'CANCELLED', 'DONE')}. \\
 \hline
-\texttt{repair\_orders} & PK: \texttt{id}; FK: \texttt{vehicle\_id}, \texttt{advisor\_id}, \texttt{technician\_id} & Bảng trung tâm quản lý Phiếu sửa chữa (RO); mã \texttt{ro\_number} duy nhất; kiểm soát 10 trạng thái vòng đời. \\
+5. \texttt{services} & PK: \texttt{id} & Danh mục dịch vụ sửa chữa; \texttt{name UNIQUE}, \texttt{description} (cho phép \texttt{NULL}), \texttt{price >= 0} (kiểu \texttt{INTEGER}), \texttt{is\_active}. \\
 \hline
-\texttt{ro\_line\_items} & PK: \texttt{id}; FK: \texttt{repair\_order\_id}, \texttt{part\_id}, \texttt{service\_id} & Chi tiết từng dòng hạng mục vật tư (\texttt{PART}) hoặc nhân công (\texttt{LABOR}) trong RO; ràng buộc số lượng và đơn giá $\ge 0$. \\
+6. \texttt{parts} & PK: \texttt{id} & Danh mục phụ tùng; \texttt{name UNIQUE}, \texttt{sku}, \texttt{stock >= 0}, \texttt{min\_stock >= 0}, \texttt{price >= 0}, \texttt{is\_active}. \\
 \hline
-\texttt{ro\_status\_history} & PK: \texttt{id}; FK: \texttt{repair\_order\_id}, \texttt{changed\_by} & Lưu vết bất biến mọi lần chuyển trạng thái của phiếu RO kèm mốc thời gian và lý do thay đổi. \\
+7. \texttt{stock\_transactions} & PK: \texttt{id}; FK: \texttt{part\_id}, \texttt{repair\_order\_id}, \texttt{created\_by} & Sổ cái tồn kho bất biến; \texttt{reason IN ('RECEIPT', 'USAGE', 'RETURN', 'ADJUSTMENT')}; duy trì bất biến $\texttt{parts.stock} = \sum \texttt{qty}$. \\
 \hline
-\texttt{qc\_inspections} & PK: \texttt{id}; FK: \texttt{repair\_order\_id}, \texttt{inspector\_id} & Biên bản nghiệm thu chất lượng kỹ thuật (QC Checklist) trước khi cho phép xuất xưởng và lập hóa đơn. \\
+8. \texttt{repair\_orders} & PK: \texttt{id}; FK: \texttt{vehicle\_id}, \texttt{technician\_id}, \texttt{accepted\_by} & Phiếu sửa chữa; 6 trạng thái (\texttt{RECEIVED}, \texttt{INSPECTING}, \texttt{ESTIMATING}, \texttt{REPAIRING}, \texttt{COMPLETED}, \texttt{CANCELLED}); \texttt{CHECK (acceptance\_at IS NULL OR accepted\_by IS NOT NULL)}. \\
 \hline
-\texttt{service\_catalog} & PK: \texttt{id} & Danh mục định mức giờ công và đơn giá chuẩn cho các dịch vụ bảo dưỡng, đồng sơn, máy gầm, điện lạnh. \\
+9. \texttt{repair\_order\_items} & PK: \texttt{id}; FK: \texttt{repair\_order\_id}, \texttt{service\_id}, \texttt{part\_id} & Hạng mục của phiếu; \textbf{ràng buộc XOR}: \texttt{(service\_id IS NOT NULL AND part\_id IS NULL) OR (service\_id IS NULL AND part\_id IS NOT NULL)}; \texttt{qty > 0}, \texttt{unit\_price >= 0} (chốt cứng). \\
 \hline
-\texttt{suppliers} & PK: \texttt{id} & Thông tin nhà cung cấp phụ tùng chính hãng và OEM, điều khoản thanh toán và liên hệ. \\
+10. \texttt{repair\_logs} & PK: \texttt{id}; FK: \texttt{repair\_order\_id}, \texttt{technician\_id} & Nhật ký kỹ thuật ghi lại từng bước kiểm tra, sửa chữa và chuyển trạng thái trên phiếu. \\
 \hline
-\texttt{parts} & PK: \texttt{id}; FK: \texttt{supplier\_id} & Danh mục phụ tùng tồn kho; mã \texttt{sku} duy nhất; ràng buộc $\texttt{quantity\_on\_hand} \ge \texttt{reserved\_qty} \ge 0$. \\
+11. \texttt{intake\_records} & PK: \texttt{id}; FK: \texttt{repair\_order\_id UNIQUE}, \texttt{created\_by} & Biên bản tiếp nhận xe (1--1 với phiếu sửa chữa); lưu \texttt{odometer\_at\_intake >= 0}, \texttt{fuel\_level}, \texttt{exterior\_condition}, \texttt{accessories}. \\
 \hline
-\texttt{purchase\_orders} & PK: \texttt{id}; FK: \texttt{supplier\_id}, \texttt{created\_by} & Đơn đặt hàng nhập kho phụ tùng từ nhà cung cấp kèm trạng thái giao nhận. \\
+12. \texttt{quotations} & PK: \texttt{id}; FK: \texttt{repair\_order\_id}, \texttt{created\_by}, \texttt{approved\_by}, \texttt{applied\_by} & Báo giá chính thức; 5 trạng thái (\texttt{DRAFT}, \texttt{SENT}, \texttt{APPROVED}, \texttt{REJECTED}, \texttt{EXPIRED}); cột \texttt{applied\_at} đảm bảo chỉ áp dụng 1 lần (\textit{idempotent}). \\
 \hline
-\texttt{inventory\_txns} & PK: \texttt{id}; FK: \texttt{part\_id}, \texttt{repair\_order\_id} & Sổ cái giao dịch nhập/xuất/điều chỉnh tồn kho (\texttt{IN}, \texttt{OUT}, \texttt{RESERVE}, \texttt{RELEASE}) phục vụ đối soát. \\
+13. \texttt{quotation\_items} & PK: \texttt{id}; FK: \texttt{quotation\_id}, \texttt{service\_id}, \texttt{part\_id} & Hạng mục trong báo giá; áp dụng cùng \textbf{ràng buộc XOR} giữa dịch vụ và phụ tùng; \texttt{qty > 0}, \texttt{unit\_price >= 0}. \\
 \hline
-\texttt{inventory\_reservations} & PK: \texttt{id}; FK: \texttt{repair\_order\_id}, \texttt{part\_id} & Quản lý lượng phụ tùng đang đặt giữ cho từng phiếu RO; bảo vệ an toàn giao dịch đồng thời. \\
+14. \texttt{invoices} & PK: \texttt{id}; FK: \texttt{repair\_order\_id UNIQUE} & Hóa đơn của phiếu (1--1); \texttt{status IN ('UNPAID','PARTIAL','PAID')}; \textbf{ràng buộc chống thu vượt}: \texttt{CHECK (paid <= total)}. \\
 \hline
-\texttt{invoices} & PK: \texttt{id}; FK: \texttt{repair\_order\_id}, \texttt{issued\_by} & Hóa đơn tài chính gắn với RO; lưu tổng tiền hàng, chiết khấu, thuế VAT và số dư còn phải thu. \\
+15. \texttt{payments} & PK: \texttt{id}; FK: \texttt{invoice\_id} & Lịch sử các đợt thanh toán; \texttt{amount > 0}; \texttt{method IN ('CASH','CARD','TRANSFER','ZALO')}. \\
 \hline
-\texttt{payments} & PK: \texttt{id}; FK: \texttt{invoice\_id}, \texttt{received\_by} & Giao dịch thu tiền thực tế (Tiền mặt, Chuyển khoản, Thẻ) hỗ trợ thanh toán một lần hoặc trả góp nhiều đợt. \\
+16. \texttt{ai\_results} & PK: \texttt{id}; FK: \texttt{repair\_order\_id}, \texttt{reviewed\_by} & Lưu kết quả AI và trạng thái duyệt; \texttt{kind IN ('history', 'explain', 'quote')}; \texttt{review\_status IN ('PENDING', 'APPROVED', 'REJECTED')}; \texttt{CHECK (review\_status = 'PENDING' OR (reviewed\_by IS NOT NULL AND reviewed\_at IS NOT NULL))}. \\
 \hline
-\texttt{warranty\_claims} & PK: \texttt{id}; FK: \texttt{repair\_order\_id}, \texttt{part\_id} & Quản lý hồ sơ yêu cầu bảo hành đối với phụ tùng và hạng mục công việc sau sửa chữa. \\
+17. \texttt{warranties} & PK: \texttt{id}; FK: \texttt{repair\_order\_id}, \texttt{service\_id}, \texttt{part\_id}, \texttt{created\_by} & Bảo hành theo hạng mục của phiếu đã hoàn thành; \texttt{scope IN ('SERVICE', 'PART')} kèm \textbf{ràng buộc XOR}; \texttt{months > 0}, \texttt{end\_date > start\_date}. \\
 \hline
-\texttt{maintenance\_reminders} & PK: \texttt{id}; FK: \texttt{vehicle\_id}, \texttt{customer\_id} & Lịch nhắc bảo dưỡng định kỳ theo mốc ODO dự kiến hoặc mốc thời gian (kết nối với tác vụ AI04). \\
-\hline
-\texttt{ai\_suggestions} & PK: \texttt{id}; FK: \texttt{repair\_order\_id}, \texttt{reviewed\_by} & Lưu toàn bộ gợi ý do AI01--AI04 sinh ra cùng trạng thái duyệt HITL (\texttt{PENDING}, \texttt{ACCEPTED}, \texttt{REJECTED}). \\
-\hline
-\texttt{ai\_audit\_logs} \& \newline \texttt{prompts} & PK: \texttt{id}; FK: \texttt{user\_id} & Lưu phiên bản Prompt ngoại hóa (\texttt{v1.0}--\texttt{v3.2}) và nhật ký kiểm toán từng lần gọi LLM (độ trễ, token, cờ fallback). \\
-\hline
-\texttt{ai\_provider\_credentials}\newline \& \texttt{audit\_logs} & PK: \texttt{id}; FK: \texttt{owner\_user\_id} & Kho lưu trữ khóa API mã hóa BYOK của từng nhà cung cấp và nhật ký bảo mật toàn hệ thống. \\
+18--21. \texttt{shop\_categories},\newline \texttt{shop\_products},\newline \texttt{shop\_orders},\newline \texttt{shop\_order\_items} & PK: \texttt{id}; FK: \texttt{category\_id}, \texttt{order\_id}, \texttt{product\_id} & Bốn bảng mở rộng cho mô-đun cửa hàng dụng cụ/phụ kiện (\texttt{shop\_orders.status IN ('PENDING', 'PAID', 'SHIPPED', 'CANCELLED')}). \\
 \hline
 \end{longtable}
 \end{small}
 
-\section{Thiết kế kiến trúc Điều phối AI, RAG Context Gate và Kho khóa BYOK}
+\section{Thiết kế Pipeline AI 7 bước và Cơ chế Chống ảo giác giá}
 
-Để mô hình ngôn ngữ lớn đưa ra gợi ý chính xác với thực tế xưởng dịch vụ mà không làm lộ dữ liệu nhạy cảm, hệ thống thiết kế đường ống xử lý AI 7 bước (Hình~\ref{fig:g-ai-pipeline}) cùng ma trận kiểm soát ngữ cảnh (Bảng~\ref{tab:g-context-gate}).
+Để đảm bảo AI hoạt động đúng vai trò trợ lý tư vấn, hệ thống thiết kế luồng xử lý 7 bước tại \texttt{app/ai\_gateway.py} và \texttt{app/services/ai.py} (Hình~\ref{fig:g-ai-pipeline}) cùng bảng kiểm soát dữ liệu cho từng chức năng (Bảng~\ref{tab:g-context-gate}).
 
 \begin{figure}[H]
 \centering
 \vspace{2pt}
 \input{figures/ai-pipeline.tex}
 \vspace{2pt}
-\caption{Kiến trúc đường ống xử lý AI (AI Pipeline), RAG Context Gate và Smart Fallback}
+\caption{Quy trình xử lý 7 bước của AI Gateway, lọc khớp giá CSDL và duyệt Human Review}
 \label{fig:g-ai-pipeline}
 \end{figure}
 
 \begin{table}[H]
 \centering
 \small
-\caption{Ma trận kiểm soát ranh giới dữ liệu nạp vào ngữ cảnh AI (RAG Context Gate)}
+\caption{Dữ liệu đầu vào và cơ chế kiểm soát đầu ra của 3 chức năng AI}
 \label{tab:g-context-gate}
-\begin{tabularx}{\textwidth}{|L{2.8cm}|Y|Y|}
+\begin{tabularx}{\textwidth}{|L{2.9cm}|Y|Y|}
 \hline
-\thead{Tác vụ AI} & \thead{Dữ liệu được phép nạp vào Prompt (Allowlist)} & \thead{Dữ liệu bị cấm tuyệt đối (Blocklist -- Bảo vệ PII \& Bí mật)}\\
+\thead{Chức năng AI} & \thead{Biến dữ liệu ghép vào Prompt (\texttt{config/prompts/*.txt})} & \thead{Ràng buộc đầu ra \& Xử lý ca biên tại \texttt{ai\_gateway.py}}\\
 \hline
-AI01: Chẩn đoán triệu chứng & Hãng xe, dòng xe, đời sản xuất, số ODO hiện tại, mô tả triệu chứng kỹ thuật, lịch sử các hạng mục sửa chữa trước đây của cùng mã VIN. & Họ tên chủ xe, số điện thoại, địa chỉ email, căn cước công dân, thông tin thẻ thanh toán. \\
+AI01: Tóm tắt lịch sử sửa chữa (\texttt{history.txt}) & Biến \texttt{\{\{repair\_history\}\}}: thông tin biển số, hãng, dòng, năm sản xuất và danh sách các phiếu sửa chữa + hạng mục trước đó của xe. & Trả về đúng 4 mục đánh số \texttt{1..4}; nếu xe chưa từng sửa chữa (\texttt{orders} rỗng, ví dụ \texttt{vehicle\_id=6}), ghi rõ “Chưa có lịch sử sửa chữa” và cấm suy đoán lỗi. \\
 \hline
-AI02: Đề xuất báo giá \& phụ tùng & Kết quả chẩn đoán kỹ thuật, danh mục dịch vụ chuẩn (\texttt{service\_catalog}) và danh sách mã SKU, tên phụ tùng, đơn giá bán, số lượng khả dụng ($\text{OnHand} - \text{Reserved}$). & Giá vốn nhập kho (\texttt{cost\_price}), chiết khấu nhà cung cấp, biên lợi nhuận nội bộ của xưởng. \\
+AI02: Giải thích dịch vụ (\texttt{explain.txt}) & Biến \texttt{\{\{service\}\}}: tên dịch vụ, đơn giá niêm yết (\texttt{services.price}) và mô tả kỹ thuật (\texttt{services.description}). & Trả về 3 mục dễ hiểu cho khách hàng; nếu dịch vụ chưa có mô tả (\texttt{description IS NULL}, ví dụ \texttt{service\_id=7}) thì tự điền câu mặc định ở mục 1, không báo lỗi 500. \\
 \hline
-AI03: Tóm tắt tiến độ RO & Trạng thái hiện tại của RO, danh sách hạng mục đã hoàn thành, kết quả kiểm tra QC và tổng chi phí tạm tính. & Ghi chú nội bộ giữa quản lý và kỹ thuật viên, lương thưởng nhân sự. \\
-\hline
-AI04: Cảnh báo bảo dưỡng & Dòng xe, số ODO hiện tại, ngày bảo dưỡng gần nhất và các mốc ODO đã thay dầu/lọc/má phanh trong quá khứ. & Dữ liệu định vị hành trình cá nhân hoặc thông tin tài chính của khách hàng. \\
+AI03: Báo giá nháp (\texttt{quote.txt}) & Biến \texttt{\{\{items\}\}} và \texttt{\{\{backend\_total\}\}}: danh sách hạng mục từ \texttt{repair\_order\_items} (hoặc từ báo giá \texttt{quotations} đang mở) và tổng tiền do Backend tự cộng. & Chỉ giữ lại các dòng trong JSON khớp chính xác \texttt{(name, qty, unit\_price)} với CSDL; luôn gán \texttt{total = backend\_total}; tự động fallback sang \texttt{\_goi\_mock} nếu lỗi. \\
 \hline
 \end{tabularx}
 \end{table}
 
-\section{Tiến hóa và tối ưu hóa Prompt qua 3 vòng lặp thực nghiệm}
+\section{Ba vòng thử nghiệm và tối ưu Prompt (\texttt{KT3\_PROMPT\_EXPERIMENTS.md})}
 
-Toàn bộ cấu hình System Prompt và User Prompt Template của 4 tác vụ AI01--AI04 được tách biệt hoàn toàn khỏi mã nguồn Python, quản lý tập trung theo phiên bản để dễ dàng kiểm toán và tối ưu hóa. Nhóm đã thực hiện 3 vòng lặp cải tiến kỹ thuật Prompt (Prompt Engineering Iterations):
+Toàn bộ lời nhắc gửi lên mô hình được tách khỏi mã nguồn Python thành 4 tệp văn bản trong \texttt{config/prompts/} (\texttt{system.txt}, \texttt{history.txt}, \texttt{explain.txt}, \texttt{quote.txt}). Nhóm đã thực hiện 3 vòng thử nghiệm và cải tiến cho từng chức năng:
 
-\begin{itemize}
-  \item \textbf{Vòng 1 -- Phiên bản \texttt{v1.0} (Zero-shot Naïve Prompt)}: Chỉ truyền câu lệnh đơn giản (\textit{“Hãy chẩn đoán lỗi xe và gợi ý phụ tùng thay thế cho triệu chứng sau...”}).
-  \textbf{Nhược điểm phát hiện}: Mô hình trả về văn bản tự do kèm các khối đánh dấu \texttt{```json} không đồng nhất khiến bộ phân tích cú pháp thất bại 65\%; nghiêm trọng hơn, mô hình tự bịa ra các mã phụ tùng không tồn tại trong kho xưởng và ước lượng giá bằng đồng USD.
-  \item \textbf{Vòng 2 -- Phiên bản \texttt{v2.0} (Role-based + Explicit JSON Schema)}: Thiết lập vai trò Kỹ sư trưởng chẩn đoán ô tô, định nghĩa rõ cấu trúc các khóa JSON bắt buộc (\texttt{possible\_causes}, \texttt{recommended\_parts}, \texttt{confidence\_score}) và đơn vị tiền tệ VNĐ.
-  \textbf{Kết quả \& Hạn chế}: Tỷ lệ hợp lệ cú pháp tăng lên 88.5\%, nhưng khi gặp các triệu chứng phức tạp, mô hình vẫn đôi lúc gợi ý tên phụ tùng chung chung không khớp với mã \texttt{sku} trong bảng \texttt{parts} hoặc đề xuất xuất kho vượt quá số lượng khả dụng.
-  \item \textbf{Vòng 3 -- Phiên bản \texttt{v3.2} (RAG Inventory Grounding + Anti-Hallucination Guardrails)}: Bơm trực tiếp danh sách phụ tùng khả dụng từ CSDL vào vùng ngữ cảnh \texttt{[AVAILABLE\_INVENTORY\_CONTEXT]}, kết hợp 4 mệnh đề rào chắn âm (Negative Constraints): (1) Chỉ được chọn mã \texttt{sku} nằm trong danh sách kho cung cấp; (2) Nếu phụ tùng cần thiết có $\text{available\_qty} == 0$, bắt buộc gắn cờ \texttt{stock\_warning = true}; (3) Không bao giờ tự khẳng định 100\% nguyên nhân khi chưa tháo kiểm tra thực tế; (4) Chỉ xuất duy nhất đối tượng JSON hợp lệ khớp với Pydantic v2 Schema.
+\begin{itemize}[noitemsep,topsep=2pt]
+  \item \textbf{Vòng 1 -- Câu lệnh ngắn, không quy định cấu trúc đầu ra}:
+  Ví dụ với AI01 chỉ viết \textit{“Tóm tắt lịch sử sửa chữa sau cho nhân viên lễ tân: \{\{repair\_history\}\}”}; với AI03 chỉ yêu cầu \textit{“Tạo báo giá nháp dạng JSON từ danh sách hạng mục”}.
+  \textbf{Vấn đề gặp phải}: Mỗi lần gọi AI01 trả về một bố cục khác nhau, và khi gặp xe mới chưa có lịch sử thì mô hình tự suy diễn các lỗi thường gặp của dòng xe; với AI03, mô hình trả kèm khối \texttt{```json} và có lần cộng nhầm tổng tiền \texttt{total}.
+  \item \textbf{Vòng 2 -- Quy định rõ bố cục mục và khóa JSON, truyền sẵn \texttt{backend\_total}}:
+  Quy định cố định 4 mục cho AI01, 3 mục cho AI02 và truyền sẵn biến \texttt{\{\{backend\_total\}\}} vào \texttt{quote.txt}.
+  \textbf{Kết quả \& Điểm còn thiếu}: Đầu ra đã đi vào khuôn khổ, nhưng khi kiểm thử với dịch vụ có \texttt{description IS NULL} (dịch vụ \texttt{\#7} cân chỉnh thước lái) ở AI02 thì mô hình giải thích chung chung và thiếu đơn giá niêm yết; với AI03 khi phiếu sửa chữa trống hạng mục thì chưa có quy định trả mảng rỗng rõ ràng.
+  \item \textbf{Vòng 3 -- Bổ sung quy tắc xử lý dữ liệu trống và bộ lọc hậu kiểm ở Backend}:
+  Hoàn thiện cả 4 tệp prompt trong \texttt{config/prompts/}: cấm suy đoán khi xe chưa có lịch sử, truyền kèm đơn giá niêm yết và quy định câu trả lời mặc định khi \texttt{description} trống cho AI02, đồng thời bổ sung bộ lọc đối chiếu từng dòng \texttt{(name, qty, unit\_price)} và cưỡng bức \texttt{total = backend\_total} trong hàm \texttt{bao\_gia\_nhap}.
 \end{itemize}
 
-\begin{lstlisting}[caption={Cấu trúc System Prompt và User Template phiên bản v3.2 cho AI01 \& AI02}]
-SYSTEM_PROMPT_V3_2:
-  "Ban la Tro ly Ky thuat & Co van Dich vu O to (GarageTools AI Copilot).
-   1. Chi su dung thong tin trieu chung, lich su xe va danh muc ton kho trong [CONTEXT].
-   2. Doi voi de xuat phu tung (AI02), BAT BUOC chon dung ma SKU co trong [AVAILABLE_PARTS].
-   3. Neu so luong kha dung (available_qty) < so luong can thay, phai bat co stock_warning=true.
-   4. Tra ve DUY NHAT mot JSON object tuan thu nghiem ngat Schema, khong boc markdown."
-USER_TEMPLATE_V3_2:
-  "[VEHICLE_CONTEXT]: Hang={brand}, Dong={model}, Nam={year}, ODO={mileage}km.
-   [SYMPTOMS]: {customer_symptoms} | [HISTORY]: {recent_ro_summary}
-   [AVAILABLE_PARTS]: {rag_inventory_sku_list_json}
-   Hay phan tich va xuat JSON theo hop dong du lieu."
+\begin{lstlisting}[caption={Nội dung thực tế của tệp config/prompts/system.txt và config/prompts/quote.txt}]
+# File: config/prompts/system.txt
+Ban la tro ly AI noi bo cua garage sua chua o to. Nguyen tac bat buoc:
+1. Chi su dung thong tin co trong du lieu duoc cung cap. Khong suy doan, khong bia
+   them hang muc, gia tien, ngay thang hay nguyen nhan hong hoc.
+2. Neu du lieu thieu hoac trong, noi ro la chua co thong tin; khong tu dien.
+3. Khong dua ra chan doan ky thuat thay cho ky thuat vien.
+4. Tra loi bang tieng Viet ro rang, ngan gon, dung trong tam.
+
+# File: config/prompts/quote.txt
+Lap bao gia nhap tu danh sach hang muc da duoc ghi nhan trong phieu sua chua.
+Quy tac bat buoc:
+- Chi dung cac hang muc co trong danh sach. Khong them hang muc moi, khong doi
+  so luong, khong doi don gia.
+- Giu nguyen tong tien do he thong tinh san: {{backend_total}} VND.
+- Neu danh sach hang muc trong, tra ve "items": [] va "total": 0...
 \end{lstlisting}
 
-\section{Thiết kế kiến trúc triển khai và Giao diện lập trình (API)}
+\section{Thiết kế kiến trúc triển khai và Hệ thống Route / API}
 
-Hệ thống được đóng gói triển khai linh hoạt trên máy chủ cục bộ tại xưởng hoặc môi trường Docker Container (Hình~\ref{fig:g-deployment}), cung cấp 16 nhóm RESTful API chuẩn hóa (Bảng~\ref{tab:g-api-catalog}).
+Hệ thống hỗ trợ chạy trực tiếp bằng Uvicorn hoặc đóng gói qua Docker Compose (\texttt{Dockerfile}, \texttt{docker-compose.yml}) ánh xạ cổng \texttt{8010:8000} kèm kiểm tra sức khỏe tại \texttt{/healthz} và \texttt{/readyz} (Hình~\ref{fig:g-deployment}). Bảng~\ref{tab:g-api-catalog} liệt kê các nhóm API chính trong \texttt{app/routes/api/}.
 
 \begin{figure}[H]
 \centering
 \vspace{2pt}
 \input{figures/deployment.tex}
 \vspace{2pt}
-\caption{Kiến trúc triển khai vật lý và đóng gói dịch vụ của GarageTools AI}
+\caption{Sơ đồ triển khai hệ thống trên máy trạm tại xưởng hoặc Docker Compose}
 \label{fig:g-deployment}
 \end{figure}
 
 \begin{table}[H]
 \centering
 \small
-\caption{Danh mục các nhóm API RESTful chính của hệ thống GarageTools AI}
+\caption{Danh mục các mô-đun JSON API chính trong \texttt{app/routes/api/}}
 \label{tab:g-api-catalog}
-\begin{tabularx}{\textwidth}{|L{3.8cm}|C{1.9cm}|L{3.1cm}|Y|}
+\begin{tabularx}{\textwidth}{|L{4.0cm}|C{1.8cm}|L{3.1cm}|Y|}
 \hline
-\thead{Đường dẫn Endpoint} & \thead{Phương thức} & \thead{Phân quyền RBAC} & \thead{Chức năng nghiệp vụ chính}\\
+\thead{Mô-đun \& Đường dẫn} & \thead{Phương thức} & \thead{Quyền kiểm tra} & \thead{Chức năng nghiệp vụ chính}\\
 \hline
-\texttt{/api/auth/login}, \texttt{/me} & POST, GET & Công khai / Đã xác thực & Xác thực tài khoản, cấp phát JWT Bearer Token và truy xuất hồ sơ phiên làm việc. \\
+\texttt{auth\_api.py}\newline(\texttt{/api/auth/*}) & POST, GET & Công khai / Đã đăng nhập & Đăng nhập Argon2id, cấp cookie \texttt{garage\_session} + \texttt{garage\_csrf}, đổi mật khẩu (tăng \texttt{auth\_version}), đăng xuất. \\
 \hline
-\texttt{/api/customers}, \texttt{/vehicles} & GET, POST, PUT, DELETE & Admin, Advisor (KTV chỉ đọc xe gán) & Quản lý hồ sơ chủ xe, phương tiện theo biển số/VIN, tìm kiếm và phân trang. \\
+\texttt{parties\_api.py}\newline(\texttt{/api/customers}, \texttt{/vehicles}, \texttt{/appointments}) & GET, POST, PUT, DELETE & \texttt{customer.*}, \texttt{vehicle.*}, \texttt{appointment.*} & CRUD khách hàng, phương tiện, lịch hẹn; tìm kiếm, lọc và phân trang. \\
 \hline
-\texttt{/api/appointments} & GET, POST, PUT & Admin, Advisor & Quản lý lịch hẹn dịch vụ, kiểm tra xung đột khoang sửa chữa và chuyển thành RO. \\
+\texttt{orders\_api.py}\newline(\texttt{/api/orders/*}) & GET, POST, DELETE & \texttt{order.*} + \texttt{duoc\_gan\_cong} & Tạo phiếu sửa chữa, lưu biên bản tiếp nhận (\texttt{intake\_records}), phân công KTV, thêm/gỡ hạng mục, đổi trạng thái, nghiệm thu. \\
 \hline
-\texttt{/api/repair-orders} & GET, POST, PUT & Tất cả (KTV lọc theo \texttt{technician\_id}) & Quản lý vòng đời 10 trạng thái Phiếu sửa chữa, thêm hạng mục công việc/vật tư và nghiệm thu QC. \\
+\texttt{quotations\_api.py}\newline(\texttt{/api/quotations/*}) & GET, POST, DELETE & \texttt{quote.manage}, \texttt{quote.approve} & Tạo báo giá, thêm/gỡ dòng báo giá, gửi/duyệt báo giá và áp dụng \textit{idempotent} vào phiếu sửa chữa. \\
 \hline
-\texttt{/api/parts}, \texttt{/inventory/*} & GET, POST, PUT & Admin, Advisor, KTV (chỉ đọc/yêu cầu) & Quản lý danh mục SKU, nhập kho, đặt giữ nguyên tử (\texttt{BEGIN IMMEDIATE}) và giải phóng tồn kho. \\
+\texttt{catalog\_api.py} \& \texttt{stock\_api.py} & GET, POST, PUT & \texttt{catalog.*}, \texttt{stock.manage} & Quản lý danh mục dịch vụ, phụ tùng, nhập/điều chỉnh kho qua sổ cái \texttt{stock\_transactions} và đối soát tồn kho. \\
 \hline
-\texttt{/api/invoices}, \texttt{/payments} & GET, POST & Admin, Accountant, Advisor & Phát hành hóa đơn từ RO, tính thuế VAT/chiết khấu, thu tiền nhiều đợt và theo dõi công nợ. \\
+\texttt{billing\_api.py}\newline(\texttt{/api/invoices}, \texttt{/payments}) & GET, POST, DELETE & \texttt{invoice.manage}, \texttt{payment.record} & Lập hóa đơn cho phiếu đã \texttt{COMPLETED}, thu tiền từng phần/toàn bộ (\texttt{paid <= total}) và hủy khoản thu nhầm. \\
 \hline
-\texttt{/api/ai/diagnose}, \texttt{/ro-copilot}, \texttt{/summarize}, \texttt{/maintenance} & POST & Admin, Advisor, Technician (trên RO gán) & Kích hoạt 4 tác vụ AI01--AI04 qua RAG Context Gate, lưu đề xuất trạng thái \texttt{PENDING} và ghi Audit Log. \\
+\texttt{warranties\_api.py}\newline(\texttt{/api/warranties/*}) & GET, POST & \texttt{warranty.manage} & Tạo bảo hành theo hạng mục của phiếu đã hoàn thành, yêu cầu bảo hành (\texttt{CLAIMED}) hoặc hủy bảo hành. \\
 \hline
-\texttt{/api/ai/suggestions/}\newline\texttt{\{id\}/*} & POST & Admin, Advisor & Phê duyệt (\texttt{/approve}) hoặc từ chối (\texttt{/reject}) gợi ý của AI theo cơ chế Human-in-the-loop. \\
+\texttt{ai\_api.py}\newline(\texttt{/api/ai/*}) & GET, POST & \texttt{ai.history}, \texttt{ai.explain}, \texttt{ai.quote}, \texttt{ai.review} & Chạy 3 chức năng AI01--AI03 và duyệt/từ chối kết quả AI trong bảng \texttt{ai\_results}. \\
 \hline
-\texttt{/api/ai-providers/*}, \texttt{/system/backups/*} & GET, POST, PUT & Admin & Cấu hình khóa BYOK mã hóa (chống SSRF), kiểm tra kết nối LLM, sao lưu và phục hồi CSDL SQLite. \\
+\texttt{dashboard\_api.py}, \texttt{reports\_api.py}, \texttt{admin\_api.py} & GET, POST, PUT & \texttt{dashboard.view}, \texttt{report.view}, \texttt{user.*} & Tổng quan garage, 5 báo cáo thống kê và quản trị tài khoản nhân viên. \\
 \hline
 \end{tabularx}
 \end{table}
 
 \section{Kết luận chương}
 
-Chương 4 đã trình bày toàn diện thiết kế kiến trúc C4 Container, mô hình dữ liệu quan hệ 21 bảng chuẩn 3NF, kiến trúc đường ống RAG + BYOK và sự tiến hóa của Prompt từ \texttt{v1.0} lên \texttt{v3.2}. Toàn bộ các bản thiết kế này được chuyển hóa trực tiếp thành mã nguồn thực tế trình bày tại Chương 5.
+Chương 4 đã trình bày đầy đủ thiết kế kiến trúc 4 tầng, lược đồ CSDL 21 bảng chuẩn 3NF với 37 chỉ mục, quy trình xử lý 7 bước của AI Gateway và 3 vòng thử nghiệm cải tiến Prompt. Chương 5 tiếp theo sẽ trình bày chi tiết việc hiện thực hóa các thiết kế này trong mã nguồn.

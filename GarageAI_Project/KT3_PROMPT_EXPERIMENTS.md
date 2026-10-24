@@ -72,7 +72,7 @@ Prompt nằm ở `config/prompts/`, tách khỏi mã nguồn, nạp bằng
 - **Kết quả:** vẫn tạo được kết quả hợp lệ. Phần đầu ghi đúng câu bắt buộc do prompt quy
   định: *"Danh mục chưa có mô tả cho dịch vụ này"*.
 - **Nhận xét:** đây là ca biên bắt buộc phải chạy được chứ không được lỗi 500. Có ca kiểm
-  thử tự động: `test_ai02_dich_vu_thieu_mo_ta_van_tao_duoc_ket_qua`.
+  thử tự động: `test_ba_chuc_nang_sinh_ket_qua_pending` (`subTest service_id=7`).
 - **Quyết định:** giữ.
 
 ### 3.3 Lần thử 3 — phong cách ngôn ngữ
@@ -145,4 +145,4 @@ Prompt nằm ở `config/prompts/`, tách khỏi mã nguồn, nạp bằng
 | Rate limit (HTTP 429) & Lỗi máy chủ AI (HTTP 500) | `TestAiGateway.test_429_va_500_bi_chuyen_sang_mock` | Đạt |
 | Phản hồi rỗng / JSON sai định dạng / bọc markdown | `TestAiGateway.test_phan_tich_json_boc_khoi` & `test_429_va_500_bi_chuyen_sang_mock` | Đạt |
 | Dữ liệu đầu vào quá dài (> `AI_MAX_CONTEXT`) | `TestAiGateway.test_cat_ngu_dung_vuot_gioi_han` | Đạt (tự cắt ngắn kèm chú thích `[dữ liệu bị cắt bớt...]`) |
-| Đo độ trễ mô hình thật (`groq` — `openai/gpt-oss-120b`) | Đo thực nghiệm 12/10/2026 (`IMPLEMENTATION_PROGRESS.md`) | Đạt: gọi thô **1.20s**, AI01 **2.46s**, AI02 **3.99s**, AI03 **2.98s** (đều < ngưỡng 10s của CK-07) |
+| Đo độ trễ mô hình thật (`groq` — `openai/gpt-oss-120b`) | Đo thực nghiệm 12/10/2026 (`Báo cáo.pdf` Chương 7) | Đạt: gọi thô **1.20s**, AI01 **2.46s**, AI02 **3.99s**, AI03 **2.98s** (đều < ngưỡng 10s của CK-07) |

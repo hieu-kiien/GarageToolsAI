@@ -37,7 +37,7 @@ RÀNG BUỘC BẮT BUỘC
 
 ĐỊNH DẠNG ĐẦU RA
 1. Dịch vụ là gì: {giải thích ngắn bằng tiếng Việt}
-2. Hạng mục đang ghi nhận: {danh sách hạng mục có trong phiếu}
+2. Hạng mục đang ghi nhận: {tên dịch vụ và đơn giá niêm yết trong danh mục}
 3. Khách cần lưu ý: {lưu ý dựa trên dữ liệu, hoặc "Không có"}
 
 Kết quả sẽ được lưu vào bảng ai_results với trạng thái PENDING và phải được

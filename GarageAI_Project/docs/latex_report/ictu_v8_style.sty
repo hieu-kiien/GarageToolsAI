@@ -29,18 +29,35 @@
 \RequirePackage{tikz}
 \RequirePackage{pgfplots}
 \pgfplotsset{compat=1.18}
-\usetikzlibrary{arrows.meta,positioning,shapes.geometric,shapes.multipart,calc,fit,backgrounds,matrix}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,shapes.multipart,calc,fit,backgrounds,matrix,shadows}
 
-% Print-ready monochrome palette (100% crisp black for physical book printing)
-\definecolor{ictunavy}{RGB}{0,0,0}
-\definecolor{ictublue}{RGB}{0,0,0}
-\definecolor{ictulight}{RGB}{245,245,245}
-\definecolor{ictugray}{RGB}{235,235,235}
-\definecolor{ictugreen}{RGB}{0,0,0}
-\definecolor{ictuorange}{RGB}{0,0,0}
-\definecolor{ictureddark}{RGB}{0,0,0}
-\definecolor{codebg}{RGB}{248,248,248}
-\definecolor{codeframe}{RGB}{180,180,180}
+% Print-ready & academic palette (Clean pastel diagram palette)
+\definecolor{ictunavy}{RGB}{15,23,42}
+\definecolor{ictublue}{RGB}{2,106,167}
+\definecolor{ictulight}{RGB}{245,247,250}
+\definecolor{ictugray}{RGB}{235,238,242}
+\definecolor{ictugreen}{RGB}{22,128,60}
+\definecolor{ictuorange}{RGB}{180,83,9}
+\definecolor{ictureddark}{RGB}{185,28,28}
+\definecolor{navy}{RGB}{15,40,80}
+\definecolor{teal}{RGB}{15,118,110}
+\definecolor{amber}{RGB}{180,83,9}
+\definecolor{crimson}{RGB}{185,28,28}
+\definecolor{slate}{RGB}{71,85,105}
+\definecolor{diagbluefill}{RGB}{232,244,253}
+\definecolor{diagblueline}{RGB}{3,105,161}
+\definecolor{diaggreenfill}{RGB}{233,247,239}
+\definecolor{diaggreenline}{RGB}{21,128,61}
+\definecolor{diagamberfill}{RGB}{254,245,231}
+\definecolor{diagamberline}{RGB}{180,83,9}
+\definecolor{diagpurplefill}{RGB}{243,238,253}
+\definecolor{diagpurpleline}{RGB}{109,40,217}
+\definecolor{diagslatefill}{RGB}{238,242,246}
+\definecolor{diagslateline}{RGB}{71,85,105}
+\definecolor{diagrosefill}{RGB}{254,242,242}
+\definecolor{diagroseline}{RGB}{185,28,28}
+\definecolor{codebg}{RGB}{248,250,252}
+\definecolor{codeframe}{RGB}{203,213,225}
 
 \RequirePackage{titlesec}
 \titleformat{\chapter}[display]
@@ -68,7 +85,7 @@
 \RequirePackage{fancyhdr}
 \pagestyle{fancy}
 \fancyhf{}
-\fancyhead[L]{\small\itshape Báo cáo Đồ án Học phần Ứng dụng AI (AIA331) -- Đề tài 80277}
+\fancyhead[L]{\small\itshape Báo cáo Dự án Học phần Ứng dụng AI (AIA331) -- Đề tài 80277}
 \fancyhead[R]{\small\itshape Hệ thống GarageTools AI}
 \fancyfoot[C]{\small\thepage}
 \renewcommand{\headrulewidth}{0.4pt}
@@ -145,7 +162,7 @@
   linkcolor=black,
   citecolor=black,
   urlcolor=black,
-  pdftitle={Bao cao Do an Ung dung AI AIA331 - De tai 80277 - GarageTools AI},
+  pdftitle={Bao cao Do an Ung dung AI AIA331 - De tai 80277 - Garage AI},
   pdfauthor={Nhom 23 - Nguyen Duc Dung, Dong Quoc Khanh}
 }
 

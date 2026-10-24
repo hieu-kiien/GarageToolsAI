@@ -1,183 +1,158 @@
-\chapter{ĐÁNH GIÁ ĐỊNH LƯỢNG HỆ THỐNG AI VÀ KINH TẾ VẬN HÀNH}
+\chapter{ĐÁNH GIÁ THỰC NGHIỆM HỆ THỐNG AI VÀ HIỆU NĂNG VẬN HÀNH}
 
-\section{Phương pháp luận và bộ dữ liệu đánh giá thực nghiệm}
+\section{Môi trường và Phương pháp đo kiểm thực nghiệm}
 
-Để đánh giá khách quan chất lượng của tầng trí tuệ nhân tạo trong GarageTools AI thay vì chỉ dựa trên cảm quan định tính, nhóm đã xây dựng bộ dữ liệu kiểm định chuẩn hóa gồm \textbf{320 mẫu thử nghiệm} (80 mẫu cho mỗi tác vụ trong 4 tác vụ AI01--AI04), bao gồm:
-\begin{itemize}
-  \item \textbf{240 kịch bản nghiệp vụ tiêu chuẩn}: Các ca bảo dưỡng định kỳ, mòn má phanh, hỏng máy phát điện, rò rỉ môi chất lạnh điều hòa, lỗi cảm biến oxy, trượt côn và rung giật hộp số trên các dòng xe phổ biến tại Việt Nam (Toyota, Hyundai, Mazda, Ford, Honda, Kia).
-  \item \textbf{80 kịch bản biên và gây nhiễu (Edge \& Stress Cases)}: Mô tả triệu chứng mơ hồ, yêu cầu phụ tùng đã hết hàng trong kho ($\text{AvailableQty} = 0$), hoặc chứa câu lệnh tiêm nhiễm nhằm thử thách khả năng bám sát dữ liệu thực (Grounding) của mô hình.
+Để đánh giá khách quan hoạt động của 3 chức năng AI trong \textbf{GarageTools AI}, nhóm thực hiện kiểm chứng trên cả hai chế độ của \texttt{app/ai\_gateway.py}:
+\begin{itemize}[noitemsep,topsep=2pt]
+  \item \textbf{Chế độ gọi mô hình thật (\texttt{AI\_PROVIDER=groq})}: Kết nối trực tiếp tới mô hình \textbf{\texttt{openai/gpt-oss-120b}} qua endpoint chuẩn OpenAI-compatible của Groq Cloud (\texttt{https://api.groq.com/openai/v1/chat/completions}, \texttt{temperature = 0.2}, \texttt{AI\_TIMEOUT = 15s}).
+  \item \textbf{Chế độ dự phòng nội bộ (\texttt{AI\_PROVIDER=mock} / \texttt{\_goi\_mock})}: Sử dụng khi không có kết nối mạng, khi nhà cung cấp trả lỗi quá thời gian chờ / vượt hạn ngạch (HTTP 429/500), hoặc khi chạy bộ 226 ca kiểm thử tự động để không tiêu tốn hạn ngạch khóa API.
 \end{itemize}
 
-Ba thước đo định lượng cốt lõi được sử dụng gồm:
-\begin{enumerate}
-  \item \textbf{Tỷ lệ hợp lệ cấu trúc (Schema Validation Rate -- SVR)}: Tỷ lệ phần trăm phản hồi từ LLM vượt qua bộ kiểm định \texttt{Pydantic v2} ngay ở lần phân tích đầu tiên mà không gặp lỗi cú pháp JSON hay thiếu trường bắt buộc.
-  \item \textbf{Điểm bám sát dữ liệu gốc (Grounding Score -- GS)}: Tỷ lệ các mã phụ tùng (\texttt{sku}), đơn giá bán và lịch sử ODO trong câu trả lời của AI khớp chính xác 100\% với dữ liệu tồn kho và hồ sơ xe đã nạp vào vùng ngữ cảnh RAG.
-  \item \textbf{Tỷ lệ ảo giác (Hallucination Rate -- HR)}: Tỷ lệ các phản hồi tự bịa đặt mã phụ tùng không có trong bảng \texttt{parts}, sai lệch số học tồn kho hoặc đưa ra kết luận vượt quá dữ liệu đầu vào ($\text{HR} = 100\% - \text{GS}$).
+Mỗi chức năng AI được đánh giá dựa trên 3 tiêu chí thực chứng:
+\begin{enumerate}[noitemsep,topsep=2pt]
+  \item \textbf{Tuân thủ định dạng đầu ra}: AI01 phải trả về đúng 4 mục đánh số \texttt{1..4}; AI02 trả về đúng 3 mục giải thích dễ hiểu; AI03 trả về đối tượng JSON hợp lệ có các trường \texttt{summary}, \texttt{items}, \texttt{total}, \texttt{notes} (\texttt{is\_valid = 1} trong bảng \texttt{ai\_results}).
+  \item \textbf{Bám sát dữ liệu CSDL và chống sai lệch số tiền}: Không tự suy đoán lỗi khi xe chưa có lịch sử; nêu đúng đơn giá niêm yết của dịch vụ; giữ đúng tên, số lượng, đơn giá từng hạng mục và khớp 100\% tổng tiền \texttt{backend\_total}.
+  \item \textbf{Thời gian phản hồi thực tế}: Phải thấp hơn ngưỡng tối đa 10 giây theo tiêu chí nghiệm thu cuối kỳ (\texttt{CK-07}).
 \end{enumerate}
 
-\section{Đánh giá sự tiến hóa qua 3 vòng tối ưu hóa Prompt}
+\section{Kết quả đối chiếu qua 3 vòng thử nghiệm cải tiến Prompt}
 
-Bảng~\ref{tab:g-prompt-eval} ghi nhận sự cải thiện rõ rệt của các chỉ số chất lượng qua 3 vòng tối ưu hóa Prompt (\texttt{v1.0} $\rightarrow$ \texttt{v2.0} $\rightarrow$ \texttt{v3.2}) trên tập dữ liệu thử nghiệm.
+Bảng~\ref{tab:g-prompt-eval} tổng hợp kết quả thực nghiệm qua 3 vòng cải tiến Prompt (được ghi nhật ký chi tiết tại tệp \texttt{GarageAI\_Project/KT3\_PROMPT\_EXPERIMENTS.md} trên 9 lượt thử nghiệm tương ứng với 3 chức năng AI $\times$ 3 vòng lặp).
 
 \begin{table}[H]
 \centering
 \footnotesize
-\renewcommand{\arraystretch}{1.02}
-\caption{Kết quả đánh giá định lượng qua 3 vòng lặp tối ưu hóa Prompt (N = 320 mẫu)}
+\renewcommand{\arraystretch}{1.05}
+\caption{Tổng hợp kết quả 3 vòng thử nghiệm và cải tiến Prompt (\texttt{KT3\_PROMPT\_EXPERIMENTS.md})}
 \label{tab:g-prompt-eval}
-\begin{tabularx}{\textwidth}{|L{2.8cm}|C{2.0cm}|C{2.1cm}|C{2.0cm}|Y|}
+\begin{tabularx}{\textwidth}{|L{2.7cm}|L{3.5cm}|L{3.8cm}|Y|}
 \hline
-\thead{Phiên bản Prompt} & \thead{Schema Valid} & \thead{Grounding Score} & \thead{Tỷ lệ ảo giác} & \thead{Nhận xét kỹ thuật từ thực nghiệm}\\
+\thead{Vòng thử nghiệm} & \thead{Cách viết Prompt} & \thead{Hiện tượng phát hiện khi chạy thử} & \thead{Cải tiến rút ra cho vòng kế tiếp}\\
 \hline
-Vòng 1: \texttt{v1.0} (Zero-shot cơ bản) & 35.0\% & 58.2\% & 41.8\% & Thường xuyên trả về văn bản tự do ngoài khung JSON; tự bịa mã phụ tùng ngoại lai và đơn giá ước lượng bằng USD. \\
+Vòng 1\newline(Câu lệnh ngắn, tự do) & Chỉ truyền biến dữ liệu (\texttt{\{\{repair\_history\}\}}, \texttt{\{\{service\}\}}, \texttt{\{\{items\}\}}) mà không khóa bố cục mục hay tổng tiền. & AI01 mỗi lần trả một bố cục khác nhau và tự suy đoán lỗi với xe mới; AI02 dùng nhiều thuật ngữ khó hiểu; AI03 bọc thêm \texttt{```json} và có lần cộng nhầm tổng tiền \texttt{total}. & Phải quy định cố định số mục đầu ra và không để mô hình tự cộng tổng tiền hóa đơn. \\
 \hline
-Vòng 2: \texttt{v2.0} (Role + JSON Schema) & 88.5\% & 81.0\% & 19.0\% & Định dạng JSON ổn định hơn nhưng đôi lúc vẫn gợi ý phụ tùng đã hết tồn kho khả dụng mà không bật cảnh báo. \\
+Vòng 2\newline(Khóa bố cục \& truyền \texttt{backend\_total}) & Quy định rõ 4 mục cho AI01, 3 mục cho AI02; truyền sẵn biến \texttt{\{\{backend\_total\}\}} vào \texttt{quote.txt}. & Các ca đủ dữ liệu đã chạy tốt; nhưng khi thử ca biên \texttt{service\_id=7} (\texttt{description IS NULL}) hoặc phiếu chưa có hạng mục thì câu trả lời chưa thống nhất. & Cần bổ sung quy tắc xử lý tường minh khi trường mô tả trống hoặc danh sách hạng mục rỗng. \\
 \hline
-Vòng 3: \texttt{v3.2} (RAG SKU + Guardrails) & \textbf{100.0\%} & \textbf{96.4\%} & \textbf{3.6\%} & Khớp 100\% hợp đồng dữ liệu Pydantic v2; chỉ chọn mã SKU có thật trong kho và tự động gắn cờ khi thiếu tồn kho. \\
+Vòng 3\newline(Bản chính thức trong \texttt{config/prompts/}) & Thêm quy tắc xử lý dữ liệu trống vào prompt, truyền kèm đơn giá niêm yết vào AI02, kết hợp bộ lọc hậu kiểm ở \texttt{ai\_gateway.py}. & Cả ca thường lẫn ca biên (\texttt{vehicle\_id=6} chưa có lịch sử, \texttt{service\_id=7} trống mô tả, phiếu rỗng hoặc phiếu có báo giá mở) đều đạt \textbf{9/9 tiêu chí}. & Đưa toàn bộ các ca biên này vào bộ kiểm thử tự động (\texttt{TestAI} và \texttt{TestAiGateway}) để khóa hồi quy. \\
 \hline
 \end{tabularx}
 \end{table}
 
-\section{Kết quả thực nghiệm định lượng theo từng tác vụ AI}
+\section{Kết quả đo kiểm trên các kịch bản dữ liệu thực tế (AI01 -- AI03)}
 
-Với cấu hình Prompt phiên bản \texttt{v3.2} kết hợp cơ chế hậu kiểm đối chiếu CSDL và Smart Fallback, kết quả đo đạc chi tiết trên từng tác vụ AI01--AI04 được tổng hợp tại Bảng~\ref{tab:g-task-metrics}.
+Bảng~\ref{tab:g-task-metrics} trình bày kết quả kiểm định chi tiết của 3 chức năng AI khi chạy với dữ liệu mẫu trong \texttt{garage.db} trên mô hình thật \texttt{openai/gpt-oss-120b} (qua Groq Cloud) và bộ kiểm thử tự động.
 
 \begin{table}[H]
 \centering
 \footnotesize
-\renewcommand{\arraystretch}{1.02}
-\caption{Chỉ số chất lượng thực nghiệm phân theo 4 tác vụ AI cốt lõi (Phiên bản Prompt v3.2)}
+\renewcommand{\arraystretch}{1.04}
+\caption{Kết quả kiểm định thực tế của 3 chức năng AI01, AI02 và AI03}
 \label{tab:g-task-metrics}
-\begin{tabularx}{\textwidth}{|L{3.5cm}|C{1.6cm}|C{1.9cm}|C{1.9cm}|Y|}
+\begin{tabularx}{\textwidth}{|L{3.2cm}|L{3.0cm}|C{1.8cm}|Y|}
 \hline
-\thead{Tác vụ AI} & \thead{Số mẫu} & \thead{Schema Valid} & \thead{Grounding} & \thead{Cơ chế kiểm soát chất lượng đặc thù}\\
+\thead{Chức năng AI} & \thead{Dữ liệu đầu vào kiểm chứng} & \thead{Độ trễ thực} & \thead{Kết quả đầu ra và Cơ chế kiểm soát}\\
 \hline
-AI01: Chẩn đoán triệu chứng & 80 & 100.0\% & 95.5\% & Đối chiếu lịch sử sửa chữa của mã VIN; phân loại mức độ khẩn cấp và yêu cầu KTV kiểm tra thực tế. \\
+AI01: Tóm tắt lịch sử xe (\texttt{history.txt}) & Xe đã sửa nhiều lần (\texttt{vehicle\_id=1}, \texttt{30A-12345}) \& Xe mới 0 lần sửa (\texttt{vehicle\_id=6}) & \textbf{2,46 giây}\newline(1,85s--2,86s) & Ra đúng 4 mục đánh số \texttt{1..4}; với xe \texttt{\#6} báo rõ chưa có lịch sử sửa chữa, không tự bịa lần sửa hay nguyên nhân hỏng hóc. \\
 \hline
-AI02: Đề xuất báo giá \& SKU & 80 & 100.0\% & 97.2\% & Hậu kiểm mã \texttt{sku} trực tiếp với bảng \texttt{parts}; tự động gắn cờ \texttt{stock\_warning} nếu $\text{Available} < \text{Qty}$. \\
+AI02: Giải thích dịch vụ (\texttt{explain.txt}) & Dịch vụ đủ mô tả (\texttt{service\_id=1}) \& Dịch vụ trống mô tả (\texttt{service\_id=7}, \texttt{description IS NULL}) & \textbf{3,99 giây} & Ra đúng 3 mục bằng tiếng Việt phổ thông kèm đơn giá niêm yết; với dịch vụ \texttt{\#7} tự điền câu báo danh mục chưa có mô tả ở mục 1. \\
 \hline
-AI03: Tóm tắt tiến độ RO & 80 & 100.0\% & 96.8\% & Chỉ tổng hợp từ các hạng mục có thật trong \texttt{ro\_line\_items} và trạng thái nghiệm thu \texttt{qc\_inspections}. \\
-\hline
-AI04: Cảnh báo bảo dưỡng & 80 & 100.0\% & 96.1\% & Nội suy mốc bảo dưỡng kế tiếp dựa trên số ODO hiện tại và định mức chu kỳ kỹ thuật chuẩn. \\
-\hline
-\textbf{Trung bình toàn hệ thống} & \textbf{320} & \textbf{100.0\%} & \textbf{96.4\%} & \textbf{0\% lỗi cấu trúc; 100\% qua kiểm duyệt HITL trước khi áp dụng} \\
+AI03: Báo giá nháp (\texttt{quote.txt}) & Phiếu có hạng mục (\texttt{order\_id=1}) \& Phiếu trống hạng mục (\texttt{order\_id=3}) & \textbf{2,98 giây} & Trả về JSON hợp lệ (\texttt{is\_valid=1}); bộ lọc tại \texttt{bao\_gia\_nhap} loại bỏ mọi dòng sai lệch và giữ \texttt{total == backend\_total}. \\
 \hline
 \end{tabularx}
 \end{table}
 
-\section{Phân tích hiệu năng độ trễ (Latency P50 / P95 / P99)}
+\section{Phân tích thời gian phản hồi (Latency Benchmark)}
 
-Nhóm đã tiến hành đo đạc thời gian phản hồi thực tế (End-to-End Latency) của các nhóm API nghiệp vụ nội bộ và các chế độ gọi AI, thể hiện qua Bảng~\ref{tab:g-latency} và biểu đồ phân bố tại Hình~\ref{fig:g-latency-chart}.
+Nhóm đã đo thời gian phản hồi thực tế của các thao tác nội bộ trên SQLite WAL và các lệnh gọi mô hình \texttt{openai/gpt-oss-120b} qua Groq Cloud API, tổng hợp tại Bảng~\ref{tab:g-latency} và biểu đồ tại Hình~\ref{fig:g-latency-chart}.
 
 \begin{table}[H]
 \centering
 \footnotesize
-\renewcommand{\arraystretch}{1.02}
-\caption{Thống kê phân phối độ trễ phản hồi của hệ thống theo phân vị (P50, P95, P99)}
+\renewcommand{\arraystretch}{1.04}
+\caption{Thống kê thời gian phản hồi thực nghiệm của các phân hệ nội bộ và cổng AI}
 \label{tab:g-latency}
-\begin{tabularx}{\textwidth}{|L{4.6cm}|C{1.8cm}|C{1.8cm}|C{1.8cm}|Y|}
+\begin{tabularx}{\textwidth}{|L{4.8cm}|C{2.0cm}|C{2.2cm}|Y|}
 \hline
-\thead{Nhóm tác vụ / Chế độ vận hành} & \thead{P50 (Trung vị)} & \thead{P95} & \thead{P99} & \thead{Đánh giá theo ngưỡng NFR03 \& NFR05}\\
+\thead{Nhóm tác vụ / Chế độ vận hành} & \thead{Thời gian đo} & \thead{Trần yêu cầu} & \thead{Đánh giá theo tiêu chí nghiệm thu}\\
 \hline
-API Nghiệp vụ CRUD \& Tra cứu kho & 8.4 ms & 24.6 ms & 38.2 ms & Đạt vượt mức yêu cầu (Ngưỡng mục tiêu P95 $<$ 45 ms). \\
+Truy vấn danh sách \& Chi tiết trên SQLite WAL & 5 ms -- 25 ms & $< 200$ ms & Phản hồi tức thời khi chuyển trang và lọc dữ liệu. \\
 \hline
-Giao dịch Giữ kho nguyên tử (\texttt{BEGIN IMMEDIATE}) & 11.2 ms & 29.5 ms & 43.0 ms & Bảo đảm khóa nguyên tử nhanh, không gây nghẽn cổ chai. \\
+Giao dịch Kho \& Hóa đơn (\texttt{BEGIN IMMEDIATE}) & 8 ms -- 30 ms & $< 200$ ms & Khóa nguyên tử nhanh, đảm bảo không âm kho và không thu lố. \\
 \hline
-Động cơ AI Smart Fallback (Nội bộ) & 14.5 ms & 22.8 ms & 31.4 ms & Phản hồi tức thời khi đứt kết nối mạng (Mục tiêu $<$ 50 ms). \\
+Chế độ AI Dự phòng (\texttt{AI\_PROVIDER=mock}) & $< 5$ ms & $< 50$ ms & Giúp bộ 226 ca kiểm thử tự động chạy hoàn tất chỉ trong $\approx 23$ giây. \\
 \hline
-Groq Cloud LLM (\texttt{gpt-oss-120b}) & 840 ms & 1.650 ms & 2.320 ms & Tốc độ suy luận đám mây rất nhanh, trải nghiệm mượt mà. \\
+Gọi thô tới Groq (\texttt{openai/gpt-oss-120b}) & \textbf{1,20 giây} & $< 10,0$ giây & Kết nối HTTPS ổn định, tốc độ sinh token rất nhanh. \\
 \hline
-Google Gemini (\texttt{gemini-2.5-flash}) & 1.380 ms & 2.740 ms & 3.850 ms & Ổn định, nằm hoàn toàn trong ngưỡng Timeout an toàn (12.000 ms). \\
+AI01 (\texttt{history}) End-to-End qua Groq Cloud & \textbf{2,46 giây} & $< 10,0$ giây & Nhanh hơn 4 lần so với ngưỡng tối đa 10 giây của tiêu chí CK-07. \\
+\hline
+AI03 (\texttt{quote}) \& AI02 (\texttt{explain}) qua Groq Cloud & \textbf{2,98s -- 3,99s} & $< 10,0$ giây & Bao gồm trọn vẹn bước đọc CSDL, gọi mô hình, lọc JSON và ghi \texttt{ai\_results}. \\
 \hline
 \end{tabularx}
 \end{table}
 
 \begin{figure}[H]
 \centering
-\resizebox{0.96\textwidth}{!}{%
+\resizebox{0.94\textwidth}{!}{%
 \begin{tikzpicture}[font=\sffamily\scriptsize]
-  % Legend at top
-  \draw[fill=black!18, draw=black, line width=0.6pt] (3.2, 4.35) rectangle (3.6, 4.6);
-  \node[anchor=west, font=\sffamily\footnotesize\bfseries] at (3.7, 4.48) {Trung vị P50 (ms)};
-  \draw[fill=black!50, draw=black, line width=0.6pt] (7.5, 4.35) rectangle (7.9, 4.6);
-  \node[anchor=west, font=\sffamily\footnotesize\bfseries] at (8.0, 4.48) {Phân vị P95 (ms)};
-
-  % Left Panel: Internal APIs & Smart Fallback (0 - 35 ms, scale: 10 ms = 1.0 cm)
-  \node[font=\sffamily\footnotesize\bfseries] at (3.3, 3.85) {(a) Nội bộ \& Smart Fallback (0--35 ms)};
-  \draw[line width=0.6pt] (0.6, 0) -- (0.6, 3.5);
-  \draw[line width=0.6pt] (0.6, 0) -- (6.2, 0);
-  \foreach \y/\val in {0/0, 1.0/10, 2.0/20, 3.0/30} {
-    \draw[dashed, black!30] (0.6, \y) -- (6.2, \y);
-    \node[anchor=east] at (0.5, \y) {\val};
+  \node[font=\sffamily\footnotesize\bfseries, text=navy] at (6.5, 4.2) {Thời gian phản hồi thực tế của Cổng AI trên Groq (\texttt{openai/gpt-oss-120b}) so với trần CK-07 (10s)};
+  \draw[line width=0.6pt, navy] (1.2, 0) -- (1.2, 3.6);
+  \draw[line width=0.6pt, navy] (1.2, 0) -- (12.2, 0);
+  \foreach \y/\val in {0/0.0s, 1.0/2.0s, 2.0/4.0s, 3.0/6.0s} {
+    \draw[dashed, black!25] (1.2, \y) -- (12.2, \y);
+    \node[anchor=east] at (1.1, \y) {\val};
   }
-  % Bar group 1: API CRUD (8.4, 24.6)
-  \draw[fill=black!18, draw=black, line width=0.6pt] (1.1, 0) rectangle (1.55, 0.84);
-  \node[above] at (1.325, 0.84) {8.4};
-  \draw[fill=black!50, draw=black, line width=0.6pt] (1.6, 0) rectangle (2.05, 2.46);
-  \node[above] at (1.825, 2.46) {24.6};
-  \node[below, align=center] at (1.575, -0.05) {API CRUD};
+  % Bar 1: Mock fallback (0.01s)
+  \draw[fill=teal!30, draw=teal!80!black, line width=0.6pt] (2.0, 0) rectangle (3.1, 0.08);
+  \node[above] at (2.55, 0.08) {\textbf{0,005s}};
+  \node[below, align=center] at (2.55, -0.08) {Chế độ \texttt{mock}\\(\texttt{\_goi\_mock})};
 
-  % Bar group 2: Giữ kho ACID (11.2, 29.5)
-  \draw[fill=black!18, draw=black, line width=0.6pt] (2.9, 0) rectangle (3.35, 1.12);
-  \node[above] at (3.125, 1.12) {11.2};
-  \draw[fill=black!50, draw=black, line width=0.6pt] (3.4, 0) rectangle (3.85, 2.95);
-  \node[above] at (3.625, 2.95) {29.5};
-  \node[below, align=center] at (3.375, -0.05) {Giữ kho};
+  % Bar 2: Raw LLM ping (1.20s -> 0.60 height)
+  \draw[fill=navy!25, draw=navy, line width=0.6pt] (4.3, 0) rectangle (5.4, 0.60);
+  \node[above] at (4.85, 0.60) {\textbf{1,20s}};
+  \node[below, align=center] at (4.85, -0.08) {Gọi thô Groq\\(\texttt{gpt-oss-120b})};
 
-  % Bar group 3: AI Fallback (14.5, 22.8)
-  \draw[fill=black!18, draw=black, line width=0.6pt] (4.7, 0) rectangle (5.15, 1.45);
-  \node[above] at (4.925, 1.45) {14.5};
-  \draw[fill=black!50, draw=black, line width=0.6pt] (5.2, 0) rectangle (5.65, 2.28);
-  \node[above] at (5.425, 2.28) {22.8};
-  \node[below, align=center] at (5.175, -0.05) {Fallback};
+  % Bar 3: AI01 History (2.46s -> 1.23 height)
+  \draw[fill=navy!45, draw=navy, line width=0.6pt] (6.6, 0) rectangle (7.7, 1.23);
+  \node[above] at (7.15, 1.23) {\textbf{2,46s}};
+  \node[below, align=center] at (7.15, -0.08) {AI01 \texttt{history}\\(Tóm tắt lịch sử)};
 
-  % Right Panel: Cloud LLM (0 - 3000 ms, scale: 1000 ms = 1.0 cm)
-  \node[font=\sffamily\footnotesize\bfseries] at (10.7, 3.85) {(b) Cloud LLM qua HTTPS (0--3.000 ms)};
-  \draw[line width=0.6pt] (8.0, 0) -- (8.0, 3.5);
-  \draw[line width=0.6pt] (8.0, 0) -- (13.2, 0);
-  \foreach \y/\val in {0/0, 1.0/1.000, 2.0/2.000, 3.0/3.000} {
-    \draw[dashed, black!30] (8.0, \y) -- (13.2, \y);
-    \node[anchor=east] at (7.9, \y) {\val};
-  }
-  % Bar group 4: Groq LLM (840, 1650)
-  \draw[fill=black!18, draw=black, line width=0.6pt] (8.9, 0) rectangle (9.45, 0.84);
-  \node[above] at (9.175, 0.84) {840};
-  \draw[fill=black!50, draw=black, line width=0.6pt] (9.55, 0) rectangle (10.1, 1.65);
-  \node[above] at (9.825, 1.65) {1.650};
-  \node[below, align=center] at (9.5, -0.05) {Groq LLM};
+  % Bar 4: AI03 Quote (2.98s -> 1.49 height)
+  \draw[fill=navy!65, draw=navy, line width=0.6pt] (8.9, 0) rectangle (10.0, 1.49);
+  \node[above] at (9.45, 1.49) {\textbf{2,98s}};
+  \node[below, align=center] at (9.45, -0.08) {AI03 \texttt{quote}\\(Báo giá nháp)};
 
-  % Bar group 5: Gemini Flash (1380, 2740)
-  \draw[fill=black!18, draw=black, line width=0.6pt] (11.1, 0) rectangle (11.65, 1.38);
-  \node[above] at (11.375, 1.38) {1.380};
-  \draw[fill=black!50, draw=black, line width=0.6pt] (11.75, 0) rectangle (12.3, 2.74);
-  \node[above] at (12.025, 2.74) {2.740};
-  \node[below, align=center] at (11.7, -0.05) {Gemini 2.5 Flash};
+  % Bar 5: AI02 Explain (3.99s -> 1.995 height)
+  \draw[fill=navy!80, draw=navy, line width=0.6pt] (10.8, 0) rectangle (11.9, 2.00);
+  \node[above] at (11.35, 2.00) {\textbf{3,99s}};
+  \node[below, align=center] at (11.35, -0.08) {AI02 \texttt{explain}\\(Giải thích DV)};
 \end{tikzpicture}%
 }
-\caption{Biểu đồ đối sánh độ trễ P50 và P95 (đơn vị: ms) giữa các phân hệ nội bộ và dịch vụ Cloud LLM}
+\caption{Biểu đồ đối chiếu thời gian phản hồi thực nghiệm trên Groq Cloud (\texttt{openai/gpt-oss-120b}) và chế độ \texttt{mock} (tất cả đều thấp hơn nhiều so với ngưỡng tối đa 10 giây).}
 \label{fig:g-latency-chart}
 \end{figure}
 
-\section{Phân tích kinh tế vận hành (Token Economics \& Cost Analysis)}
+\section{Đánh giá chi phí vận hành và Các phương án API miễn phí}
 
-Nhờ kỹ thuật chọn lọc ngữ cảnh RAG (chỉ truyền các phụ tùng liên quan thay vì đổ toàn bộ cơ sở dữ liệu vào Prompt), dung lượng trung bình của mỗi yêu cầu AI được tối ưu hóa ở mức $\approx 620$ Input Tokens và $\approx 280$ Output Tokens. Bảng~\ref{tab:g-cost} phân tích chi phí thực tế trong giai đoạn phát triển và dự phóng chi phí khi vận hành thương mại tại một xưởng dịch vụ quy mô 1.000 lượt gọi AI mỗi tháng.
+Một ưu điểm thực tế của kiến trúc \texttt{AI\_PROVIDERS} trong \texttt{app/core/config.py} là hỗ trợ sẵn các nhà cung cấp có gói miễn phí (\textit{Free Tier}) hợp thức và tách biệt hoàn toàn với môi trường kiểm thử tự động (Bảng~\ref{tab:g-cost}).
 
 \begin{table}[H]
 \centering
 \small
-\caption{Phân tích chi phí sử dụng Token và dự phóng kinh tế vận hành cho xưởng dịch vụ}
+\caption{Các chế độ cấu hình nhà cung cấp AI và chi phí vận hành tương ứng}
 \label{tab:g-cost}
-\begin{tabularx}{\textwidth}{|L{3.8cm}|C{2.2cm}|C{2.4cm}|Y|}
+\begin{tabularx}{\textwidth}{|L{3.5cm}|C{2.9cm}|C{2.0cm}|Y|}
 \hline
-\thead{Chế độ / Nhà cung cấp AI} & \thead{Token TB / Lượt} & \thead{Chi phí / 1.000 lượt} & \thead{Đánh giá hiệu quả kinh tế vận hành}\\
+\thead{Cấu hình \texttt{AI\_PROVIDER}} & \thead{Mô hình mặc định} & \thead{Chi phí} & \thead{Ngữ cảnh sử dụng phù hợp}\\
 \hline
-Google AI Studio / Groq Free Tier + Smart Fallback & 620 In / 280 Out & \textbf{0 VNĐ} & Chi phí thực tế trong quá trình phát triển và kiểm thử đồ án bằng 0 VNĐ nhờ tận dụng hạn ngạch miễn phí. \\
+\texttt{mock} (\texttt{\_goi\_mock}) & Thuật toán nội bộ & \textbf{0 VNĐ} & Chạy bộ 226 ca kiểm thử tự động (\texttt{tests/run\_all.py}), chạy không cần mạng hoặc làm phương án dự phòng khi mất kết nối. \\
 \hline
-Thương mại: Gemini 2.5 Flash / GPT-4o-mini (Pay-as-you-go) & 620 In / 280 Out & $\approx \textbf{2.850 VNĐ}$ ($\sim \$0.11$) & Chi phí vận hành cực thấp: trung bình một xưởng dịch vụ chỉ tốn dưới 3.000 VNĐ cho mỗi 1.000 lần trợ lý AI hỗ trợ lập báo giá. \\
+\texttt{groq} / \texttt{gemini} / \texttt{openrouter} & \texttt{gpt-oss-120b}\newline / \texttt{gemini-2.0-flash} & \textbf{0 VNĐ}\newline(Free Tier) & Chạy demo thuyết trình dự án trực tiếp và vận hành thực tế tại garage vừa và nhỏ bằng khóa API miễn phí từ \texttt{console.groq.com} hoặc \texttt{aistudio.google.com}. \\
+\hline
+\texttt{openai} (Trả phí theo token) & \texttt{gpt-4o-mini} & $\approx 2.500$ đ /\newline 1.000 lượt & Tùy chọn mở rộng cho garage có lưu lượng lớn muốn dùng hạ tầng thương mại của OpenAI. \\
 \hline
 \end{tabularx}
 \end{table}
 
 \section{Kết luận chương}
 
-Chương 7 đã chứng minh định lượng hiệu quả của kiến trúc AI trong GarageTools AI: quá trình tối ưu hóa Prompt 3 vòng kết hợp RAG Grounding đã đưa tỷ lệ hợp lệ Schema đạt 100\%, điểm bám sát dữ liệu thực đạt 96.4\%, độ trễ trung vị dưới 1,4 giây và chi phí vận hành thương mại chưa tới 3.000 VNĐ cho 1.000 lượt yêu cầu.
+Chương 7 đã tổng hợp kết quả thực nghiệm qua 3 vòng cải tiến Prompt, chứng minh tính ổn định của cả 3 chức năng AI01--AI03 trên các ca dữ liệu thực và ca biên, đồng thời xác nhận thời gian phản hồi trên mô hình thật \texttt{openai/gpt-oss-120b} chỉ từ 2,46s đến 3,99s với chi phí 0 VNĐ qua gói Free Tier.

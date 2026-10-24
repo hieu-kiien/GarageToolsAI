@@ -19,6 +19,7 @@ BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if BASE not in sys.path:
     sys.path.insert(0, BASE)
 os.environ.setdefault('APP_ENV', 'test')
+os.environ.setdefault('AI_PROVIDER', 'mock')
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 

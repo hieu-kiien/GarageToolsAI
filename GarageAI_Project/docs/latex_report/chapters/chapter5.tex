@@ -2,132 +2,163 @@
 
 \section{Tổng quan cấu trúc mã nguồn thực tế}
 
-Hệ thống GarageTools AI được hiện thực hóa hoàn chỉnh trong thư mục dự án \texttt{GarageAI\_\allowbreak Project/} với sự phân tách mạch lạc giữa máy chủ API (\texttt{backend/}) và ứng dụng giao diện (\texttt{frontend/}). Bảng~\ref{tab:g-source-tree} mô tả chi tiết cấu trúc tổ chức mã nguồn của hệ thống.
+Mã nguồn của hệ thống được tổ chức thành hai nhánh chính tại thư mục gốc của kho lưu trữ: \texttt{GarageAI\_Project/} (chứa Backend FastAPI, CSDL SQLite, tệp cấu hình Prompt, giao diện Jinja2 và bộ kiểm thử Python) và \texttt{frontend/} (chứa ứng dụng giao diện React 19 + TanStack Start), cùng thư mục \texttt{scripts/} chứa các kịch bản kiểm thử và sao lưu tự động. Bảng~\ref{tab:g-source-tree} mô tả chính xác các tệp mã nguồn của dự án.
 
 \begin{table}[H]
 \centering
 \small
-\caption{Cấu trúc phân bổ mã nguồn thực tế của hệ thống GarageTools AI}
+\caption{Cấu trúc phân bổ mã nguồn thực tế của dự án \texttt{Nhom23\_GarageToolsAI}}
 \label{tab:g-source-tree}
-\begin{tabularx}{\textwidth}{|L{4.4cm}|Y|L{3.0cm}|}
+\begin{tabularx}{\textwidth}{|L{4.5cm}|Y|L{3.0cm}|}
 \hline
-\thead{Đường dẫn mã nguồn} & \thead{Trách nhiệm và thành phần hiện thực hóa} & \thead{Công nghệ cốt lõi}\\
+\thead{Đường dẫn mã nguồn} & \thead{Trách nhiệm và thành phần hiện thực hóa} & \thead{Công nghệ sử dụng}\\
 \hline
-\texttt{backend/core/config.py}, \texttt{security.py} & Quản lý biến môi trường, băm mật khẩu, ký và xác thực JWT, kiểm tra phân quyền RBAC 4 vai trò và cô lập phạm vi bản ghi. & Python 3.12, PyJWT, Passlib / Hashlib\\
+\texttt{GarageAI\_Project/app/\allowbreak main.py}, \texttt{models.py}, \texttt{crud.py} & Khởi tạo ứng dụng (\texttt{create\_app}), tự động chạy migrations, đăng ký middleware bảo mật, định nghĩa Pydantic v2 models và tầng truy vấn tham số hóa. & Python 3.12+, FastAPI, Pydantic v2\\
 \hline
-\texttt{backend/database/db.py}, \texttt{schema.sql} & Quản lý kết nối SQLite 3 với \texttt{WAL mode}, kích hoạt khóa ngoại, định nghĩa 21 bảng 3NF và cơ chế khóa \texttt{BEGIN IMMEDIATE}. & SQLite 3, Context Manager\\
+\texttt{GarageAI\_Project/app/\allowbreak core/*.py} & Gồm \texttt{config.py} (7 presets AI), \texttt{db.py} (kết nối WAL \& \texttt{transaction()} dùng \texttt{BEGIN IMMEDIATE}), \texttt{security.py} (Argon2id, HMAC cookie, CSRF), \texttt{ratelimit.py}, \texttt{money.py}, \texttt{pagination.py}, \texttt{errors.py}. & SQLite 3, Argon2-cffi, HMAC-SHA256\\
 \hline
-\texttt{backend/routers/*.py} & Tập hợp 16 bộ định tuyến API: xác thực, khách hàng, xe, lịch hẹn, phiếu RO, kho phụ tùng, hóa đơn, thanh toán, bảo hành, trợ lý AI. & FastAPI Routers, Pydantic v2\\
+\texttt{GarageAI\_Project/app/\allowbreak services/*.py} & 11 mô-đun nghiệp vụ thuần: \texttt{auth.py}, \texttt{security\_matrix.py}, \texttt{orders.py}, \texttt{quotations.py}, \texttt{stock.py}, \texttt{warranties.py}, \texttt{billing.py}, \texttt{parties.py}, \texttt{catalog.py}, \texttt{ai.py}, \texttt{reports.py}. & Tầng nghiệp vụ nguyên tử\\
 \hline
-\texttt{backend/services/}\newline\texttt{ai\_service.py} & Động cơ điều phối AI01--AI04, xây dựng ngữ cảnh RAG từ tồn kho và lịch sử xe, kiểm định đầu ra và kích hoạt Smart Fallback. & Groq / Gemini / OpenAI SDK, Pydantic\\
+\texttt{GarageAI\_Project/app/\allowbreak ai\_gateway.py} \& \texttt{config/prompts/*.txt} & Lớp gọi mô hình ngôn ngữ (\texttt{mock}, \texttt{groq}, \texttt{openrouter}, \texttt{gemini}, \texttt{openai}, \texttt{9router}, \texttt{custom}), nạp 4 tệp prompt (\texttt{system}, \texttt{history}, \texttt{explain}, \texttt{quote}), lọc khớp giá và fallback \texttt{\_goi\_mock}. & HTTPX, JSON Parser, Price Filter\\
 \hline
-\texttt{backend/services/}\newline\texttt{ai\_provider\_service.py} & Quản lý kho khóa BYOK mã hóa đối xứng, che mặt nạ khóa (Key Masking) và bộ kiểm định chống tấn công SSRF. & Cryptography (Fernet / AES), Socket DNS\\
+\texttt{GarageAI\_Project/app/\allowbreak routes/*.py} \& \texttt{routes/api/*.py} & 7 mô-đun route HTML Jinja2 (\texttt{auth}, \texttt{orders}, \texttt{parties}, \texttt{quotations}, \texttt{stock}, \texttt{system}, \texttt{warranties}) và 14 mô-đun JSON API trong \texttt{routes/api/}. & FastAPI APIRouter, Jinja2\\
 \hline
-\texttt{backend/services/}\newline\texttt{backup\_service.py} & Dịch vụ sao lưu nóng CSDL SQLite, kiểm tra tính toàn vẹn tệp sao lưu (\texttt{integrity\_check}) và phục hồi trạng thái có kiểm soát. & SQLite Online Backup API\\
+\texttt{GarageAI\_Project/\allowbreak database/} & Gồm \texttt{schema.sql} (21 bảng, 37 chỉ mục), \texttt{seed\_data.sql} (171 dòng mẫu), \texttt{init\_db.py} và \texttt{migrations/} (\texttt{001} $\rightarrow$ \texttt{005} + \texttt{run\_missing.py}). & SQLite 3 DDL, Auto-Migrate\\
 \hline
-\texttt{backend/tests/test\_*.py} & Bộ kiểm thử tự động gồm 202 ca kiểm thử đơn vị, tích hợp, giao dịch kho đồng thời và đối kháng bảo mật. & Pytest, HTTPX TestClient\\
+\texttt{frontend/src/} & Ứng dụng giao diện chính gồm 16 màn hình trong \texttt{src/routes/}, \texttt{src/lib/rbac.tsx}, \texttt{src/services/api.ts} và kiểm thử \texttt{vitest}. & React 19, TanStack Start, Tailwind v4\\
 \hline
-\texttt{frontend/src/routes/*} & Hệ thống 16 màn hình chức năng: Dashboard, Tiếp nhận, Chi tiết RO, Kho SKU, Hóa đơn, Trung tâm AI, Quản trị hệ thống. & React 19, TanStack Start, TypeScript\\
-\hline
-\texttt{frontend/src/}\newline\texttt{components/*} & Các thành phần giao diện tái sử dụng: AI Copilot Drawer, Bảng dữ liệu phân trang, Huy hiệu trạng thái, Hộp thoại xác nhận. & Tailwind CSS v4, Lucide Icons\\
+\texttt{GarageAI\_Project/tests/} \& \texttt{scripts/*.ps1} & Bộ 226 ca kiểm thử Python (\texttt{run\_all.py}) và 4 kịch bản PowerShell (\texttt{smoke.ps1}, \texttt{e2e.ps1}, \texttt{backup.ps1}, \texttt{restore.ps1}). & Python \texttt{unittest}, PowerShell\\
 \hline
 \end{tabularx}
 \end{table}
 
-\section{Hiện thực hóa các phân hệ Backend trọng tâm}
+\section{Hiện thực hóa các chốt chặn nghiệp vụ và bảo mật ở Backend}
 
-\subsection{Phân hệ Bảo mật, Phân quyền RBAC và Cô lập bản ghi (IDOR Guard)}
+\subsection{Ma trận Phân quyền tập trung và Cô lập phiếu theo Kỹ thuật viên}
 
-Trong \texttt{backend/core/security.py} và các bộ định tuyến nghiệp vụ, cơ chế bảo vệ theo chiều sâu (Defense-in-Depth) được áp dụng trên từng yêu cầu HTTP. Bảng~\ref{tab:g-scope-matrix} trình bày ma trận phân giải quyền truy cập theo ngữ cảnh thực tế đã được lập trình.
+Trong \texttt{app/services/security\_matrix.py}, biến \texttt{PERMISSIONS} ánh xạ từng quyền cụ thể tới tập hợp các vai trò được phép, kết hợp với hàm \texttt{duoc\_gan\_cong(user, phieu)} để kiểm soát phạm vi thao tác trên từng phiếu sửa chữa. Bảng~\ref{tab:g-scope-matrix} tóm tắt cách hệ thống phân giải quyền cho 4 vai trò.
 
 \begin{table}[H]
 \centering
 \footnotesize
 \renewcommand{\arraystretch}{1.04}
-\caption{Ma trận phân giải quyền hạn truy cập tài nguyên theo vai trò và phạm vi phụ trách}
+\caption{Ma trận phân giải quyền hạn theo 4 vai trò trong \texttt{app/services/security\_matrix.py}}
 \label{tab:g-scope-matrix}
-\begin{tabularx}{\textwidth}{|L{2.2cm}|L{2.5cm}|C{1.9cm}|C{2.0cm}|Y|C{2.2cm}|}
+\begin{tabularx}{\textwidth}{|L{2.2cm}|L{2.5cm}|C{1.9cm}|C{2.0cm}|Y|C{2.1cm}|}
 \hline
-\thead{Tài nguyên} & \thead{Hành động} & \thead{Quản lý (\texttt{admin})} & \thead{Cố vấn (\texttt{advisor})} & \thead{Kỹ thuật viên (\texttt{technician})} & \thead{Kế toán (\texttt{accountant})}\\
+\thead{Phân hệ} & \thead{Thao tác} & \thead{Quản lý (\texttt{MANAGER})} & \thead{Lễ tân (\texttt{RECEPTIONIST})} & \thead{Kỹ thuật viên (\texttt{TECHNICIAN})} & \thead{Thu ngân (\texttt{CASHIER})}\\
 \hline
-\multirow{3}{*}{Phiếu RO} & Xem danh sách / Chi tiết & Toàn bộ RO & Toàn bộ RO & Chỉ RO có \texttt{technician\_id} \texttt{== user.id} (Ngoài: 403) & Toàn bộ RO (Chỉ đọc)\\
+\multirow{3}{*}{Phiếu sửa chữa} & Xem danh sách / Chi tiết & Toàn bộ phiếu & Toàn bộ phiếu & Xem phiếu (\texttt{order.view}) & Toàn bộ phiếu (Chỉ xem)\\
 \cline{2-6}
-& Tạo mới / Giao KTV & Cho phép & Cho phép & Từ chối (HTTP 403) & Từ chối (HTTP 403)\\
+& Tạo phiếu / Giao KTV / Nghiệm thu & Cho phép & Cho phép & Từ chối (HTTP 403) & Từ chối (HTTP 403)\\
 \cline{2-6}
-& Cập nhật chẩn đoán & Cho phép & Cho phép & Chỉ trên RO được phân công & Từ chối (HTTP 403)\\
+& Đổi trạng thái / Thêm hạng mục / Ghi log & Cho phép & Bị chặn thêm hạng mục; chỉ giao KTV / nghiệm thu & Chỉ trên phiếu có \texttt{technician\_id == user.id} & Từ chối (HTTP 403)\\
 \hline
-\multirow{2}{*}{Trợ lý AI} & Gọi gợi ý AI01--AI04 & Cho phép & Cho phép & Chỉ gọi AI01 trên RO được gán & Từ chối (HTTP 403)\\
+\multirow{2}{*}{Báo giá} & Tạo \& Gửi báo giá (\texttt{quote.manage}) & Cho phép & Cho phép & Từ chối (HTTP 403) & Từ chối (HTTP 403)\\
 \cline{2-6}
-& Duyệt gợi ý vào RO & Cho phép & Cho phép & Từ chối tuyệt đối (HTTP 403) & Từ chối (HTTP 403)\\
+& Duyệt \& Áp dụng (\texttt{quote.approve}) & \textbf{Duy nhất duyệt} & Chỉ được áp dụng báo giá đã duyệt & Từ chối (HTTP 403) & Từ chối (HTTP 403)\\
 \hline
-Hóa đơn \& Thu phí & Phát hành \& Ghi nhận thu & Cho phép & Xem trạng thái & Từ chối (HTTP 403) & Toàn quyền nghiệp vụ\\
+\multirow{2}{*}{Trợ lý AI} & Chạy AI01, AI02, AI03 & AI01, AI02, AI03 & AI01, AI02, AI03 & Chỉ chạy AI03 (\texttt{ai.quote}) trên phiếu được giao & Từ chối (HTTP 403)\\
+\cline{2-6}
+& Duyệt kết quả (\texttt{ai.review}) & \textbf{Duy nhất cho phép} & Từ chối (HTTP 403) & Từ chối (HTTP 403) & Từ chối (HTTP 403)\\
 \hline
-Cấu hình AI \& Backup & Quản lý khóa BYOK, Sao lưu & Toàn quyền & Từ chối (403) & Từ chối (HTTP 403) & Từ chối (HTTP 403)\\
+Hóa đơn \& Thu & Lập hóa đơn / Thu tiền & Lập HĐ \& Thu tiền & Chỉ xem hóa đơn & Từ chối (HTTP 403) & \textbf{Thu tiền \& Hủy khoản thu}\\
+\hline
+Kho \& Danh mục & Sửa danh mục / Nhập chỉnh kho & Toàn quyền & Nhập/Chỉnh kho (\texttt{stock.manage}) & Chỉ xem danh mục & Chỉ xem danh mục\\
 \hline
 \end{tabularx}
 \end{table}
 
-\subsection{Hiện thực hóa Giao dịch kho nguyên tử và Máy trạng thái RO / HITL}
+\subsection{Bốn chốt chặn bảo vệ Tiền tệ, Sổ cái Tồn kho và Hóa đơn}
 
-Để ngăn chặn triệt để lỗi xuất âm kho khi nhiều người dùng thao tác cùng lúc và bảo đảm không một gợi ý AI nào tự ý làm thay đổi chi phí sửa chữa khi chưa được duyệt, hệ thống cài đặt các điều kiện chốt chặn (Guard Conditions) tại Bảng~\ref{tab:g-hitl-rules}.
+Để tránh mọi sai lệch về số tiền và tồn kho khi nhiều nhân viên thao tác cùng lúc, các mô-đun trong \texttt{app/services/} thực thi các điều kiện kiểm tra nguyên tử được tổng hợp tại Bảng~\ref{tab:g-hitl-rules}.
 
 \begin{table}[H]
 \centering
 \footnotesize
 \renewcommand{\arraystretch}{1.04}
-\caption{Quy tắc chuyển dịch trạng thái nghiệp vụ và cơ chế bảo vệ toàn vẹn giao dịch}
+\caption{Các chốt chặn kỹ thuật bảo vệ toàn vẹn giao dịch trong \texttt{app/services/}}
 \label{tab:g-hitl-rules}
-\begin{tabularx}{\textwidth}{|L{2.2cm}|L{2.9cm}|C{1.9cm}|Y|C{2.5cm}|}
+\begin{tabularx}{\textwidth}{|L{2.3cm}|L{2.8cm}|C{2.0cm}|Y|C{2.4cm}|}
 \hline
-\thead{Trạng thái gốc} & \thead{Thao tác kích hoạt} & \thead{Vai trò thực hiện} & \thead{Điều kiện bảo vệ kỹ thuật (Guard Condition)} & \thead{Trạng thái đích}\\
+\thead{Nghiệp vụ} & \thead{Hàm xử lý chính} & \thead{Mô-đun} & \thead{Chốt chặn kỹ thuật trong khối \texttt{BEGIN IMMEDIATE}} & \thead{Kết quả bảo vệ}\\
 \hline
-Gọi AI01 / AI02 & \texttt{POST /api/ai/}\newline\texttt{ro-copilot} & Advisor, Admin & Kiểm tra quyền trên RO; nạp tồn kho thực tế vào RAG; lưu bản ghi đề xuất tách biệt, không chạm vào bảng kê RO. & \texttt{PENDING}\newline (Chờ duyệt)\\
+Trừ / Cộng tồn kho qua Sổ cái & \texttt{ghi\_giao\_dich} & \texttt{services/\allowbreak stock.py} & Thực thi câu lệnh nguyên tử \texttt{UPDATE parts SET stock = stock + ? WHERE id = ? AND stock + ? >= 0} kèm \texttt{INSERT INTO stock\_transactions}. & Chặn tuyệt đối xuất âm kho; giữ $\texttt{stock} = \sum \texttt{qty}$.\\
 \hline
-Đề xuất \texttt{PENDING} & \texttt{POST .../approve} & Advisor, Admin & Mở khóa \texttt{BEGIN IMMEDIATE}; kiểm tra $\text{OnHand} - \text{Reserved} \ge \text{Qty}$; giữ kho và chèn dòng vào \texttt{ro\_line\_items}. & \texttt{ACCEPTED} \& Giữ kho\\
+Thêm hạng mục vào phiếu & \texttt{them\_hang\_muc} & \texttt{services/\allowbreak orders.py} & Kiểm tra phiếu chưa đóng và chưa có hóa đơn (\texttt{\_khoa\_hang\_muc}); luôn đọc \texttt{price} từ CSDL và chốt cứng vào cột \texttt{unit\_price}. & Đổi giá danh mục không làm thay đổi hóa đơn cũ.\\
 \hline
-Đề xuất \texttt{PENDING} & \texttt{POST .../reject} & Advisor, Admin & Ghi nhận người từ chối và lý do vào nhật ký kiểm toán; giữ nguyên trạng thái bảng kê RO. & \texttt{REJECTED}\\
+Áp dụng Báo giá vào phiếu & \texttt{ap\_dung\_vao\_phieu} & \texttt{services/\allowbreak quotations.py} & Yêu cầu \texttt{status == 'APPROVED'} và \texttt{applied\_at IS NULL}; chèn hạng mục, trừ kho qua sổ cái và gán ngay \texttt{applied\_at}. & Áp dụng \textit{idempotent} đúng 1 lần; chặn trừ kho kép.\\
 \hline
-RO đang sửa (\texttt{IN\_PROGRESS}) & \texttt{POST /api/}\newline\texttt{qc-inspections} & Advisor, Admin, KTV & Tất cả hạng mục công việc phải hoàn tất; kiểm tra đạt các tiêu chí an toàn kỹ thuật trước khi xuất xưởng. & \texttt{QC\_PASSED}\\
+Nghiệm thu hoàn thành phiếu & \texttt{nghiem\_thu\_phieu} & \texttt{services/\allowbreak orders.py} & Phiếu phải ở trạng thái \texttt{COMPLETED} và \texttt{acceptance\_at IS NULL}; ghi nhận \texttt{accepted\_by}, \texttt{acceptance\_at}, \texttt{acceptance\_note}. & Chặn nghiệm thu lặp lại lần 2 (HTTP 409).\\
 \hline
-RO đạt QC (\texttt{QC\_PASSED}) & \texttt{POST /api/invoices} & Accountant, Admin & Khấu trừ chính thức lượng phụ tùng đã đặt giữ (\texttt{RESERVED} $\rightarrow$ \texttt{CONSUMED}); tính thuế VAT và phát hành hóa đơn. & \texttt{INVOICED}\\
+Thu tiền \& Hủy khoản thu & \texttt{ghi\_thanh\_toan},\newline\texttt{huy\_thanh\_toan} & \texttt{services/\allowbreak billing.py} & Kiểm tra ngay trong SQL: \texttt{UPDATE invoices SET paid = paid + ? WHERE id = ? AND total - paid >= ?}; tự cập nhật \texttt{PARTIAL}/\texttt{PAID}. & Chặn thu vượt số tiền còn nợ (HTTP 409).\\
 \hline
-RO đã lập hóa đơn & \texttt{PUT /api/repair-}\newline\texttt{orders/\{id\}} & Mọi vai trò & \textbf{Khóa bất biến tài chính}: Từ chối mọi thao tác sửa đổi phụ tùng hoặc đơn giá sau khi đã xuất hóa đơn (HTTP 400). & Giữ nguyên \texttt{INVOICED}\\
+Duyệt kết quả AI & \texttt{duyet\_ket\_qua} & \texttt{services/\allowbreak ai.py} & Kiểm tra quyền \texttt{ai.review} và \texttt{review\_status == 'PENDING'}; cập nhật \texttt{reviewed\_by}, \texttt{reviewed\_at}. & Chặn duyệt lại kết quả đã duyệt.\\
 \hline
 \end{tabularx}
 \end{table}
 
-\section{Hiện thực hóa giao diện người dùng (Frontend Industrial Light UI)}
+\section{Hiện thực hóa Giao diện Người dùng và Ảnh minh chứng thực tế}
 
-Giao diện người dùng được thiết kế tối ưu cho tác nghiệp cường độ cao tại xưởng dịch vụ với bố cục rõ ràng, dễ đọc cả trên màn hình máy trạm lẫn khi in phiếu sửa chữa ra giấy. Hình~\ref{fig:g-ui-wireframe} minh họa cấu trúc bố cục màn hình chi tiết Phiếu sửa chữa kết hợp ngăn kéo AI Copilot.
+Giao diện người dùng tại \texttt{frontend/src/routes/} gồm 16 màn hình nghiệp vụ đầy đủ kết nối tới Backend qua \texttt{/api/*}. Các Hình~\ref{fig:g-ui-wireframe}, \ref{fig:g-ui-order-quote}, \ref{fig:g-ui-stock} và \ref{fig:g-ui-ai-review} dưới đây là ảnh chụp màn hình vận hành thực tế của hệ thống \textbf{GarageTools AI}.
 
 \begin{figure}[H]
 \centering
-\input{figures/ui-wireframe.tex}
+\setlength{\fboxsep}{1pt}
+\fcolorbox{codeframe}{white}{\includegraphics[width=0.84\textwidth]{../../screenshots/03_phieu_sua_chua.png}}
 \vspace{2pt}
-\caption{Kiến trúc bố cục giao diện Phiếu sửa chữa (RO) và ngăn kéo trợ lý AI Copilot}
+\caption{Ảnh minh chứng thực tế: Giao diện Quản lý và lọc Phiếu sửa chữa theo 6 trạng thái}
 \label{fig:g-ui-wireframe}
 \end{figure}
 
-Các đặc trưng kỹ thuật nổi bật trên tầng giao diện bao gồm:
-\begin{enumerate}
-  \item \textbf{Bảng điều khiển vận hành (Executive Dashboard)}: Tổng hợp tức thời số lượng xe đang trong xưởng theo từng trạng thái, doanh thu thực thu, công nợ tồn đọng và danh sách cảnh báo các mã phụ tùng chạm ngưỡng tồn tối thiểu (\texttt{Low Stock Alerts}).
-  \item \textbf{Không gian làm việc Phiếu sửa chữa (RO Workspace) \& AI Copilot}: Tích hợp trực tiếp bảng kê hạng mục vật tư/nhân công với ngăn kéo trợ lý AI. Mọi gợi ý từ AI đều gắn nhãn cảnh báo minh bạch, hiển thị số lượng tồn kho khả dụng ngay bên cạnh từng mã SKU và yêu cầu Cố vấn dịch vụ nhấn nút xác nhận duyệt.
-  \item \textbf{Trung tâm Quản trị Khóa BYOK và Sao lưu Hệ thống}: Cung cấp giao diện cấu hình nhà cung cấp AI (Groq, Gemini, OpenAI, Mock), kiểm tra kết nối trực tiếp (Ping Test) và quản lý các bản sao lưu CSDL SQLite chỉ với một thao tác.
+\begin{figure}[H]
+\centering
+\setlength{\fboxsep}{1pt}
+\fcolorbox{codeframe}{white}{\includegraphics[height=5.7cm]{../../screenshots/02_dashboard.png}}\hfill
+\fcolorbox{codeframe}{white}{\includegraphics[height=5.7cm]{../../screenshots/04_chi_tiet_phieu.png}}
+\vspace{2pt}
+\caption{Ảnh minh chứng thực tế: (Trái) Bảng điều khiển Tổng quan Dashboard; (Phải) Chi tiết Phiếu sửa chữa \#1 kèm hạng mục chốt giá và Biên bản tiếp nhận xe}
+\label{fig:g-ui-order-quote}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\setlength{\fboxsep}{1pt}
+\fcolorbox{codeframe}{white}{\includegraphics[width=0.78\textwidth]{../../screenshots/14_cua_hang.png}}
+\vspace{2pt}
+\caption{Ảnh minh chứng thực tế: Giao diện Kho phụ tùng và Sổ cái giao dịch đối soát thời gian thực (\texttt{Lệch sổ: 0})}
+\label{fig:g-ui-stock}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\setlength{\fboxsep}{1pt}
+\fcolorbox{codeframe}{white}{\includegraphics[width=0.48\textwidth]{../../screenshots/12_ai.png}}\hfill
+\fcolorbox{codeframe}{white}{\includegraphics[width=0.48\textwidth]{../../screenshots/13_duyet_ai.png}}
+\vspace{2pt}
+\caption{Ảnh minh chứng thực tế Trung tâm AI: (Trái) Kết quả mới sinh ở trạng thái \textit{Chờ duyệt}; (Phải) Sau khi Quản lý phê duyệt chuyển sang \textit{Đã duyệt}}
+\label{fig:g-ui-ai-review}
+\end{figure}
+
+Các điểm nổi bật trên giao diện thực tế gồm:
+\begin{enumerate}[noitemsep,topsep=2pt]
+  \item \textbf{Tổng quan Garage \& Bảng điều phối Kanban}: Thống kê trực tiếp số phiếu đang mở, doanh thu thực thu, cảnh báo phụ tùng chạm mức tồn tối thiểu (\texttt{stock <= min\_stock}) và bảng kéo-thả theo dõi 6 trạng thái của phiếu sửa chữa.
+  \item \textbf{Màn hình Chi tiết Phiếu sửa chữa, Báo giá và Bảo hành}: Cho phép thao tác liên hoàn từ ghi biên bản tiếp nhận (\texttt{intake\_records}), lập và áp dụng báo giá một lần, xuất phụ tùng/dịch vụ, ghi nhật ký kỹ thuật, nghiệm thu bàn giao xe đến lập hóa đơn và cấp phiếu bảo hành.
+  \item \textbf{Màn hình Trợ lý AI \& Hàng đợi Duyệt kết quả (\texttt{/ai} và \texttt{/ai-review})}: Tách biệt rõ khu vực chạy thử nghiệm 3 chức năng AI01--AI03 và hàng đợi duyệt dành riêng cho Quản lý (\texttt{MANAGER}).
 \end{enumerate}
 
-\section{Hiện thực hóa Động cơ AI Smart Fallback và Toán học Tồn kho / Tài chính}
+\section{Công thức Bất biến Số học về Tiền tệ và Sổ cái Tồn kho}
 
-Để bảo đảm tính đúng đắn số học tuyệt đối và duy trì hoạt động liên tục khi dịch vụ LLM đám mây gặp sự cố, hệ thống hiện thực hóa các công thức kiểm soát xác định (Deterministic Formulas) trong tầng dịch vụ:
+Toàn bộ việc tính toán tiền tệ và tồn kho trong hệ thống đều dùng số nguyên (\texttt{INTEGER}) và thỏa mãn 3 bất biến toán học được kiểm tra tự động trong bộ test:
 
 \begin{align}
-\text{AvailableQty}(p) &= \text{QuantityOnHand}(p) - \text{ReservedQty}(p) \ge 0 \\
-\text{Subtotal}(RO) &= \sum_{i \in \text{Items}(RO)} \left( \text{Qty}_i \times \text{UnitPrice}_i - \text{ItemDiscount}_i \right) \\
-\text{TaxVAT}(RO) &= \max\left(0,\ \text{Subtotal}(RO) - \text{OrderDiscount}\right) \times r_{\text{VAT}} \\
-\text{BalanceDue}(\text{Inv}) &= \text{TotalPayable}(\text{Inv}) - \sum_{k \in \text{Payments}(\text{Inv})} \text{Amount}_k
+\forall p \in \texttt{parts}:\quad p.\texttt{stock} &= \sum_{t \in \texttt{stock\_transactions}(p)} t.\texttt{qty} \ge 0 \\
+\forall r \in \texttt{repair\_orders}:\quad \text{TongPhieu}(r) &= \sum_{i \in \texttt{repair\_order\_items}(r)} \left( i.\texttt{qty} \times i.\texttt{unit\_price} \right) \\
+\forall h \in \texttt{invoices}:\quad h.\texttt{paid} &= \sum_{k \in \texttt{payments}(h)} k.\texttt{amount} \le h.\texttt{total}
 \end{align}
 
-Khi kết nối tới nhà cung cấp LLM bên ngoài gặp lỗi mạng, quá thời gian chờ (Timeout) hoặc thiếu khóa API, hàm \texttt{\_run\_deterministic\_fallback} trong \texttt{ai\_service.py} tự động phân tích từ khóa triệu chứng (như hệ thống phanh, động cơ quá nhiệt, điều hòa, ắc quy, hộp số), đối chiếu trực tiếp với các bản ghi có thật trong bảng \texttt{parts} và \texttt{service\_catalog} của CSDL để trả về cấu trúc JSON chuẩn xác trong thời gian dưới 25ms, đồng thời ghi nhận minh bạch cờ \texttt{is\_fallback = 1} vào bảng \texttt{ai\_audit\_logs}.
+Đối với hàm đối soát kho (\texttt{doi\_soat\_so\_cai} trong \texttt{app/services/stock.py} và endpoint \texttt{GET /api/stock/audit}), hệ thống so sánh trực tiếp cột \texttt{parts.stock} với tổng \texttt{SUM(stock\_transactions.qty)} của từng phụ tùng; trong suốt toàn bộ các kịch bản kiểm thử E2E và UAT, danh sách lệch kho luôn rỗng tuyệt đối.
 
 \section{Kết luận chương}
 
-Chương 5 đã trình bày chi tiết quá trình hiện thực hóa mã nguồn của GarageTools AI trên cả hai tầng Backend và Frontend. Mọi yêu cầu về phân quyền cô lập bản ghi, khóa giao dịch kho nguyên tử, quy trình duyệt HITL và động cơ dự phòng Smart Fallback đều đã được cài đặt hoàn chỉnh và được kiểm chứng nghiêm ngặt thông qua hệ thống kiểm thử tự động ở Chương 6.
+Chương 5 đã trình bày chi tiết cấu trúc mã nguồn và cách hiện thực hóa các chốt chặn bảo mật, phân quyền, giao dịch nguyên tử \texttt{BEGIN IMMEDIATE}, sổ cái tồn kho và cổng AI trong dự án. Chương 6 tiếp theo sẽ trình bày kết quả kiểm thử tự động trên toàn bộ hệ thống.

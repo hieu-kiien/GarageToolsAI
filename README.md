@@ -28,14 +28,22 @@ python -m venv .venv
 .\.venv\Scripts\activate
 pip install -r requirements.txt
 
-# Khởi tạo CSDL mẫu lần đầu (nếu chưa có garage.db)
+# Khởi tạo CSDL mẫu lần đầu (tạo garage.db với 21 bảng & dữ liệu mẫu)
 python database/init_db.py
+
+# (Tuỳ chọn) Cấu hình AI thật miễn phí bằng Groq hoặc Gemini:
+# Copy-Item .env.example .env
+# Mặc định không cần tạo .env hệ thống vẫn chạy ngay ở chế độ AI_PROVIDER=mock.
+# Nếu muốn gọi LLM thật miễn phí (Groq), mở GarageAI_Project/.env và đặt:
+#   AI_PROVIDER=groq
+#   AI_MODEL=openai/gpt-oss-120b
+#   AI_API_KEY=gsk_xxxxxxxxxxxxxxxxxxxx
 
 # Chạy máy chủ FastAPI (tự động áp migrations 001 -> 005)
 python -m uvicorn app.main:app --reload --port 8000
 ```
 
-### Bước 2: Khởi chạy Giao diện React (Frontend)
+### Bước 2: Khởi chạy Giao diện React (Frontend — cổng `3000`)
 
 Mở một cửa sổ terminal thứ hai:
 
@@ -45,7 +53,7 @@ npm install
 npm run dev
 ```
 
-Vite dev server tự động chuyển tiếp (proxy) mọi yêu cầu `/api/*` sang `http://127.0.0.1:8000`.
+Mở trình duyệt tại **`http://localhost:3000`** (hoặc `http://127.0.0.1:8000` cho giao diện SSR dự phòng). Vite dev server tự động chuyển tiếp (proxy) mọi yêu cầu `/api/*` sang `http://127.0.0.1:8000`.
 
 ### Tài khoản dùng thử (Demo)
 
@@ -91,9 +99,9 @@ Hệ thống đã vượt qua toàn bộ các cấp độ kiểm thử:
 
 ## 4. Danh mục tài liệu trong kho mã nguồn
 
-- [`Báo cáo.pdf`](./Báo%20cáo.pdf) — Báo cáo kỹ thuật hoàn thiện biên dịch bằng **XeLaTeX** (`ictu_v8_style.sty`, 102 trang, 49 bảng, 31 hình/ảnh)
-- [`Báo cáo.docx`](./Báo%20cáo.docx) — Báo cáo kỹ thuật chuẩn hóa định dạng Microsoft Word (A4, Times New Roman 12pt, lề chuẩn ICTU)
-- [`GarageAI_Project/docs/latex_report/`](./GarageAI_Project/docs/latex_report/) — Mã nguồn LaTeX học thuật (`main.tex`, `ictu_v8_style.sty`, `chapters/*.tex`)
+- [`Báo cáo.pdf`](./Báo%20cáo.pdf) — Báo cáo Dự án Kết thúc Học phần hoàn thiện biên dịch bằng **XeLaTeX** (`ictu_v8_style.sty`, 56 trang, 8 chương & 3 phụ lục, đầy đủ sơ đồ và ảnh minh chứng thực tế)
+- [`Slide_Thuyet_Trinh_Nhom23.html`](./Slide_Thuyet_Trinh_Nhom23.html) & [`KICH_BAN_THUYET_TRINH_VA_HOI_DAP.md`](./KICH_BAN_THUYET_TRINH_VA_HOI_DAP.md) — Bộ slide trình chiếu tương tác **Reveal.js 5.1** (12 slide, phông chữ Be Vietnam Pro, có Logo ICTU) và kịch bản thuyết trình chi tiết kèm cẩm nang hỏi đáp
+- [`GarageAI_Project/docs/latex_report/`](./GarageAI_Project/docs/latex_report/) — Mã nguồn LaTeX học thuật (`main.tex`, `ictu_v8_style.sty`, `chapters/*.tex`, `figures/*.tex`)
 - [`GarageAI_Project/README.md`](./GarageAI_Project/README.md) — Hướng dẫn cài đặt, kiến trúc tầng, cấu hình `.env` và Docker của Backend
 - [`frontend/README.md`](./frontend/README.md) — Hướng dẫn cài đặt và danh sách 16 màn hình của Frontend React 19
 - [`GarageAI_Project/TEST_REPORT.md`](./GarageAI_Project/TEST_REPORT.md) — Báo cáo kết quả kiểm thử tự động (226/226) và E2E

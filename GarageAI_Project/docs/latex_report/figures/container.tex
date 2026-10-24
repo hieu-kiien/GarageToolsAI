@@ -1,52 +1,80 @@
-\resizebox{0.96\textwidth}{!}{%
+\resizebox{\textwidth}{!}{%
 \begin{tikzpicture}[
-  font=\sffamily,
-  box/.style={rectangle, rounded corners=3pt, draw=black, line width=0.7pt, fill=white, text width=4.6cm, minimum height=1.35cm, align=center, font=\sffamily\scriptsize, inner sep=4pt},
-  headbox/.style={rectangle, rounded corners=3pt, draw=black, line width=0.8pt, fill=black!10, text width=4.6cm, minimum height=1.35cm, align=center, font=\sffamily\scriptsize, inner sep=4pt},
-  arr/.style={-{Latex[length=2mm,width=1.5mm]}, line width=0.6pt, draw=black},
-  lbl/.style={font=\sffamily\scriptsize, fill=white, inner sep=1.5pt, align=center}
+    font=\sffamily\footnotesize,
+    >=Latex,
+    cardblue/.style={rectangle, draw=diagblueline, line width=0.9pt, fill=diagbluefill, rounded corners=5pt, text width=4.3cm, align=center, inner sep=5.5pt},
+    cardgreen/.style={rectangle, draw=diaggreenline, line width=0.9pt, fill=diaggreenfill, rounded corners=5pt, text width=4.3cm, align=center, inner sep=5.5pt},
+    cardamber/.style={rectangle, draw=diagamberline, line width=0.9pt, fill=diagamberfill, rounded corners=5pt, text width=4.3cm, align=center, inner sep=5.5pt},
+    cardpurple/.style={rectangle, draw=diagpurpleline, line width=0.9pt, fill=diagpurplefill, rounded corners=5pt, text width=4.3cm, align=center, inner sep=5.5pt},
+    layerbar/.style={rectangle, draw=diagslateline, line width=0.8pt, fill=diagslatefill, rounded corners=4pt, text width=14.5cm, align=center, font=\sffamily\scriptsize\bfseries, inner sep=4pt},
+    arrow/.style={-Latex, line width=0.9pt, diagblueline}
 ]
-  \node[headbox] (fe) at (0, 2.7) {
-    \textbf{\footnotesize Tầng Giao diện (SPA)}\\[2pt]
-    React 19 + TanStack Start + TypeScript\\
-    Tailwind CSS v4 (Industrial Light UI)
-  };
 
-  \node[headbox] (api) at (8.2, 2.7) {
-    \textbf{\footnotesize Tầng Điều phối API}\\[2pt]
-    FastAPI (Python 3.12) + Pydantic v2\\
-    JWT Auth + RBAC + IDOR Scope Guard
-  };
+% Tầng 1: Giao diện
+\node[cardblue, text width=14.5cm] (fe) {
+    \textbf{TẦNG 1: GIAO DIỆN NGƯỜI DÙNG (\texttt{frontend/src/} \& \texttt{app/templates/})}\\
+    React 19 + TanStack Start + TypeScript + Tailwind CSS v4 (16 màn hình nghiệp vụ kết nối \texttt{/api/*} kèm Jinja2 SSR)
+};
 
-  \node[box] (svc) at (8.2, 0.0) {
-    \textbf{\footnotesize Tầng Dịch vụ Nghiệp vụ}\\[2pt]
-    RO Engine, Inventory Reservation\\
-    Invoice Tax/Discount, Backup Service
-  };
+% Tầng 2: Định tuyến & Bảo mật (dùng below=0.45cm of ... để không bao giờ đè nhau)
+\node[layerbar, below=0.45cm of fe] (bar2) {TẦNG 2: ĐỊNH TUYẾN, XÁC THỰC PHIÊN \& MA TRẬN PHÂN QUYỀN (\texttt{app/main.py}, \texttt{app/core/}, \texttt{app/routes/})};
 
-  \node[box] (ai) at (0, 0.0) {
-    \textbf{\footnotesize Tầng Điều phối AI \& RAG}\\[2pt]
-    Prompt Registry v3.2 + Context Gate\\
-    BYOK AES Vault + Smart Fallback
-  };
+\node[cardpurple, below=0.35cm of bar2] (rbac) {
+    \textbf{Ma trận Phân quyền RBAC}\\
+    4 vai trò (\texttt{security\_matrix.py})\\
+    Cô lập phiếu KTV (\texttt{duoc\_gan\_cong})
+};
+\node[cardpurple, left=0.5cm of rbac] (sec) {
+    \textbf{Bảo mật \& Giới hạn Tần suất}\\
+    Argon2id + Cookie \texttt{garage\_session}\\
+    CSRF 2 lớp + \texttt{auth\_version}
+};
+\node[cardpurple, right=0.5cm of rbac] (api) {
+    \textbf{Hệ thống Route \& JSON API}\\
+    14 mô-đun JSON (\texttt{routes/api/})\\
+    + 7 mô-đun Jinja2 (\texttt{routes/})
+};
 
-  \node[headbox] (db) at (8.2, -2.7) {
-    \textbf{\footnotesize Tầng Lưu trữ Quan hệ}\\[2pt]
-    SQLite 3 (WAL Mode, Foreign Keys ON)\\
-    21 Bảng chuẩn hóa 3NF + BEGIN IMMEDIATE
-  };
+% Tầng 3: Dịch vụ nghiệp vụ & AI
+\node[layerbar, below=0.5cm of rbac] (bar3) {TẦNG 3: DỊCH VỤ NGHIỆP VỤ LÕI \& CỔNG TRỢ LÝ AI (\texttt{app/services/}, \texttt{app/ai\_gateway.py}, \texttt{config/prompts/})};
 
-  \node[box, dashed] (cloud) at (0, -2.7) {
-    \textbf{\footnotesize Nhà cung cấp LLM Ngoài}\\[2pt]
-    Groq (gpt-oss-120b), Google Gemini,\\
-    OpenAI API, Custom OpenAI-Compatible
-  };
+\node[cardamber, below=0.35cm of bar3] (aigw) {
+    \textbf{Cổng AI (\texttt{ai\_gateway.py})}\\
+    AI01 \texttt{history}, AI02 \texttt{explain}, AI03 \texttt{quote}\\
+    Lọc khớp giá CSDL + ép \texttt{backend\_total}
+};
+\node[cardgreen, left=0.5cm of aigw] (svc) {
+    \textbf{11 Mô-đun Nghiệp vụ Lõi}\\
+    \texttt{orders}, \texttt{quotations}, \texttt{stock},\\
+    \texttt{billing}, \texttt{warranties}, \texttt{parties}...
+};
+\node[cardamber, right=0.5cm of aigw] (prompt) {
+    \textbf{Tệp Prompt Ngoại hóa}\\
+    \texttt{system.txt}, \texttt{history.txt},\\
+    \texttt{explain.txt}, \texttt{quote.txt}
+};
 
-  \draw[arr, <->] (fe.east) -- node[lbl, above]{REST JSON / JWT} (api.west);
-  \draw[arr, <->] (api.south) -- node[lbl, right=2pt]{Điều phối} (svc.north);
-  \draw[arr, <->] (svc.west) -- node[lbl, above]{Ngữ cảnh nội bộ} (ai.east);
-  \draw[arr, <->] (svc.south) -- node[lbl, right=2pt]{SQL Giao dịch} (db.north);
-  \draw[arr, <->] (ai.south east) -- node[lbl, above, sloped]{Đọc RAG / Ghi Audit} (db.north west);
-  \draw[arr, <->] (ai.south) -- node[lbl, left=2pt]{HTTPS (Timeout 12s)} (cloud.north);
+% Tầng 4: CSDL & Cloud AI
+\node[cardblue, text width=6.9cm, below=0.6cm of $(svc.south)!0.5!(aigw.south)$, xshift=-1.1cm] (db) {
+    \textbf{TẦNG 4A: CSDL QUAN HỆ SQLITE 3 (\texttt{garage.db})}\\
+    Chế độ WAL + \texttt{PRAGMA foreign\_keys=ON} + \texttt{BEGIN IMMEDIATE}\\
+    21 bảng chuẩn 3NF, 37 chỉ mục, 171 dòng dữ liệu mẫu
+};
+\node[cardgreen, text width=6.9cm, right=0.5cm of db] (cloud) {
+    \textbf{TẦNG 4B: NHÀ CUNG CẤP MÔ HÌNH AI (7 PRESETS)}\\
+    \texttt{groq} (\texttt{openai/gpt-oss-120b}), \texttt{gemini} (\texttt{gemini-2.0-flash}),\\
+    \texttt{openrouter}, \texttt{openai}, \texttt{9router}, \texttt{custom} \& \texttt{mock}
+};
+
+% Kết nối giữa các tầng
+\draw[arrow] (fe.south) -- (bar2.north);
+\draw[arrow] (sec.east) -- (rbac.west);
+\draw[arrow] (rbac.east) -- (api.west);
+\draw[arrow] (rbac.south) -- (bar3.north);
+\draw[arrow, <->] (aigw.east) -- (prompt.west);
+\draw[arrow, <->] (svc.south) -- (svc.south |- db.north);
+\draw[arrow, <->] ([xshift=-0.8cm]aigw.south) -- ([xshift=2.2cm]db.north);
+\draw[arrow, <->, diaggreenline] ([xshift=0.8cm]aigw.south) -- ([xshift=-2.2cm]cloud.north);
+
 \end{tikzpicture}%
 }

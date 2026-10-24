@@ -1,49 +1,49 @@
-\chapter{KẾT LUẬN VÀ GIỚI HẠN ĐÃ BIẾT}
+\chapter{KẾT LUẬN VÀ HƯỚNG PHÁT TRIỂN}
 
-\section{Tổng kết thành quả đạt được}
+\section{Tổng kết các kết quả đạt được}
 
-Đề tài \textbf{“Hệ thống quản trị xưởng dịch vụ ô tô tích hợp trợ lý trí tuệ nhân tạo (GarageTools AI -- Mã đề tài 80277)”} đã hoàn thành đầy đủ các mục tiêu nghiên cứu và hiện thực hóa phần mềm theo đúng yêu cầu của học phần Ứng dụng trí tuệ nhân tạo (AIA331). Những kết quả cốt lõi đạt được bao gồm:
+Đề tài \textbf{“Hệ thống quản lý garage sửa chữa ô tô có tích hợp AI (GarageTools AI -- Mã đề tài 80277)”} đã hoàn thành đầy đủ 54/54 tiêu chí đánh giá từ KT1, KT2, KT3 đến Cuối kỳ của học phần Ứng dụng trí tuệ nhân tạo (AIA331). Những kết quả trọng tâm đã đạt được gồm:
 \begin{enumerate}[noitemsep,topsep=2pt]
-  \item \textbf{Xây dựng hoàn chỉnh hệ thống quản trị xưởng dịch vụ ô tô chuẩn 3NF}: Hiện thực hóa 21 bảng dữ liệu quan hệ và 16 nhóm RESTful API xử lý trọn vẹn chu trình từ quản lý khách hàng, phương tiện (biển số, số khung VIN), lịch hẹn theo khoang, phiếu sửa chữa RO (10 trạng thái), nghiệm thu QC, quản lý tồn kho SKU đến hóa đơn, thanh toán đa phương thức, bảo hành và nhắc bảo dưỡng.
-  \item \textbf{Bảo đảm toàn vẹn giao dịch kho nguyên tử và an ninh phân quyền mức bản ghi}: Giải quyết triệt để bài toán tranh chấp xuất kho đồng thời bằng khóa giao dịch \texttt{BEGIN IMMEDIATE} kết hợp cơ chế đặt giữ tồn kho (\texttt{inventory\_reservations}). Thiết lập mô hình RBAC 4 vai trò kết hợp cô lập phạm vi bản ghi Kỹ thuật viên (\texttt{Record-level NFR01}), ngăn chặn hoàn toàn lỗ hổng leo quyền ngang IDOR.
-  \item \textbf{Tích hợp Đa nhà cung cấp AI (AI01--AI04) có nối đất dữ liệu thực và kiểm duyệt HITL}: Hỗ trợ linh hoạt Groq Cloud, Google Gemini, OpenAI cùng kho khóa mã hóa BYOK (chống SSRF) và động cơ dự phòng Smart Fallback. Mọi đề xuất chẩn đoán và báo giá phụ tùng của AI đều đối chiếu trực tiếp với tồn kho thực tế và bắt buộc qua bước phê duyệt của Cố vấn dịch vụ trước khi ghi vào phiếu RO.
-  \item \textbf{Kiểm chứng thực nghiệm và định lượng minh bạch}: Vượt qua 100\% trên tổng số 217 ca kiểm thử tự động (\texttt{pytest} và \texttt{vitest}) cùng 35 kịch bản UAT; nâng tỷ lệ hợp lệ JSON Schema từ 35.0\% (\texttt{v1.0}) lên 100.0\% (\texttt{v3.2}) và đạt điểm bám sát dữ liệu gốc 96.4\% trên 320 mẫu thử nghiệm.
+  \item \textbf{Hoàn thiện quy trình nghiệp vụ garage khép kín trên CSDL 21 bảng chuẩn 3NF}: Xây dựng trọn vẹn luồng nghiệp vụ từ Đặt lịch hẹn (\texttt{appointments}) $\rightarrow$ Tiếp nhận xe (\texttt{intake\_records}) $\rightarrow$ Phiếu sửa chữa 6 trạng thái (\texttt{repair\_orders}) $\rightarrow$ Báo giá chính thức áp dụng 1 lần (\texttt{quotations}) $\rightarrow$ Sổ cái tồn kho (\texttt{stock\_transactions}) $\rightarrow$ Nghiệm thu $\rightarrow$ Hóa đơn (\texttt{invoices}) \& Thanh toán (\texttt{payments}) $\rightarrow$ Bảo hành theo hạng mục (\texttt{warranties}), hiển thị đồng bộ trên 16 màn hình React 19 + TanStack Start và giao diện Jinja2.
+  \item \textbf{Thiết lập 4 chốt chặn bảo vệ tuyệt đối Tiền tệ, Tồn kho và Phân quyền}: (1) Dùng kiểu số nguyên \texttt{INTEGER} cho toàn bộ cột tiền và chốt cứng \texttt{unit\_price} tại thời điểm thêm hạng mục; (2) Áp dụng ràng buộc \texttt{CHECK XOR} (\texttt{service\_id} $\oplus$ \texttt{part\_id}) trên cả 3 bảng hạng mục, báo giá và bảo hành; (3) Duy trì bất biến sổ cái tồn kho $\texttt{parts.stock} = \sum \texttt{stock\_transactions.qty}$ kèm cơ chế tự hoàn kho (\texttt{RETURN}) khi hủy phiếu; và (4) Khóa nguyên tử \texttt{BEGIN IMMEDIATE} kết hợp phân quyền 4 vai trò và cô lập phiếu theo Kỹ thuật viên (\texttt{duoc\_gan\_cong}).
+  \item \textbf{Tích hợp 3 chức năng AI an toàn, hỗ trợ đa nhà cung cấp và Human Review}: Loại bỏ từ sớm ý tưởng AI tự chẩn đoán lỗi xe; hiện thực hóa AI01 (\texttt{history}), AI02 (\texttt{explain}) và AI03 (\texttt{quote}) qua \texttt{app/ai\_gateway.py} với bộ lọc khớp giá CSDL, cưỡng bức \texttt{backend\_total}, tự động fallback sang \texttt{\_goi\_mock} khi lỗi 429/Timeout và bắt buộc Quản lý phê duyệt (\texttt{ai.review}).
+  \item \textbf{Kiểm chứng thực nghiệm 100\%}: Vượt qua tuyệt đối \textbf{226/226} ca kiểm thử tự động Backend (\texttt{tests/run\_all.py}), \textbf{31/31} ca Smoke (\texttt{scripts/smoke.ps1}), \textbf{32/32} ca E2E (\texttt{scripts/e2e.ps1}) và \textbf{35/35} ca UAT (\texttt{USER\_ACCEPTANCE\_TEST.md}); độ trễ thực tế trên Groq (\texttt{openai/gpt-oss-120b}) đạt từ 2,46s đến 3,99s.
 \end{enumerate}
 
-\section{Đánh giá khách quan các giới hạn kỹ thuật đã biết}
+\section{Đánh giá khách quan các giới hạn hiện tại (Chủ đích an toàn)}
 
-Trên tinh thần trung thực học thuật, nhóm thẳng thắn nhìn nhận các giới hạn kỹ thuật hiện tại của hệ thống và đề xuất giải pháp khắc phục trong Bảng~\ref{tab:g-limitations}.
+Đúng với tinh thần đánh giá khách quan ở tiêu chí cuối kỳ (\texttt{CK-14}) và nội dung trình bày trên Slide báo cáo, nhóm thẳng thắn chỉ ra các giới hạn hiện tại của hệ thống cùng phương án nâng cấp trong Bảng~\ref{tab:g-limitations}.
 
 \begin{table}[H]
 \centering
 \footnotesize
 \renewcommand{\arraystretch}{1.06}
-\caption{Các giới hạn kỹ thuật đã biết của hệ thống và định hướng nâng cấp}
+\caption{Các giới hạn kỹ thuật hiện tại của hệ thống và phương án mở rộng}
 \label{tab:g-limitations}
-\begin{tabularx}{\textwidth}{|L{3.0cm}|Y|Y|}
+\begin{tabularx}{\textwidth}{|L{3.2cm}|Y|Y|}
 \hline
-\thead{Hạng mục kỹ thuật} & \thead{Hiện trạng và giới hạn trong phiên bản hiện tại} & \thead{Phương án nâng cấp trong giai đoạn tiếp theo}\\
+\thead{Hạng mục kỹ thuật} & \thead{Hiện trạng và giới hạn trong phiên bản hiện tại} & \thead{Phương án nâng cấp ở giai đoạn tiếp theo}\\
 \hline
-Khả năng mở rộng CSDL đa chi nhánh & SQLite 3 (WAL mode + \texttt{BEGIN IMMEDIATE}) vận hành rất ổn định cho một xưởng dịch vụ độc lập (5--30 nhân sự thao tác đồng thời), nhưng chưa phù hợp cho chuỗi hàng chục garage dùng chung một cụm máy chủ phân tán. & Chuyển đổi tầng lưu trữ sang PostgreSQL 16 sử dụng cơ chế khóa dòng \texttt{SELECT ... FOR UPDATE} khi mở rộng lên mô hình chuỗi xưởng đa chi nhánh. \\
+1. Phạm vi áp dụng của kết quả duyệt AI03 & Khi Quản lý nhấn duyệt (\texttt{APPROVED}) một báo giá nháp AI03 trong bảng \texttt{ai\_results}, kết quả dừng ở vai trò văn bản tư vấn đã được xác nhận chứ chưa tự động sinh bản ghi sang bảng \texttt{quotations} (chủ đích tách bạch dữ liệu AI và chứng từ tài chính). & Bổ sung nút \textit{“Chuyển thành bản nháp Báo giá (\texttt{DRAFT})”} sau khi Quản lý đã duyệt \texttt{APPROVED} để Lễ tân không phải nhập lại từng dòng. \\
 \hline
-Kết nối phần cứng chẩn đoán OBD-II & Hiện tại các triệu chứng và mã lỗi DTC được Cố vấn dịch vụ hoặc Kỹ thuật viên nhập qua giao diện web; chưa đọc trực tiếp luồng dữ liệu từ giắc cắm OBD-II trên xe. & Phát triển ứng dụng cầu nối (Edge Gateway) đọc dữ liệu từ thiết bị OBD-II Bluetooth/Wi-Fi và đồng bộ tự động vào phiếu RO. \\
+2. Cơ chế trừ tồn kho trực tiếp (\texttt{USAGE}) & Hiện tại tồn kho được trừ trực tiếp qua sổ cái (\texttt{USAGE}) khi thêm phụ tùng vào phiếu sửa chữa hoặc khi áp dụng báo giá đã duyệt (\texttt{APPROVED}); chưa tách bước \textit{“Giữ kho tạm thời (Soft Reservation)”} trong lúc báo giá mới ở trạng thái gửi khách (\texttt{SENT}). & Bổ sung trạng thái giữ hàng tạm thời có thời hạn hiệu lực (\texttt{valid\_until}) cho các báo giá đang chờ khách phản hồi. \\
 \hline
-Cổng thanh toán và Hóa đơn điện tử & Hệ thống đã tính toán đầy đủ thuế VAT, chiết khấu và quản lý giao dịch thu tiền nội bộ, nhưng chưa tích hợp gạch nợ tự động qua VietQR ngân hàng hoặc API Hóa đơn điện tử thuế. & Tích hợp Webhook thanh toán QR động và kết nối API phát hành hóa đơn điện tử có mã của cơ quan thuế. \\
+3. Quy mô CSDL một xưởng độc lập \& Rate Limit trong RAM & SQLite WAL + \texttt{BEGIN IMMEDIATE} khóa ghi ở mức toàn tệp CSDL và bộ đếm \texttt{ratelimit.py} lưu trong RAM: rất gọn và ổn định cho 1 garage độc lập (5--30 nhân viên), nhưng chưa phù hợp khi chạy nhiều tiến trình worker hoặc chuỗi nhiều chi nhánh. & Chuyển CSDL sang PostgreSQL (dùng khóa dòng \texttt{SELECT ... FOR UPDATE}) và đưa bộ đếm Rate Limit / hàng đợi gọi AI sang Redis khi mở rộng đa chi nhánh. \\
 \hline
-Năng lực AI Đa phương thức (Multimodal) & Bốn tác vụ AI01--AI04 hiện xử lý trên dữ liệu văn bản kỹ thuật và bảng số liệu tồn kho; chưa phân tích trực tiếp hình ảnh vết trầy xước thân vỏ hoặc âm thanh tiếng gõ động cơ. & Khai thác mô hình thị giác -- ngôn ngữ (Vision LLM) để hỗ trợ đánh giá mức độ hư hỏng đồng sơn từ ảnh chụp hiện trường khi tiếp nhận xe. \\
+4. Hóa đơn thuế VAT, VietQR \& Thiết bị OBD-II & Bảng \texttt{invoices} hiện tính tổng tiền nguyên (\texttt{total}, \texttt{paid}) từ các hạng mục đã chốt giá, chưa tách riêng cột chiết khấu/thuế VAT, chưa gạch nợ tự động qua VietQR và chưa đọc trực tiếp mã lỗi từ cổng phần cứng OBD-II. & Tách cột chiết khấu/VAT trên hóa đơn, tích hợp Webhook thanh toán VietQR và kết nối thiết bị đọc mã lỗi OBD-II tại khoang sửa chữa. \\
 \hline
 \end{tabularx}
 \end{table}
 
 \section{Lộ trình phát triển tiếp theo}
 
-Từ nền tảng kiến trúc hiện có, lộ trình nâng cấp hệ thống GarageTools AI được hoạch định qua ba giai đoạn:
+Từ nền tảng mã nguồn và bộ kiểm thử hiện có, lộ trình mở rộng hệ thống \textbf{GarageTools AI} được chia làm 3 bước:
 \begin{enumerate}[noitemsep,topsep=2pt]
-  \item \textbf{Giai đoạn 1 -- Chuỗi cung ứng và Đa chi nhánh}: Nâng cấp CSDL lên PostgreSQL kết hợp Redis Cache và tự động hóa quy trình gửi đơn đặt hàng (\texttt{purchase\_orders}) tới nhà cung cấp khi tồn kho chạm ngưỡng tối thiểu.
-  \item \textbf{Giai đoạn 2 -- Tích hợp IoT OBD-II và Cổng khách hàng}: Kết nối trực tiếp thiết bị đọc lỗi OBD-II tại khoang sửa chữa và cung cấp cổng tra cứu tiến độ sửa chữa trực tuyến qua mã QR cho chủ xe.
-  \item \textbf{Giai đoạn 3 -- Chẩn đoán đa phương thức}: Mở rộng trợ lý AI nhận diện ảnh chụp hư hỏng ngoại thất và đọc biển kiểm soát xe tự động qua camera cổng xưởng.
+  \item \textbf{Bước 1 -- Hoàn thiện liên thông Báo giá \& Hàng đợi AI bất đồng bộ}: Cho phép khởi tạo nhanh báo giá \texttt{DRAFT} từ kết quả AI03 đã duyệt và chuyển lời gọi LLM sang xử lý bất đồng bộ (Server-Sent Events / Background Queue).
+  \item \textbf{Bước 2 -- Nâng cấp Đa chi nhánh (PostgreSQL + Redis)}: Hỗ trợ cấu hình chạy trên PostgreSQL cho mô hình chuỗi garage dùng chung hồ sơ lịch sử phương tiện và tồn kho liên chi nhánh.
+  \item \textbf{Bước 3 -- Tích hợp VietQR, Hóa đơn điện tử và OBD-II}: Tự động hóa khâu đối soát thanh toán chuyển khoản và đọc thông số kỹ thuật trực tiếp từ xe khi tiếp nhận.
 \end{enumerate}
 
 \section{Lời kết}
 
-Đồ án GarageTools AI đã minh chứng rằng việc ứng dụng trí tuệ nhân tạo trong lĩnh vực kỹ thuật dịch vụ ô tô chỉ thực sự mang lại giá trị bền vững khi được đặt trên một nền tảng dữ liệu chuẩn mực, giao dịch kho nguyên tử và quy trình kiểm duyệt Human-in-the-loop nghiêm ngặt.
+Quá trình xây dựng \textbf{GarageTools AI} đã giúp nhóm rèn luyện trọn vẹn tư duy kỹ nghệ phần mềm có tích hợp trí tuệ nhân tạo: biết dùng AI để tăng tốc công việc nhưng luôn kiểm chứng chéo bằng quy tắc nghiệp vụ, khóa giao dịch cơ sở dữ liệu chặt chẽ, bảo vệ tuyệt đối con số tiền tệ và giữ quyền quyết định cuối cùng ở con người.

@@ -25,9 +25,9 @@ Ngày kiểm tra: **16/10/2026** — Người kiểm tra: **Nhóm 23 (AIA331 - M
 | B2 | Đủ 21 bảng (17 bảng nghiệp vụ lõi + 4 bảng mở rộng, 37 chỉ mục) theo mục 4.2 | `python tests/test_schema_constraints.py` (37/37 đạt) | [x] |
 | B3 | Đạt số lượng dữ liệu mẫu tối thiểu ở mục 4.5 | `test_so_luong_theo_muc_4_5` | [x] |
 | B4 | `PRAGMA foreign_keys = ON` mọi lần kết nối | `app/core/db.py` | [x] |
-| B5 | `integrity_check` đạt | `test_kiem_tra_toan_ven` + `GET /readyz` | [x] |
+| B5 | `integrity_check` đạt | `test_health_va_readiness` (`GET /readyz`) & `test_04_tep_khoi_phuc_van_hop_le` | [x] |
 | B6 | Mỗi hạng mục đúng một trong `service_id` / `part_id` | Nhóm ràng buộc XOR trên `repair_order_items`, `quotation_items`, `warranties` | [x] |
-| B7 | Đổi giá danh mục không làm đổi hạng mục đã chốt | `test_thay_doi_gia_danh_muc_khong_lam_doi_lich_su` | [x] |
+| B7 | Đổi giá danh mục không làm đổi hạng mục đã chốt | `test_01_don_gia_khong_doi_khi_doi_gia_danh_muc` & `test_gia_danh_muc_doi_khong_lam_doi_hang_muc_cu` | [x] |
 | B8 | Không thu vượt tổng hóa đơn | Nhóm thanh toán (`BEGIN IMMEDIATE`) | [x] |
 | B9 | Xoá khách/xe/danh mục đã có giao dịch bị chặn | Nhóm bảo vệ lịch sử (`ban_ghi_da_bi_tham_chieu`) | [x] |
 
@@ -61,7 +61,7 @@ Ngày kiểm tra: **16/10/2026** — Người kiểm tra: **Nhóm 23 (AIA331 - M
 | # | Hạng mục | Cách kiểm | Kết quả |
 |---|---|---|---|
 | D1 | Cả ba chức năng chạy được với `AI_PROVIDER=mock` và provider thật (`groq`) | Nhóm chức năng AI + E2E UI với `openai/gpt-oss-120b` | [x] |
-| D2 | Dữ liệu thiếu vẫn ra kết quả, không lỗi 500 | `test_ai02_dich_vu_thieu_mo_ta_van_tao_duoc_ket_qua` | [x] |
+| D2 | Dữ liệu thiếu vẫn ra kết quả, không lỗi 500 | `test_ba_chuc_nang_sinh_ket_qua_pending` (`service_id=7`) | [x] |
 | D3 | Phiếu rỗng không bị AI bịa thêm hạng mục | `test_ai_khong_tao_hang_muc_hoac_hoa_don` | [x] |
 | D4 | Kết quả mới luôn `PENDING` | `test_duyet_va_khong_duoc_duet_lai` | [x] |
 | D5 | Duyệt ghi đủ người duyệt và thời điểm | `test_duyet_va_khong_duoc_duet_lai` | [x] |
@@ -79,7 +79,7 @@ Ngày kiểm tra: **16/10/2026** — Người kiểm tra: **Nhóm 23 (AIA331 - M
 | E3 | Ảnh chụp màn hình lấy từ ứng dụng đang chạy (`screenshots/` & `docs/screenshots/`) | [x] |
 | E4 | `KT3_PROMPT_EXPERIMENTS.md` mô tả đầy đủ thử nghiệm mock và mô hình thật | [x] |
 | E5 | `USER_ACCEPTANCE_TEST.md` hoàn thành đủ **35/35 ca** | [x] |
-| E6 | Báo cáo và tài liệu tiến độ (`KEP_HOACH_HOAN_THIEN.md`, `IMPLEMENTATION_PROGRESS.md`) đã đồng bộ | [x] |
+| E6 | Báo cáo và bộ slide bảo vệ (`Báo cáo.pdf`, `Slide_Thuyet_Trinh_Nhom23.html`) đã đồng bộ 100% với mã nguồn | [x] |
 | E7 | Ma trận 40 tiêu chí môn học (KT1, KT2, KT3, Cuối kỳ) khớp đầy đủ | [x] |
 
 ## F. Triển khai
