@@ -2,7 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { q, ApiError } from "@/services/api";
-import { useNhan, useRole, fmtNgay } from "@/lib/rbac";
+import { useLookups } from "@/services/lookups";
+import { useNhan, useRole, fmtNgay, vnd } from "@/lib/rbac";
 import {
   PageHeader,
   Panel,
@@ -13,6 +14,13 @@ import {
   DangTai,
 } from "@/components/app/ui-kit";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/repair-orders/")({
@@ -33,7 +41,10 @@ export const Route = createFileRoute("/repair-orders/")({
 function List() {
   const { area } = useRole();
   const N = useNhan();
+  const L = useLookups();
   const [loc, setLoc] = useState<string>("all");
+  const [locKtv, setLocKtv] = useState<string>("all");
+  const [locNgay, setLocNgay] = useState<string>("all");
   const [tim, setTim] = useState("");
   const [tuKhoa, setTuKhoa] = useState("");
   const [trang, setTrang] = useState(1);
@@ -53,6 +64,8 @@ function List() {
       trang,
       q: tuKhoa || undefined,
       trang_thai: loc === "all" ? undefined : loc,
+      ktv: locKtv === "all" ? undefined : locKtv,
+      ngay: locNgay === "all" ? undefined : locNgay,
     }),
   );
 
@@ -77,9 +90,9 @@ function List() {
       />
       <div className="p-6 lg:p-8">
         <Panel bodyClass="p-0">
-          <div className="flex flex-col gap-3 border-b p-3 md:flex-row md:items-center">
+          <div className="flex flex-col gap-3 border-b p-3 xl:flex-row xl:items-center">
             <div className="flex flex-wrap gap-1">
-              {["all", ...N.trangThaiPhieu].map((k) => (
+              {["all", "DANG_XU_LY", ...N.trangThaiPhieu].map((k) => (
                 <button
                   key={k}
                   onClick={() => {
@@ -93,16 +106,55 @@ function List() {
                       : "text-muted-foreground hover:bg-muted",
                   )}
                 >
-                  {k === "all" ? "Tất cả" : N.trangThai(k)}
+                  {k === "all" ? "Tất cả" : k === "DANG_XU_LY" ? "Đang xử lý" : N.trangThai(k)}
                 </button>
               ))}
             </div>
-            <input
-              value={tim}
-              onChange={(e) => setTim(e.target.value)}
-              placeholder="Lọc theo mã, biển số, ghi chú…"
-              className="h-8 rounded-md border bg-background px-2.5 text-sm md:ml-auto md:w-64"
-            />
+            <div className="flex flex-wrap items-center gap-2 xl:ml-auto">
+              <Select
+                value={locKtv}
+                onValueChange={(v) => {
+                  setLocKtv(v);
+                  setTrang(1);
+                }}
+              >
+                <SelectTrigger className="h-8 w-40 text-xs">
+                  <SelectValue placeholder="Mọi KTV" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Mọi KTV</SelectItem>
+                  <SelectItem value="none">Chưa phân công</SelectItem>
+                  {L.ky_thuat_vien.map((t) => (
+                    <SelectItem key={t.id} value={String(t.id)}>
+                      {t.full_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select
+                value={locNgay}
+                onValueChange={(v) => {
+                  setLocNgay(v);
+                  setTrang(1);
+                }}
+              >
+                <SelectTrigger className="h-8 w-36 text-xs">
+                  <SelectValue placeholder="Mọi thời gian" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Mọi thời gian</SelectItem>
+                  <SelectItem value="hom_nay">Hôm nay</SelectItem>
+                  <SelectItem value="7_ngay">7 ngày qua</SelectItem>
+                  <SelectItem value="30_ngay">30 ngày qua</SelectItem>
+                </SelectContent>
+              </Select>
+              <input
+                value={tim}
+                onChange={(e) => setTim(e.target.value)}
+                placeholder="Lọc mã, biển số, khách, SĐT, ghi chú…"
+                className="h-8 rounded-md border bg-background px-2.5 text-sm md:w-64"
+              />
+            </div>
           </div>
 
           {ds.isError && (
@@ -121,13 +173,21 @@ function List() {
               <table className="w-full text-sm">
                 <thead className="bg-muted/50 text-left text-[11px] uppercase tracking-wider text-muted-foreground">
                   <tr>
-                    {["Mã phiếu", "Biển số", "Xe", "Trạng thái", "KTV", "Ngày tạo", "Ghi chú"].map(
-                      (h) => (
-                        <th key={h} className="px-4 py-2 font-medium">
-                          {h}
-                        </th>
-                      ),
-                    )}
+                    {[
+                      "Mã phiếu",
+                      "Biển số",
+                      "Xe",
+                      "Khách hàng",
+                      "Trạng thái",
+                      "KTV",
+                      "Tổng tiền",
+                      "Ngày tạo",
+                      "Ghi chú",
+                    ].map((h) => (
+                      <th key={h} className="px-4 py-2 font-medium">
+                        {h}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y">
@@ -149,13 +209,22 @@ function List() {
                         {o.brand} {o.model}
                       </td>
                       <td className="px-4 py-2.5">
+                        <div>{o.khach ?? "—"}</div>
+                        {o.khach_phone && (
+                          <div className="font-mono text-[11px] text-muted-foreground">
+                            {o.khach_phone}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-4 py-2.5">
                         <StatusPill s={o.status} />
                       </td>
                       <td className="px-4 py-2.5 text-muted-foreground">
                         {o.ky_thuat_vien ?? "—"}
                       </td>
+                      <td className="tabular px-4 py-2.5 font-medium">{vnd(o.tong ?? 0)}</td>
                       <td className="tabular px-4 py-2.5 text-xs">{fmtNgay(o.created_at)}</td>
-                      <td className="max-w-[260px] truncate px-4 py-2.5 text-xs text-muted-foreground">
+                      <td className="max-w-[240px] truncate px-4 py-2.5 text-xs text-muted-foreground">
                         {o.technical_notes ?? "—"}
                       </td>
                     </tr>

@@ -22,9 +22,9 @@ from ..core.db import (fetch_all, fetch_one, phieu_da_quyet_toan,
 from ..core.errors import (KhongCoQuyen, KhongTimThay, SaiQuyTac,
                            XungDdot)
 from ..core.money import utc_now
-from ..models import (DoiTrangThaiInput, NghiemThuInput, NhatKyInput,
-                      PhanCongInput, TaoPhieuInput, ThemHangMucInput,
-                      TiepNhanInput)
+from ..models import (CapNhatGhiChuInput, DoiTrangThaiInput, NghiemThuInput,
+                      NhatKyInput, PhanCongInput, TaoPhieuInput,
+                      ThemHangMucInput, TiepNhanInput)
 from .security_matrix import CHUYEN_TRANG_THAI, TEN_TRANG_THAI
 from .stock import ghi_giao_dich
 
@@ -36,29 +36,55 @@ TRANG_THAI_KHOA_HANG_MUC = {'COMPLETED', 'CANCELLED'}
 # ---------------------------------------------------------------------------
 FROM_PHIEU = ('repair_orders r'
               ' JOIN vehicles v ON v.id = r.vehicle_id'
+              ' JOIN customers c ON c.id = v.customer_id'
               ' LEFT JOIN users u ON u.id = r.technician_id')
 
 
-def danh_sach_phieu(trang, *, q: str = '', trang_thai: str = '') -> tuple[list[dict], int]:
+def danh_sach_phieu(trang, *, q: str = '', trang_thai: str = '',
+                    user: dict | None = None, ktv: str = '',
+                    ngay: str = '') -> tuple[list[dict], int]:
     dieu_kien, tham_so = ['1=1'], []
+    if user is not None and user.get('role') == 'TECHNICIAN':
+        dieu_kien.append('r.technician_id = ?')
+        tham_so.append(user['id'])
+    elif ktv:
+        if ktv == 'none':
+            dieu_kien.append('r.technician_id IS NULL')
+        elif ktv.isdigit():
+            dieu_kien.append('r.technician_id = ?')
+            tham_so.append(int(ktv))
+    if ngay == 'hom_nay':
+        dieu_kien.append("date(r.created_at) = date('now')")
+    elif ngay == '7_ngay':
+        dieu_kien.append("date(r.created_at) >= date('now', '-7 days')")
+    elif ngay == '30_ngay':
+        dieu_kien.append("date(r.created_at) >= date('now', '-30 days')")
     if q:
+        q_clean = q.strip().lstrip('#')
         dieu_kien.append(
-            "(v.plate LIKE ? ESCAPE '\\' OR r.technical_notes LIKE ? ESCAPE '\\'"
+            "(v.plate LIKE ? ESCAPE '\\' OR v.brand LIKE ? ESCAPE '\\'"
+            " OR v.model LIKE ? ESCAPE '\\' OR c.name LIKE ? ESCAPE '\\'"
+            " OR c.phone LIKE ? ESCAPE '\\' OR r.technical_notes LIKE ? ESCAPE '\\'"
             " OR CAST(r.id AS TEXT) = ?)")
         like = '%%%s%%' % q.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
-        tham_so += [like, like, q.strip()]
-    if trang_thai:
+        tham_so += [like, like, like, like, like, like, q_clean]
+    if trang_thai == 'DANG_XU_LY':
+        dieu_kien.append("r.status IN ('RECEIVED','INSPECTING','ESTIMATING','REPAIRING')")
+    elif trang_thai:
         dieu_kien.append('r.status = ?')
         tham_so.append(trang_thai)
     return crud.truy_van_danh_sach(
         'repair_orders',
         cot=('r.id', 'v.plate', 'v.brand', 'v.model', 'r.status', 'r.created_at',
-             'r.technical_notes', 'u.full_name AS ky_thuat_vien'),
+             'r.technical_notes', 'r.technician_id', 'u.full_name AS ky_thuat_vien',
+             'c.name AS khach', 'c.phone AS khach_phone',
+             '(SELECT COALESCE(SUM(unit_price * qty), 0) FROM repair_order_items'
+             ' WHERE repair_order_id = r.id) AS tong'),
         dieu_kien=' AND '.join(dieu_kien), tham_so=tham_so, trang=trang,
         sap_xep='created_at', huong='desc', from_clause=FROM_PHIEU)
 
 
-def chi_tiet(phieu_id: int) -> dict:
+def chi_tiet(phieu_id: int, user: dict | None = None) -> dict:
     phieu = fetch_one(
         'SELECT r.*, v.plate, v.brand, v.model, v.year, v.customer_id,'
         ' c.name AS khach, c.phone AS khach_phone, u.full_name AS ky_thuat_vien'
@@ -69,6 +95,10 @@ def chi_tiet(phieu_id: int) -> dict:
         ' WHERE r.id = ?', (phieu_id,))
     if phieu is None:
         raise KhongTimThay('Không tìm thấy phiếu sửa chữa số %d.' % phieu_id)
+    if user is not None and user.get('role') == 'TECHNICIAN':
+        from .security_matrix import duoc_gan_cong
+        if not duoc_gan_cong(user, phieu):
+            raise KhongCoQuyen('Bạn chỉ được xem phiếu sửa chữa được phân công cho mình.')
     phieu['tong'] = tong_phieu(phieu_id)
     phieu['ten_trang_thai'] = TEN_TRANG_THAI.get(phieu['status'], phieu['status'])
     return phieu
@@ -153,10 +183,28 @@ def tao_phieu(du_lieu: TaoPhieuInput, user) -> int:
             ' technical_notes, created_at) VALUES (?, ?, ?, ?, ?)',
             (du_lieu.vehicle_id, du_lieu.technician_id, 'RECEIVED',
              du_lieu.technical_notes, utc_now())).lastrowid)
+        # Tự động chuyển các lịch hẹn đang chờ của xe này sang Đã thực hiện (DONE)
+        c.execute(
+            "UPDATE appointments SET status = 'DONE'"
+            " WHERE vehicle_id = ? AND status IN ('SCHEDULED', 'CONFIRMED')",
+            (du_lieu.vehicle_id,))
         _ghi_nhat_ky(c, khoa, user['id'],
                      'Tiếp nhận xe %s. %s' % (xe['plate'],
                                              du_lieu.technical_notes or ''))
     return khoa
+
+
+def cap_nhat_ghi_chu(phieu_id: int, du_lieu: CapNhatGhiChuInput, user) -> None:
+    """Cập nhật ghi chú kỹ thuật của phiếu sửa chữa và ghi nhật ký."""
+    phieu = _kiem_tra_quyen_thao_tac(user, phieu_id)
+    if phieu['status'] in TRANG_THAI_KHOA_HANG_MUC:
+        raise SaiQuyTac('Phiếu đã %s nên không thể sửa ghi chú kỹ thuật.'
+                        % TEN_TRANG_THAI.get(phieu['status'], phieu['status']))
+    moi = (du_lieu.technical_notes or '').strip() or None
+    crud.sua('repair_orders', phieu_id, {'technical_notes': moi})
+    with transaction() as c:
+        _ghi_nhat_ky(c, phieu_id, user['id'],
+                     'Cập nhật ghi chú kỹ thuật: %s' % (moi or '(Đã xoá ghi chú)'))
 
 
 def gan_ky_thuat_vien(phieu_id: int, du_lieu: PhanCongInput, user) -> None:
@@ -290,6 +338,10 @@ def doi_trang_thai(phieu_id: int, du_lieu: DoiTrangThaiInput, user) -> None:
                 ' WHERE repair_order_id = ?', (phieu_id,)).fetchone()[0]
             if int(tong or 0) <= 0:
                 raise SaiQuyTac('Phiếu chưa có hạng mục nên chưa thể hoàn thành.')
+        if moi == 'CANCELLED':
+            if c.execute('SELECT 1 FROM invoices WHERE repair_order_id = ?',
+                         (phieu_id,)).fetchone():
+                raise SaiQuyTac('Phiếu đã có hoá đơn nên không thể huỷ.')
         n = c.execute('UPDATE repair_orders SET status = ? WHERE id = ? AND status = ?',
                       (moi, phieu_id, cu_status)).rowcount
         if n != 1:

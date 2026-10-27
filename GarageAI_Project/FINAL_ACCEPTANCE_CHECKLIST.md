@@ -35,7 +35,7 @@ Ngày kiểm tra: **16/10/2026** — Người kiểm tra: **Nhóm 23 (AIA331 - M
 
 | # | Hạng mục | Cách kiểm | Kết quả |
 |---|---|---|---|
-| C1 | Không lỗi 500 ở bất kỳ màn hình nào, kể cả dữ liệu sai | `test_backend.py` (133/133) + `test_api.py` (50/50) | [x] |
+| C1 | Không lỗi 500 ở bất kỳ màn hình nào, kể cả dữ liệu sai | `test_backend.py` (136/136) + `test_api.py` (52/52) | [x] |
 | C2 | Chưa đăng nhập bị chuyển về trang đăng nhập (HTML 303 / API 401) | Nhóm đăng nhập | [x] |
 | C3 | Sai mật khẩu không lộ thông tin tài khoản | Nhóm đăng nhập | [x] |
 | C4 | Bốn vai trò đúng ma trận quyền | `test_ma_tran_dung_theo_vai_tro` + `AREA_QUYEN` trên React FE | [x] |
@@ -68,14 +68,14 @@ Ngày kiểm tra: **16/10/2026** — Người kiểm tra: **Nhóm 23 (AIA331 - M
 | D6 | Không duyệt lại được kết quả đã xử lý | `test_duyet_va_khong_duoc_duet_lai` | [x] |
 | D7 | Người thiếu quyền bị chặn | `test_khong_duoc_duet_khi_thieu_quyen` | [x] |
 | D8 | Mô tả ranh giới "AI không tự quyết tiền" hiện rõ trên giao diện | Xem màn hình `/ai` (Jinja2) và `/ai-review` (React) | [x] |
-| D9 | Có ca kiểm thử cho timeout, lỗi 429/500, phản hồi rỗng, phản hồi sai định dạng | `TestAiGateway` trong `tests/test_backend.py` (15 ca kiểm thử) | [x] |
+| D9 | Có ca kiểm thử cho timeout, lỗi 429/500, phản hồi rỗng, phản hồi sai định dạng | `TestAiGateway` trong `tests/test_backend.py` (17 ca kiểm thử) | [x] |
 
 ## E. Tài liệu và minh chứng
 
 | # | Hạng mục | Kết quả |
 |---|---|---|
 | E1 | `README.md` và `frontend/README.md` mô tả đúng trạng thái thật | [x] |
-| E2 | `TEST_REPORT.md` sinh từ kết quả chạy thật (**226/226 đạt**) | [x] |
+| E2 | `TEST_REPORT.md` sinh từ kết quả chạy thật (**231/231 đạt**) | [x] |
 | E3 | Ảnh chụp màn hình lấy từ ứng dụng đang chạy (`screenshots/` & `docs/screenshots/`) | [x] |
 | E4 | `KT3_PROMPT_EXPERIMENTS.md` mô tả đầy đủ thử nghiệm mock và mô hình thật | [x] |
 | E5 | `USER_ACCEPTANCE_TEST.md` hoàn thành đủ **35/35 ca** | [x] |
@@ -96,4 +96,4 @@ Ngày kiểm tra: **16/10/2026** — Người kiểm tra: **Nhóm 23 (AIA331 - M
 
 Số mục đạt: **54 / 54 (100%)**
 
-**Trạng thái:** Hệ thống đã hoàn thành toàn bộ các tiêu chí kỹ thuật, nghiệp vụ, kiểm thử tự động (**226/226**), kiểm thử vận hành Smoke (**31/31**), E2E (**32/32**) và UAT (**35/35**). Sẵn sàng nộp bài và bảo vệ đồ án.
+**Trạng thái:** Hệ thống đã hoàn thành toàn bộ các tiêu chí kỹ thuật, nghiệp vụ, kiểm thử tự động (**231/231**), kiểm thử vận hành Smoke (**31/31**), E2E (**32/32**) và UAT (**35/35**). Sẵn sàng nộp bài và bảo vệ đồ án.

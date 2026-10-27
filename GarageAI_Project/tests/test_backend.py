@@ -334,6 +334,23 @@ class TestPhanQuyen(CoSoDichChung):
         self.assertIn('Khách hàng', html)          # được xem danh sách
         self.assertNotIn('>Duyệt AI<', html)       # không được duyệt AI
 
+    def test_ky_thuat_vien_chi_xem_va_chay_ai_tren_phieu_duoc_phan_cong(self):
+        c = sqlite3.connect(self.db)
+        c.execute('UPDATE repair_orders SET technician_id = 1 WHERE id = 12')
+        c.commit()
+        c.close()
+        self.dang_nhap('ky_thuat_vien')
+        # Không xem được chi tiết phiếu của người khác.
+        self.assertEqual(self.client.get('/repair-orders/12').status_code, 403)
+        # Danh sách phiếu không hiển thị phiếu của người khác.
+        ds = self.client.get('/repair-orders', params={'q': '30F-6666'})
+        self.assertEqual(ds.status_code, 200)
+        self.assertIn('Chưa có phiếu nào.', ds.text)
+        # Không chạy được AI03 trên phiếu không được phân công.
+        truoc_ai = len(self.q('SELECT id FROM ai_results'))
+        self.post('/ai/quote', {'repair_order_id': '12'})
+        self.assertEqual(len(self.q('SELECT id FROM ai_results')), truoc_ai)
+
 
 # ===========================================================================
 class TestKiemTraDauVao(CoSoDichChung):
@@ -1562,6 +1579,85 @@ class TestAiGateway(unittest.TestCase):
             self.assertTrue(len(ai_gateway._cat_ngoi_dung('x' * 600)) < 600)
         finally:
             get_settings().AI_MAX_CONTEXT = 6000
+
+    def test_ai01_co_ghi_chu_ky_thuat_va_an_ten_khach(self):
+        """AI01 phải đưa ghi chú kỹ thuật vào ngữ cảnh nhưng không gửi họ tên chủ xe."""
+        import json as _json
+        from app import ai_gateway
+        from app.core import db as core_db
+        tmp = tempfile.mkdtemp(prefix='garage_ai01_')
+        db_path = os.path.join(tmp, 't.db')
+        _dung(db_path)
+        cu = get_settings().DATABASE_PATH
+        core_db.dat_lai_dich_vu(db_path)
+        prompt_gui_di = []
+        orig_goi = ai_gateway.goi
+
+        def fake_goi(sys_p, user_p, cho_phep_mock=True):
+            prompt_gui_di.append(user_p)
+            return None
+
+        ai_gateway.goi = fake_goi
+        try:
+            kq = ai_gateway.tom_tat_lich_su(1)
+            self.assertEqual(len(prompt_gui_di), 1)
+            self.assertIn('Ghi chú kỹ thuật:', prompt_gui_di[0])
+            self.assertNotIn('Nguyễn Văn An', prompt_gui_di[0])
+            meta = _json.loads(kq['input_json'])
+            self.assertTrue(meta['fallback_used'])
+            self.assertEqual(meta['provider_thuc_te'], 'mock')
+        finally:
+            ai_gateway.goi = orig_goi
+            core_db.dat_lai_dich_vu(cu)
+            for f in (db_path, db_path + '-wal', db_path + '-shm'):
+                if os.path.exists(f):
+                    try:
+                        os.remove(f)
+                    except OSError:
+                        pass
+            os.rmdir(tmp)
+
+    def test_ai03_chong_lap_dong_hang_muc_va_gan_nhan_ghi_chu(self):
+        """Nếu LLM lặp lại nhiều lần cùng một dòng hàng hợp lệ, chỉ giữ đúng số dòng trong CSDL."""
+        import json as _json
+        from app import ai_gateway
+        from app.core import db as core_db
+        tmp = tempfile.mkdtemp(prefix='garage_ai03_')
+        db_path = os.path.join(tmp, 't.db')
+        _dung(db_path)
+        cu = get_settings().DATABASE_PATH
+        core_db.dat_lai_dich_vu(db_path)
+        orig_goi = ai_gateway.goi
+
+        def fake_goi(sys_p, user_p, cho_phep_mock=True):
+            # Phiếu 10 có 1 dòng 'Nâp cấp ánh sáng' (qty=2, unit_price=2400000).
+            # Cố tình lặp 3 lần dòng này trong JSON trả về.
+            item = {'name': 'Nâp cấp ánh sáng', 'qty': 2,
+                    'unit_price': 2400000, 'subtotal': 4800000}
+            return _json.dumps({
+                'items': [item, item, item],
+                'total': 99999999,
+                'notes': 'Khuyến nghị kiểm tra thêm cầu chì',
+            }, ensure_ascii=False)
+
+        ai_gateway.goi = fake_goi
+        try:
+            kq = ai_gateway.bao_gia_nhap(10)
+            self.assertEqual(kq['output_text'].count('- Nâp cấp ánh sáng x2:'), 1)
+            self.assertIn('Ghi chú tham khảo (do AI sinh, cần nhân viên kiểm tra):',
+                          kq['output_text'])
+            meta = _json.loads(kq['input_json'])
+            self.assertFalse(meta['fallback_used'])
+        finally:
+            ai_gateway.goi = orig_goi
+            core_db.dat_lai_dich_vu(cu)
+            for f in (db_path, db_path + '-wal', db_path + '-shm'):
+                if os.path.exists(f):
+                    try:
+                        os.remove(f)
+                    except OSError:
+                        pass
+            os.rmdir(tmp)
 
 
 if __name__ == '__main__':

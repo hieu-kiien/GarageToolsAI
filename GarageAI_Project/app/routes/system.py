@@ -40,9 +40,9 @@ def dashboard(request: Request):
     if user is None:
         return _ve(request, '/accounts/login')
     return render(request, 'dashboard.html', {
-        'kpi': reports.tong_quan(),
-        'trang_thai': reports.phieu_theo_trang_thai(),
-        'gan_nhat': reports.phieu_moi_nhat(8),
+        'kpi': reports.tong_quan(user=user),
+        'trang_thai': reports.phieu_theo_trang_thai(user=user),
+        'gan_nhat': reports.phieu_moi_nhat(8, user=user),
     })
 
 
@@ -56,7 +56,7 @@ def lich_su(request: Request):
         return _ve(request, '/accounts/login')
     trang = doc_trang(request)
     q = request.query_params.get('q', '').strip()
-    dong, tong = reports.lich_su(trang, q=q)
+    dong, tong = reports.lich_su(trang, q=q, user=user)
     return render(request, 'lich_su.html', paged({}, 'dong', dong, tong, trang) | {'q': q})
 
 
@@ -99,7 +99,7 @@ def cong_ai(request: Request):
     return render(request, 'ai.html', {
         'dich_vu': crud.lua_chon_dich_vu(),
         'xe': crud.lua_chon_xe(),
-        'phieu_list': crud.fetch_all_phieu() if hasattr(crud, 'fetch_all_phieu') else [],
+        'phieu_list': crud.fetch_all_phieu(user=user) if hasattr(crud, 'fetch_all_phieu') else [],
         'ket_qua': ai_svc.ket_qua_gan_nhat(5),
         'phieu': request.query_params.get('phieu', ''),
         'provider': get_settings().AI_PROVIDER,

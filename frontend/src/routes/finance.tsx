@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Wallet, Search, ReceiptText } from "lucide-react";
+import { Wallet, Search, ReceiptText, Plus, Printer } from "lucide-react";
 import { api, q, ApiError } from "@/services/api";
 import { useNhan, useRole, fmtTime, vnd, vndShort } from "@/lib/rbac";
 import {
@@ -63,6 +63,8 @@ function Finance() {
   const [soTien, setSoTien] = useState(0);
   const [hinhThuc, setHinhThuc] = useState<PayMethod>("CASH");
   const [loiGhiThu, setLoiGhiThu] = useState<string | null>(null);
+  const [moLapHD, setMoLapHD] = useState(false);
+  const [phieuLapId, setPhieuLapId] = useState("");
 
   // Tìm kiếm gộp sau 300ms để không gọi API từng ký tự.
   useEffect(() => {
@@ -83,6 +85,24 @@ function Finance() {
     }),
   );
   const chiTiet = useQuery({ ...q.invoice(chon ?? 0), enabled: chon !== null });
+  const dsPhieuHoanThanh = useQuery({
+    ...q.orders({ moi_trang: 100, trang_thai: "COMPLETED" }),
+    enabled: moLapHD,
+  });
+
+  const lapHDMoi = useMutation({
+    mutationFn: () => api.lapHoaDon(Number(phieuLapId)),
+    onSuccess: async (kq) => {
+      toast.success(kq.thong_bao);
+      setMoLapHD(false);
+      setPhieuLapId("");
+      await qc.invalidateQueries({ queryKey: ["invoices"] });
+      await qc.invalidateQueries({ queryKey: ["orders"] });
+      await qc.invalidateQueries({ queryKey: ["dashboard"] });
+      setChon(kq.id);
+    },
+    onError: (e) => toast.error(e instanceof ApiError ? e.message : "Lập hoá đơn thất bại."),
+  });
 
   const ghiThu = useMutation({
     mutationFn: () => api.thuTien(thu!.id, { amount: soTien, method: hinhThuc }),
@@ -128,9 +148,23 @@ function Finance() {
         title="Hoá đơn & Thanh toán"
         desc="Tổng tiền và tổng đã thu do backend tính — màn hình này chỉ theo dõi công nợ và ghi nhận thu tiền."
         actions={
-          <span className="text-xs text-muted-foreground">
-            Số liệu từ <code className="font-mono">GET /api/dashboard</code>
-          </span>
+          <div className="flex items-center gap-3">
+            {can("invoice.manage") && (
+              <Button
+                size="sm"
+                onClick={() => {
+                  setPhieuLapId("");
+                  setMoLapHD(true);
+                }}
+              >
+                <Plus className="size-4" />
+                Lập hoá đơn
+              </Button>
+            )}
+            <span className="text-xs text-muted-foreground">
+              Số liệu từ <code className="font-mono">GET /api/dashboard</code>
+            </span>
+          </div>
         }
       />
 
@@ -334,7 +368,16 @@ function Finance() {
                     {vnd(hd.con_phai_thu)}
                   </span>
                 </div>
-                <div className="mt-2 flex justify-end">
+                <div className="mt-2 flex items-center justify-between">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs no-print"
+                    onClick={() => window.print()}
+                  >
+                    <Printer className="size-3.5" />
+                    In hoá đơn
+                  </Button>
                   <InvoicePill s={hd.status} />
                 </div>
               </div>
@@ -461,6 +504,57 @@ function Finance() {
               onClick={() => ghiThu.mutate()}
             >
               Xác nhận thu tiền
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog lập hoá đơn cho phiếu đã hoàn thành. */}
+      <Dialog open={moLapHD} onOpenChange={(o) => !o && setMoLapHD(false)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ReceiptText className="size-4" />
+              Lập hoá đơn từ phiếu hoàn thành
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 text-sm">
+            <p className="text-xs text-muted-foreground">
+              Chọn phiếu sửa chữa đã ở trạng thái <b>Đã hoàn thành</b>. Tổng tiền hoá đơn được
+              backend tự động tính từ các hạng mục của phiếu.
+            </p>
+            <Select value={phieuLapId} onValueChange={setPhieuLapId}>
+              <SelectTrigger>
+                <SelectValue
+                  placeholder={
+                    dsPhieuHoanThanh.isPending
+                      ? "Đang tải phiếu hoàn thành…"
+                      : "Chọn phiếu đã hoàn thành…"
+                  }
+                />
+              </SelectTrigger>
+              <SelectContent>
+                {(dsPhieuHoanThanh.data?.dong ?? [])
+                  .filter(
+                    (p) => !(dsData?.dong ?? []).some((hdItem) => hdItem.repair_order_id === p.id),
+                  )
+                  .map((p) => (
+                    <SelectItem key={p.id} value={String(p.id)}>
+                      #{p.id} — {p.plate} ({p.brand} {p.model})
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMoLapHD(false)}>
+              Huỷ
+            </Button>
+            <Button
+              disabled={!Number(phieuLapId) || lapHDMoi.isPending}
+              onClick={() => lapHDMoi.mutate()}
+            >
+              Lập hoá đơn
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -45,24 +45,24 @@ def danh_sach_loai(request: Request):
 
 @router.get('/history')
 def lich_su(request: Request):
-    quyen(request, 'history.view')
+    user = quyen(request, 'history.view')
     tr = trang(request)
     q = request.query_params.get('q', '').strip()
-    dong, tong = reports.lich_su(tr, q=q)
+    dong, tong = reports.lich_su(tr, q=q, user=user)
     return JSONResponse(trang_kq(dong, tong, tr))
 
 
 @router.get('/lookups')
 def gia_tri_chon(request: Request):
     """Giá trị tra cứu cho mọi form: chỉ id + tên, không kèm thông tin bí mật."""
-    quyen(request, 'customer.view')
+    user = quyen(request, 'customer.view')
     return JSONResponse({
         'khach_hang': crud.lua_chon_khach(),
         'xe': crud.lua_chon_xe(),
         'dich_vu': crud.lua_chon_dich_vu(),
         'phu_tung': crud.lua_chon_phu_tung(),
         'ky_thuat_vien': crud.lua_chon_ky_thuat_vien(),
-        'phieu': crud.fetch_all_phieu(),
+        'phieu': crud.fetch_all_phieu(user=user),
         'vai_tro': sm.VAI_TRO,
         'trang_thai': sm.TEN_TRANG_THAI,
         'chuyen_trang_thai': sm.CHUYEN_TRANG_THAI,
@@ -73,14 +73,14 @@ def gia_tri_chon(request: Request):
 
 @router.get('/lookups/{ten}')
 def gia_tri_chon_mot(request: Request, ten: str):
-    quyen(request, 'customer.view')
+    user = quyen(request, 'customer.view')
     du_lieu = {
         'khach_hang': lambda: crud.lua_chon_khach(),
         'xe': lambda: crud.lua_chon_xe(),
         'dich_vu': lambda: crud.lua_chon_dich_vu(),
         'phu_tung': lambda: crud.lua_chon_phu_tung(),
         'ky_thuat_vien': lambda: crud.lua_chon_ky_thuat_vien(),
-        'phieu': lambda: crud.fetch_all_phieu(),
+        'phieu': lambda: crud.fetch_all_phieu(user=user),
     }.get(ten)
     if du_lieu is None:
         from ...core.errors import KhongTimThay

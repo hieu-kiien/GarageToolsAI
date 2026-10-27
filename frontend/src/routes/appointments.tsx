@@ -1,8 +1,8 @@
-﻿import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { CalendarDays, Pencil, Plus, Trash2 } from "lucide-react";
+import { CalendarDays, ClipboardList, Pencil, Plus, Trash2 } from "lucide-react";
 import { api, q, ApiError } from "@/services/api";
 import { useNhan, useRole, fmtNgay, fmtTime } from "@/lib/rbac";
 import {
@@ -292,6 +292,30 @@ function LichHen() {
                       {coSua && (
                         <td className="px-4 py-2.5 text-right">
                           <div className="flex justify-end gap-1">
+                            {can("order.create") &&
+                              (l.status === "SCHEDULED" || l.status === "CONFIRMED") && (
+                                <Button size="sm" variant="outline" asChild>
+                                  <Link
+                                    to="/inspection"
+                                    onClick={() => {
+                                      try {
+                                        sessionStorage.setItem(
+                                          "garagetools_intake_prefill",
+                                          JSON.stringify({
+                                            xeId: String(l.vehicle_id),
+                                            ghiChuPhieu: l.notes ?? "",
+                                          }),
+                                        );
+                                      } catch {
+                                        /* ignore */
+                                      }
+                                    }}
+                                  >
+                                    <ClipboardList className="size-3.5" />
+                                    Tiếp nhận
+                                  </Link>
+                                </Button>
+                              )}
                             <Button size="sm" variant="ghost" onClick={() => moSua(l)}>
                               <Pencil className="size-3.5" />
                               Sửa

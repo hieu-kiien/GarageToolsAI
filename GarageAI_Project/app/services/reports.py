@@ -10,14 +10,21 @@ from .. import crud
 from ..core.db import fetch_all, fetch_value
 
 
-def tong_quan() -> dict:
+def tong_quan(user: dict | None = None) -> dict:
     """Số liệu chính cho màn hình tổng quan."""
+    ktv_sql = ''
+    ktv_arg: tuple = ()
+    if user is not None and user.get('role') == 'TECHNICIAN':
+        ktv_sql = ' AND technician_id = ?'
+        ktv_arg = (user['id'],)
     return {
         'tong_phieu': int(fetch_value(
-            "SELECT COUNT(*) FROM repair_orders WHERE status <> 'CANCELLED'", (), 0)),
+            "SELECT COUNT(*) FROM repair_orders WHERE status <> 'CANCELLED'" + ktv_sql,
+            ktv_arg, 0)),
         'dang_xu_ly': int(fetch_value(
             "SELECT COUNT(*) FROM repair_orders WHERE status IN"
-            " ('RECEIVED','INSPECTING','ESTIMATING','REPAIRING')", (), 0)),
+            " ('RECEIVED','INSPECTING','ESTIMATING','REPAIRING')" + ktv_sql,
+            ktv_arg, 0)),
         'lich_hen': int(fetch_value(
             "SELECT COUNT(*) FROM appointments WHERE status IN"
             " ('SCHEDULED','CONFIRMED') AND scheduled_at >= datetime('now')", (), 0)),
@@ -32,13 +39,24 @@ def tong_quan() -> dict:
     }
 
 
-def phieu_theo_trang_thai() -> list[dict]:
+def phieu_theo_trang_thai(user: dict | None = None) -> list[dict]:
+    if user is not None and user.get('role') == 'TECHNICIAN':
+        return fetch_all(
+            'SELECT status, COUNT(*) AS n FROM repair_orders'
+            ' WHERE technician_id = ? GROUP BY status ORDER BY n DESC',
+            (user['id'],))
     return fetch_all('SELECT status, COUNT(*) AS n FROM repair_orders'
                      ' GROUP BY status ORDER BY n DESC')
 
 
-def phieu_moi_nhat(limit: int = 10) -> list[dict]:
+def phieu_moi_nhat(limit: int = 10, user: dict | None = None) -> list[dict]:
     """Giới hạn số dòng để trang không phình theo dữ liệu."""
+    if user is not None and user.get('role') == 'TECHNICIAN':
+        return fetch_all(
+            'SELECT r.id, r.status, r.created_at, r.technical_notes, v.plate'
+            ' FROM repair_orders r JOIN vehicles v ON v.id = r.vehicle_id'
+            ' WHERE r.technician_id = ?'
+            ' ORDER BY r.created_at DESC LIMIT ?', (user['id'], limit))
     return fetch_all(
         'SELECT r.id, r.status, r.created_at, r.technical_notes, v.plate'
         ' FROM repair_orders r JOIN vehicles v ON v.id = r.vehicle_id'
@@ -93,9 +111,12 @@ def bao_cao_trang_thai() -> list[dict]:
                      ' GROUP BY status ORDER BY so_luong DESC')
 
 
-def lich_su(trang, *, q: str = '') -> tuple[list[dict], int]:
+def lich_su(trang, *, q: str = '', user: dict | None = None) -> tuple[list[dict], int]:
     """Tra cứu lịch sử theo biển số, tên khách hoặc số điện thoại."""
     dieu_kien, tham_so = ['1=1'], []
+    if user is not None and user.get('role') == 'TECHNICIAN':
+        dieu_kien.append('r.technician_id = ?')
+        tham_so.append(user['id'])
     if q:
         like = '%%%s%%' % q.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
         dieu_kien.append(
@@ -105,8 +126,10 @@ def lich_su(trang, *, q: str = '') -> tuple[list[dict], int]:
     return crud.truy_van_danh_sach(
         'repair_orders',
         cot=('r.id', 'r.status', 'r.created_at', 'v.plate', 'v.brand', 'v.model',
-             'c.name AS khach', 'c.phone', 'r.technician_id'),
+             'c.name AS khach', 'c.phone', 'r.technician_id',
+             'u.full_name AS ky_thuat_vien'),
         dieu_kien=' AND '.join(dieu_kien), tham_so=tham_so, trang=trang,
         sap_xep='created_at', huong='desc',
         from_clause=('repair_orders r JOIN vehicles v ON v.id = r.vehicle_id'
-                     ' JOIN customers c ON c.id = v.customer_id'))
+                     ' JOIN customers c ON c.id = v.customer_id'
+                     ' LEFT JOIN users u ON u.id = r.technician_id'))

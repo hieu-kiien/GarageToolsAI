@@ -1,4 +1,4 @@
-﻿import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -118,6 +118,10 @@ function List() {
   );
 
   // Chỉ phiếu COMPLETED mới có hạng mục cần bảo hành.
+  const dsPhieuHoanThanh = useQuery({
+    ...q.orders({ moi_trang: 100, trang_thai: "COMPLETED" }),
+    enabled: moForm,
+  });
   const oidKtra = phieuKq?.phieu.status === "COMPLETED" ? phieuKq.phieu.id : 0;
   const hangMuc = useQuery({
     queryKey: ["warranty-eligible", oidKtra],
@@ -400,30 +404,35 @@ function List() {
 
           <div className="space-y-3 text-sm">
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Phiếu sửa chữa</label>
-              <div className="flex gap-2">
-                <Input
-                  type="number"
-                  min={1}
-                  value={phieuId}
-                  onChange={(e) => {
-                    setPhieuId(e.target.value);
-                    setPhieuKq(null);
-                    setMaHangMuc("");
-                  }}
-                  placeholder="Mã phiếu, ví dụ 12"
-                  className="h-9"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-9 shrink-0"
-                  disabled={!Number(phieuId) || ktra.isPending}
-                  onClick={() => ktra.mutate(Number(phieuId))}
-                >
-                  {ktra.isPending ? "Đang kiểm tra…" : "Kiểm tra phiếu"}
-                </Button>
-              </div>
+              <label className="text-xs font-medium text-muted-foreground">
+                Phiếu sửa chữa (đã hoàn thành)
+              </label>
+              <Select
+                value={phieuId}
+                onValueChange={(v) => {
+                  setPhieuId(v);
+                  setPhieuKq(null);
+                  setMaHangMuc("");
+                  if (Number(v)) ktra.mutate(Number(v));
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue
+                    placeholder={
+                      dsPhieuHoanThanh.isPending
+                        ? "Đang tải phiếu hoàn thành…"
+                        : "Chọn phiếu đã hoàn thành…"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {(dsPhieuHoanThanh.data?.dong ?? []).map((p) => (
+                    <SelectItem key={p.id} value={String(p.id)}>
+                      #{p.id} — {p.plate} ({p.brand} {p.model})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {phieuKq && (
@@ -442,7 +451,7 @@ function List() {
               <label className="text-xs font-medium text-muted-foreground">Hạng mục bảo hành</label>
               {phieuKq?.phieu.status !== "COMPLETED" ? (
                 <p className="text-xs text-muted-foreground">
-                  Bấm “Kiểm tra phiếu” với phiếu đã hoàn thành để chọn hạng mục.
+                  Chọn một phiếu đã hoàn thành ở trên để hiển thị danh sách hạng mục.
                 </p>
               ) : hangMuc.isPending ? (
                 <p className="text-xs text-muted-foreground">Đang tải hạng mục của phiếu…</p>

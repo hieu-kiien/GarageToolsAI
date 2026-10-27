@@ -8,7 +8,7 @@
 
 \section{Danh mục các bộ kiểm thử tự động}
 
-Khi thực thi lệnh \texttt{python -X utf8 tests/run\_all.py}, hệ thống vượt qua tuyệt đối \textbf{226/226 ca kiểm thử tự động Backend} (0 Failures, 0 Errors), kết hợp cùng \textbf{31/31 kiểm thử Smoke}, \textbf{32/32 kiểm thử E2E}, bộ kiểm thử Frontend (\texttt{vitest}) và \textbf{35/35 kịch bản UAT}, được tổng hợp chi tiết tại Bảng~\ref{tab:g-test-suites}.
+Khi thực thi lệnh \texttt{python -X utf8 tests/run\_all.py}, hệ thống vượt qua tuyệt đối \textbf{231/231 ca kiểm thử tự động Backend} (0 Failures, 0 Errors), kết hợp cùng \textbf{28/28 kiểm thử Frontend (\texttt{vitest})}, \textbf{31/31 kiểm thử Smoke}, \textbf{32/32 kiểm thử E2E} và \textbf{35/35 kịch bản UAT}, được tổng hợp chi tiết tại Bảng~\ref{tab:g-test-suites}.
 
 \begin{table}[H]
 \centering
@@ -24,11 +24,11 @@ Khi thực thi lệnh \texttt{python -X utf8 tests/run\_all.py}, hệ thống v�
 \hline
 \texttt{tests/test\_backup\_\allowbreak restore.py} & 6 tests & Kiểm định quy trình sao lưu nóng SQLite, kiểm tra \texttt{PRAGMA integrity\_check}, phục hồi dữ liệu và tự động hoàn tác khi tệp sao lưu bị hỏng. & \textbf{100\% (6/6)}\\
 \hline
-\texttt{tests/test\_backend.py} & 133 tests & Kiểm thử toàn diện tầng dịch vụ: Argon2id, thu hồi phiên \texttt{auth\_version}, RBAC + \texttt{duoc\_gan\_cong}, máy trạng thái RO 6 bước, đồng bộ báo giá \textit{idempotent}, hoàn kho khi hủy, bảo hành và AI01--AI03 (kể cả biên \texttt{vehicle\_id=6}, \texttt{service\_id=7}). & \textbf{100\% (133/133)}\\
+\texttt{tests/test\_backend.py} & 136 tests & Kiểm thử toàn diện tầng dịch vụ: Argon2id, thu hồi phiên \texttt{auth\_version}, RBAC + \texttt{duoc\_gan\_cong}, máy trạng thái RO 6 bước, đồng bộ báo giá \textit{idempotent}, hoàn kho khi hủy, bảo hành và AI01--AI03 (kể cả biên \texttt{vehicle\_id=6}, \texttt{service\_id=7}). & \textbf{100\% (136/136)}\\
 \hline
-\texttt{tests/test\_api.py} & 50 tests & Kiểm thử tích hợp HTTP qua FastAPI \texttt{TestClient}: xác thực cookie, chặn thiếu CSRF token (HTTP 403), phân quyền API, Rate Limit (HTTP 429), luồng SSR và JSON API. & \textbf{100\% (50/50)}\\
+\texttt{tests/test\_api.py} & 52 tests & Kiểm thử tích hợp HTTP qua FastAPI \texttt{TestClient}: xác thực cookie, chặn thiếu CSRF token (HTTP 403), phân quyền API, Rate Limit (HTTP 429), luồng SSR và JSON API. & \textbf{100\% (52/52)}\\
 \hline
-\textbf{Tổng kiểm thử Python (\texttt{run\_all.py})} & \textbf{226 tests} & \textbf{Chạy tự động trong $\approx 23$ giây trên CSDL kiểm thử cô lập} & \textbf{226/226 Pass}\\
+\textbf{Tổng kiểm thử Python (\texttt{run\_all.py})} & \textbf{231 tests} & \textbf{Chạy tự động trong $\approx 23$ giây trên CSDL kiểm thử cô lập} & \textbf{231/231 Pass}\\
 \hline
 \texttt{scripts/smoke.ps1} & 31 checks & Kiểm thử khói giao diện và API trên máy chủ đang chạy thực tế (\texttt{/healthz}, \texttt{/readyz}, 16 màn hình và các API chính). & \textbf{100\% (31/31)}\\
 \hline
@@ -113,11 +113,11 @@ Ràng buộc lược đồ \& Di trú (\texttt{test\_schema\_constraints.py}) & 
 \hline
 Sao lưu \& Phục hồi CSDL (\texttt{test\_backup\_restore.py}) & 6 & 6 & 0 & Sao lưu nóng SQLite WAL và khôi phục an toàn 100\%.\\
 \hline
-Nghiệp vụ \& AI Gateway (\texttt{test\_backend.py}) & 133 & 133 & 0 & Bao phủ RBAC, Scope KTV, 6 trạng thái RO, Báo giá, Kho, AI01--AI03.\\
+Nghiệp vụ \& AI Gateway (\texttt{test\_backend.py}) & 136 & 136 & 0 & Bao phủ RBAC, Scope KTV, 6 trạng thái RO, Báo giá, Kho, AI01--AI03.\\
 \hline
-Tích hợp HTTP API \& CSRF (\texttt{test\_api.py}) & 50 & 50 & 0 & Xác thực phiên, chặn CSRF/IDOR/Rate Limit chính xác.\\
+Tích hợp HTTP API \& CSRF (\texttt{test\_api.py}) & 52 & 52 & 0 & Xác thực phiên, chặn CSRF/IDOR/Rate Limit chính xác.\\
 \hline
-\textbf{Tổng kiểm thử tự động Backend (\texttt{run\_all.py})} & \textbf{226} & \textbf{226} & \textbf{0} & \textbf{Tỷ lệ vượt qua: 100.0\% (226/226 Pass)}\\
+\textbf{Tổng kiểm thử tự động Backend (\texttt{run\_all.py})} & \textbf{231} & \textbf{231} & \textbf{0} & \textbf{Tỷ lệ vượt qua: 100.0\% (231/231 Pass)}\\
 \hline
 Kiểm thử Smoke (\texttt{smoke.ps1}) \& E2E (\texttt{e2e.ps1}) & 63 & 63 & 0 & 31/31 Smoke checks + 32/32 E2E checks đạt 100\%.\\
 \hline
@@ -128,4 +128,4 @@ Nghiệm thu người dùng (\texttt{USER\_ACCEPTANCE\_TEST.md}) & 35 & 35 & 0 &
 
 \section{Kết luận chương}
 
-Chương 6 đã cung cấp bằng chứng thực nghiệm đầy đủ về độ tin cậy và tính an toàn của hệ thống \textbf{Garage AI}. Việc vượt qua tuyệt đối 226/226 ca kiểm thử tự động Backend, 31/31 kiểm thử Smoke, 32/32 kiểm thử E2E và 35/35 kịch bản UAT khẳng định hệ thống hoàn toàn vững chắc. Chương 7 tiếp theo sẽ phân tích sâu các chỉ số đánh giá định lượng của cổng AI trên mô hình thực tế và hiệu quả kinh tế vận hành.
+Chương 6 đã cung cấp bằng chứng thực nghiệm đầy đủ về độ tin cậy và tính an toàn của hệ thống \textbf{Garage AI}. Việc vượt qua tuyệt đối 231/231 ca kiểm thử tự động Backend, 28/28 ca kiểm thử Frontend, 31/31 kiểm thử Smoke, 32/32 kiểm thử E2E và 35/35 kịch bản UAT khẳng định hệ thống hoàn toàn vững chắc. Chương 7 tiếp theo sẽ phân tích sâu các chỉ số đánh giá định lượng của cổng AI trên mô hình thực tế và hiệu quả kinh tế vận hành.

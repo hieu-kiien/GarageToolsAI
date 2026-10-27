@@ -15,9 +15,9 @@ Trong giai đoạn phân tích KT1, khi tham vấn công cụ AI về các tác 
 \hline
 Quản lý xưởng (\texttt{MANAGER}\\TK: \texttt{quan\_ly}) & Quản trị người dùng (\texttt{user.manage}), sửa danh mục dịch vụ/phụ tùng (\texttt{catalog.edit}), duyệt báo giá (\texttt{quote.approve}), lập hóa đơn (\texttt{invoice.manage}), duyệt kết quả AI (\texttt{ai.review}) và xem báo cáo. & Toàn quyền điều hành; là vai trò duy nhất có quyền phê duyệt hoặc từ chối kết quả AI (\texttt{APPROVED}/\texttt{REJECTED}) và duyệt báo giá chính thức. \\
 \hline
-Lễ tân dịch vụ (\texttt{RECEPTIONIST}\\TK: \texttt{le\_tan}) & Quản lý khách hàng, phương tiện, lịch hẹn; tiếp nhận xe và lập biên bản (\texttt{intake\_records}); phân công KTV; lập báo giá nháp; nhập/điều chỉnh kho; tạo bảo hành; chạy AI01, AI02, AI03. & Được gọi cả 3 chức năng AI (\texttt{ai.history}, \texttt{ai.explain}, \texttt{ai.quote}) nhưng \textbf{bị chặn} quyền duyệt kết quả AI (\texttt{ai.review}) và duyệt báo giá (\texttt{quote.approve}). \\
+Lễ tân dịch vụ (\texttt{RECEPTIONIST}\\TK: \texttt{le\_tan}) & Quản lý khách hàng, phương tiện, lịch hẹn; tiếp nhận xe 1-chạm và lập biên bản (\texttt{intake\_records}); điều phối trạng thái phiếu (\texttt{order.progress}), phân công KTV; lập báo giá nháp; lập hóa đơn khi phiếu hoàn thành (\texttt{invoice.manage}); nhập/điều chỉnh kho; tạo bảo hành; chạy AI01, AI02, AI03. & Được gọi cả 3 chức năng AI (\texttt{ai.history}, \texttt{ai.explain}, \texttt{ai.quote}) nhưng \textbf{bị chặn} quyền duyệt kết quả AI (\texttt{ai.review}) và duyệt báo giá (\texttt{quote.approve}). \\
 \hline
-Kỹ thuật viên (\texttt{TECHNICIAN}\\TK: \texttt{ky\_thuat\_vien}) & Xem phiếu sửa chữa, cập nhật trạng thái kiểm tra/sửa chữa (\texttt{order.progress}), thêm/gỡ hạng mục dịch vụ và phụ tùng (\texttt{order.item}), ghi nhật ký kỹ thuật (\texttt{repair\_logs}) và gọi AI03 (\texttt{ai.quote}). & \textbf{Cô lập theo phiếu được giao (\texttt{duoc\_gan\_cong})}: Chỉ được sửa trạng thái, thêm hạng mục, ghi nhật ký hoặc chạy AI03 trên phiếu có \texttt{technician\_id == user.id}. \\
+Kỹ thuật viên (\texttt{TECHNICIAN}\\TK: \texttt{ky\_thuat\_vien}) & Xem phiếu sửa chữa được giao, cập nhật trạng thái kiểm tra/sửa chữa và ghi chú kỹ thuật (\texttt{order.progress}), thêm/gỡ hạng mục dịch vụ và phụ tùng (\texttt{order.item}), ghi nhật ký kỹ thuật (\texttt{repair\_logs}) và gọi AI03 (\texttt{ai.quote}). & \textbf{Cô lập dữ liệu hoàn toàn theo phiếu được giao (\texttt{duoc\_gan\_cong})}: Chỉ nhìn thấy và thao tác trên phiếu có \texttt{technician\_id == user.id} tại cả Tổng quan, Lịch sử và Phiếu sửa chữa. \\
 \hline
 Thu ngân (\texttt{CASHIER}\\TK: \texttt{thu\_ngan}) & Tra cứu phiếu sửa chữa và hóa đơn, ghi nhận thanh toán từng phần hoặc toàn bộ (\texttt{payment.record}) và hủy khoản thu nhầm. & Chỉ có quyền ghi ở phân hệ Thanh toán; bị chặn (HTTP 403) khi cố tạo/sửa phiếu sửa chữa, chỉnh kho hoặc chạy AI. \\
 \hline
@@ -143,9 +143,9 @@ Bốn quy tắc bảo vệ trạng thái quan trọng được cài đặt trong
   \item \textbf{Lộ trình chuyển trạng thái chống nhảy cóc (\texttt{CHUYEN\_TRANG\_THAI})}:
   \begin{itemize}[noitemsep,topsep=1pt]
     \item Từ \texttt{RECEIVED} chỉ được chuyển sang \texttt{INSPECTING} hoặc \texttt{CANCELLED}.
-    \item Từ \texttt{INSPECTING} chỉ được chuyển sang \texttt{ESTIMATING} hoặc \texttt{CANCELLED}.
+    \item Từ \texttt{INSPECTING} được chuyển sang \texttt{ESTIMATING}, quay lùi về \texttt{RECEIVED} hoặc hủy (\texttt{CANCELLED}).
     \item Từ \texttt{ESTIMATING} được chuyển sang \texttt{REPAIRING}, quay lại \texttt{INSPECTING} hoặc hủy (\texttt{CANCELLED}).
-    \item Từ \texttt{REPAIRING} được chuyển sang \texttt{COMPLETED} (khi đã có ít nhất 1 hạng mục) hoặc quay lại \texttt{INSPECTING} khi phát sinh hạng mục cần kiểm tra lại.
+    \item Từ \texttt{REPAIRING} được chuyển sang \texttt{COMPLETED} (khi đã có ít nhất 1 hạng mục), quay lại \texttt{ESTIMATING}/\texttt{INSPECTING} khi phát sinh hạng mục hoặc hủy (\texttt{CANCELLED}) nếu chưa lập hóa đơn.
     \item Hai trạng thái \texttt{COMPLETED} và \texttt{CANCELLED} là trạng thái đóng (\texttt{[]}), đồng thời khóa hoàn toàn việc thêm/gỡ hạng mục (\texttt{TRANG\_THAI\_KHOA\_HANG\_MUC}).
   \end{itemize}
   \item \textbf{Khóa hạng mục khi đã phát hành hóa đơn}: Hàm \texttt{\_khoa\_hang\_muc} kiểm tra nếu phiếu đã có bản ghi trong bảng \texttt{invoices} thì chặn mọi thao tác thêm hoặc gỡ hạng mục để tổng tiền hạng mục và tổng tiền hóa đơn không bao giờ lệch nhau.

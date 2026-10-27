@@ -277,6 +277,21 @@ def ap_dung_vao_phieu(bao_gia_id: int, user) -> int:
             ' WHERE quotation_id = ?', (bao_gia_id,)).fetchall()
         if not rows:
             raise SaiQuyTac('Báo giá không có hạng mục để áp dụng.')
+        for r in rows:
+            if r['service_id'] is not None:
+                da_co = c.execute(
+                    'SELECT 1 FROM repair_order_items'
+                    ' WHERE repair_order_id = ? AND service_id = ? LIMIT 1',
+                    (phieu_id, r['service_id'])).fetchone()
+            else:
+                da_co = c.execute(
+                    'SELECT 1 FROM repair_order_items'
+                    ' WHERE repair_order_id = ? AND part_id = ? LIMIT 1',
+                    (phieu_id, r['part_id'])).fetchone()
+            if da_co:
+                raise XungDdot(
+                    'Phiếu sửa chữa đã có sẵn hạng mục trùng với báo giá.'
+                    ' Vui lòng gỡ hạng mục trùng trên phiếu trước khi áp dụng báo giá.')
         from .stock import ghi_giao_dich
         for r in rows:
             if r['part_id'] is not None:

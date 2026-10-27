@@ -5,7 +5,7 @@
 Để đánh giá khách quan hoạt động của 3 chức năng AI trong \textbf{GarageTools AI}, nhóm thực hiện kiểm chứng trên cả hai chế độ của \texttt{app/ai\_gateway.py}:
 \begin{itemize}[noitemsep,topsep=2pt]
   \item \textbf{Chế độ gọi mô hình thật (\texttt{AI\_PROVIDER=groq})}: Kết nối trực tiếp tới mô hình \textbf{\texttt{openai/gpt-oss-120b}} qua endpoint chuẩn OpenAI-compatible của Groq Cloud (\texttt{https://api.groq.com/openai/v1/chat/completions}, \texttt{temperature = 0.2}, \texttt{AI\_TIMEOUT = 15s}).
-  \item \textbf{Chế độ dự phòng nội bộ (\texttt{AI\_PROVIDER=mock} / \texttt{\_goi\_mock})}: Sử dụng khi không có kết nối mạng, khi nhà cung cấp trả lỗi quá thời gian chờ / vượt hạn ngạch (HTTP 429/500), hoặc khi chạy bộ 226 ca kiểm thử tự động để không tiêu tốn hạn ngạch khóa API.
+  \item \textbf{Chế độ dự phòng nội bộ (\texttt{AI\_PROVIDER=mock} / \texttt{\_goi\_mock})}: Sử dụng khi không có kết nối mạng, khi nhà cung cấp trả lỗi quá thời gian chờ / vượt hạn ngạch (HTTP 429/500), hoặc khi chạy bộ 231 ca kiểm thử tự động để không tiêu tốn hạn ngạch khóa API.
 \end{itemize}
 
 Mỗi chức năng AI được đánh giá dựa trên 3 tiêu chí thực chứng:
@@ -79,7 +79,7 @@ Truy vấn danh sách \& Chi tiết trên SQLite WAL & 5 ms -- 25 ms & $< 200$ m
 \hline
 Giao dịch Kho \& Hóa đơn (\texttt{BEGIN IMMEDIATE}) & 8 ms -- 30 ms & $< 200$ ms & Khóa nguyên tử nhanh, đảm bảo không âm kho và không thu lố. \\
 \hline
-Chế độ AI Dự phòng (\texttt{AI\_PROVIDER=mock}) & $< 5$ ms & $< 50$ ms & Giúp bộ 226 ca kiểm thử tự động chạy hoàn tất chỉ trong $\approx 23$ giây. \\
+Chế độ AI Dự phòng (\texttt{AI\_PROVIDER=mock}) & $< 5$ ms & $< 50$ ms & Giúp bộ 231 ca kiểm thử tự động chạy hoàn tất chỉ trong $\approx 23$ giây. \\
 \hline
 Gọi thô tới Groq (\texttt{openai/gpt-oss-120b}) & \textbf{1,20 giây} & $< 10,0$ giây & Kết nối HTTPS ổn định, tốc độ sinh token rất nhanh. \\
 \hline
@@ -144,7 +144,7 @@ Một ưu điểm thực tế của kiến trúc \texttt{AI\_PROVIDERS} trong \t
 \hline
 \thead{Cấu hình \texttt{AI\_PROVIDER}} & \thead{Mô hình mặc định} & \thead{Chi phí} & \thead{Ngữ cảnh sử dụng phù hợp}\\
 \hline
-\texttt{mock} (\texttt{\_goi\_mock}) & Thuật toán nội bộ & \textbf{0 VNĐ} & Chạy bộ 226 ca kiểm thử tự động (\texttt{tests/run\_all.py}), chạy không cần mạng hoặc làm phương án dự phòng khi mất kết nối. \\
+\texttt{mock} (\texttt{\_goi\_mock}) & Thuật toán nội bộ & \textbf{0 VNĐ} & Chạy bộ 231 ca kiểm thử tự động (\texttt{tests/run\_all.py}), chạy không cần mạng hoặc làm phương án dự phòng khi mất kết nối. \\
 \hline
 \texttt{groq} / \texttt{gemini} / \texttt{openrouter} & \texttt{gpt-oss-120b}\newline / \texttt{gemini-2.0-flash} & \textbf{0 VNĐ}\newline(Free Tier) & Chạy demo thuyết trình dự án trực tiếp và vận hành thực tế tại garage vừa và nhỏ bằng khóa API miễn phí từ \texttt{console.groq.com} hoặc \texttt{aistudio.google.com}. \\
 \hline

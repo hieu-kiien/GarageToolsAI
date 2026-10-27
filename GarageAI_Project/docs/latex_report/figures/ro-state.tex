@@ -21,9 +21,9 @@
 \node[cancelstate, below=0.95cm of ins] (can) {CANCELLED\\(Đã hủy \& Hoàn kho)};
 \node[endstate, below=0.95cm of rep] (com) {COMPLETED\\(Đã hoàn thành)};
 
-\draw[trans] (rec) -- (ins);
+\draw[trans, <->] (rec) -- (ins);
 \draw[trans, <->] (ins) -- (est);
-\draw[trans] (est) -- (rep);
+\draw[trans, <->] (est) -- (rep);
 \draw[trans] (rep.north) -- ++(0,0.45cm) -| node[above, pos=0.25, font=\scriptsize]{Kiểm tra lại} (ins.north);
 \draw[trans, diaggreenline] (rep) -- node[right, font=\scriptsize]{Có hạng mục} (com);
 

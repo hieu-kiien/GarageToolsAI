@@ -41,7 +41,8 @@ def danh_sach_phieu(request: Request):
     trang = doc_trang(request)
     qs = request.query_params
     dong, tong = orders.danh_sach_phieu(
-        trang, q=qs.get('q', '').strip(), trang_thai=qs.get('trang_thai', '').strip())
+        trang, q=qs.get('q', '').strip(),
+        trang_thai=qs.get('trang_thai', '').strip(), user=user)
     return render(request, 'phieu.html', paged({}, 'dong', dong, tong, trang) | {
         'q': qs.get('q', ''), 'trang_thai': qs.get('trang_thai', ''),
         'co_the_tao': auth_svc.co_the_quyen(user, 'order.create'),
@@ -81,7 +82,7 @@ def chi_tiet_phieu(request: Request, oid: int):
     user = auth_svc.yeu_cau_quyen(request, 'order.view')
     if user is None:
         return _ve(request, '/accounts/login')
-    p = orders.chi_tiet(oid)
+    p = orders.chi_tiet(oid, user=user)
     duoc = auth_svc.co_the_quyen(user, 'order.item')
     if duoc and not auth_svc.gan_quyen_phan_cong(user):
         from ..services.security_matrix import duoc_gan_cong

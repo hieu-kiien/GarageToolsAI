@@ -2,7 +2,17 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, Ban, CheckCircle2, FileCheck, Plus, Send, Trash2, XCircle } from "lucide-react";
+import {
+  ArrowLeft,
+  Ban,
+  CheckCircle2,
+  FileCheck,
+  Plus,
+  Printer,
+  Send,
+  Trash2,
+  XCircle,
+} from "lucide-react";
 import { api, q, ApiError } from "@/services/api";
 import { useLookups } from "@/services/lookups";
 import { useNhan, useRole, fmtNgay, fmtTime, vnd } from "@/lib/rbac";
@@ -187,6 +197,10 @@ function Detail() {
               {N.trangThai(bao_gia.status)}
             </Pill>
             {bao_gia.applied_at && <Pill t="success">Đã áp dụng</Pill>}
+            <Button size="sm" variant="outline" className="no-print" onClick={() => window.print()}>
+              <Printer className="size-4" />
+              In báo giá
+            </Button>
             {sua && (
               <Button size="sm" variant="outline" onClick={() => setMoThem(true)}>
                 <Plus className="size-4" />

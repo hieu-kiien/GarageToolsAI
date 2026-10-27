@@ -898,7 +898,7 @@
                 <span class="pill pill-blue" style="align-self: flex-start;">Vai trò 02</span>
                 <h3 class="pillar-title" style="font-size: 19px !important;">Lễ tân / Cố vấn</h3>
                 <ul class="pillar-list">
-                  <li>Tiếp nhận khách, lập phiếu sửa chữa và báo giá.</li>
+                  <li>Tiếp nhận 1-chạm, lập phiếu sửa chữa, báo giá và lập hóa đơn khi hoàn thành.</li>
                   <li>Dùng AI tóm tắt lịch sử xe và tư vấn khách.</li>
                 </ul>
               </div>
@@ -907,7 +907,7 @@
                 <span class="pill pill-green" style="align-self: flex-start;">Vai trò 03 · Cô lập dữ liệu</span>
                 <h3 class="pillar-title" style="font-size: 19px !important;">Kỹ thuật viên</h3>
                 <ul class="pillar-list">
-                  <li><strong>Chỉ nhìn thấy và thao tác trên đúng phiếu được giao cho mình.</strong></li>
+                  <li><strong>Cô lập dữ liệu hoàn toàn trên Tổng quan, Lịch sử &amp; Phiếu được giao.</strong></li>
                   <li>Cập nhật chẩn đoán và tiến độ sửa chữa.</li>
                 </ul>
               </div>
@@ -916,8 +916,8 @@
                 <span class="pill pill-blue" style="align-self: flex-start;">Vai trò 04</span>
                 <h3 class="pillar-title" style="font-size: 19px !important;">Thu ngân</h3>
                 <ul class="pillar-list">
-                  <li>Phát hành hóa đơn và áp dụng giảm giá.</li>
-                  <li>Ghi nhận thanh toán và theo dõi công nợ.</li>
+                  <li>Tra cứu hóa đơn và đối soát công nợ.</li>
+                  <li>Ghi nhận thanh toán từng phần hoặc toàn bộ.</li>
                 </ul>
               </div>
             </div>
@@ -930,7 +930,7 @@
               <div class="cols-4" style="gap: 14px;">
                 <div style="background: #FFFFFF; border: 1px solid var(--border-strong); border-radius: 10px; padding: 12px 14px;">
                   <div style="font-size: 12px; font-weight: 700; color: var(--ink-500);">TẦNG 1 · GIAO DIỆN</div>
-                  <div style="font-size: 16px; font-weight: 800; color: var(--ink-900); margin: 3px 0;">React 18 + TypeScript</div>
+                  <div style="font-size: 16px; font-weight: 800; color: var(--ink-900); margin: 3px 0;">React 19 + TypeScript</div>
                   <div style="font-size: 13.5px; color: var(--ink-700);">16 màn hình tiếng Việt hiển thị theo quyền.</div>
                 </div>
                 <div style="background: #FFFFFF; border: 1px solid var(--border-strong); border-radius: 10px; padding: 12px 14px;">
@@ -1016,8 +1016,8 @@
             <div class="showcase-layout">
               <div class="feature-stack">
                 <div class="point-item">
-                  <h3 class="point-title">Kiểm soát nghiệm thu chặt</h3>
-                  <p class="point-desc">Phiếu chỉ được phép chuyển sang <strong>Hoàn thành</strong> khi đã có tối thiểu 1 hạng mục dịch vụ hoặc phụ tùng.</p>
+                  <h3 class="point-title">Điều phối Kanban lưu lượng cao (30–50+ xe/ngày)</h3>
+                  <p class="point-desc">Hỗ trợ kéo tiến/lùi hợp lệ, cuộn độc lập từng cột, lọc theo Kỹ thuật viên, chế độ thẻ thu gọn và giới hạn cột kết thúc.</p>
                 </div>
                 <div class="point-item">
                   <h3 class="point-title">Tự động hoàn kho khi hủy</h3>
@@ -1077,16 +1077,16 @@
                 </div>
 
                 <div class="point-item">
-                  <h3 class="point-title">2. Biên bản tiếp nhận minh bạch</h3>
+                  <h3 class="point-title">2. Tiếp nhận tích hợp AI01 &amp; Biên bản minh bạch</h3>
                   <p class="point-desc">
-                    Lưu đầy đủ số công-tơ-mét (ODO), mức nhiên liệu, tình trạng thân vỏ và tư trang khách gửi lại xưởng.
+                    Chạy AI01 tóm tắt lịch sử xe ngay trước khi lập phiếu; ghi nhận ODO, mức nhiên liệu, ngoại thất và tự động hoàn tất lịch hẹn.
                   </p>
                 </div>
 
                 <div class="point-item">
-                  <h3 class="point-title">3. Nhật ký chuyển trạng thái</h3>
+                  <h3 class="point-title">3. Sửa ghi chú kỹ thuật, Gợi ý AI03 &amp; In phiếu</h3>
                   <p class="point-desc">
-                    Ghi vết tự động ai là người chuyển bước, vào thời gian nào để phục vụ tra cứu trách nhiệm.
+                    Cập nhật ghi chú kỹ thuật xuyên suốt quá trình khám xe, chạy AI03 giải trình báo giá ngay trong phiếu và hỗ trợ in ấn biểu mẫu.
                   </p>
                 </div>
               </div>
@@ -1273,7 +1273,7 @@
                 <span class="pill" style="background: rgba(96,165,250,0.2); color: #93C5FD; align-self: flex-start;">Chức năng AI01</span>
                 <h3>Tóm tắt Lịch sử Xe</h3>
                 <p style="margin: 0;">
-                  Tổng hợp nhanh các lần sửa chữa trước, số ODO và <strong>cảnh báo rõ những hạng mục còn đang trong hạn bảo hành</strong> để tránh tính phí trùng.
+                  Tổng hợp các lần sửa chữa trước, trạng thái phiếu, hạng mục đã làm và <strong>ghi chú kỹ thuật</strong> thành 4 mục chuẩn (ẩn danh tên chủ xe).
                 </p>
               </div>
 
@@ -1281,15 +1281,15 @@
                 <span class="pill" style="background: rgba(96,165,250,0.2); color: #93C5FD; align-self: flex-start;">Chức năng AI02</span>
                 <h3>Giải thích Dịch vụ cho Khách</h3>
                 <p style="margin: 0;">
-                  Chuyển bảng kê kỹ thuật trên phiếu thành lời tư vấn thân thiện, giải thích rõ lý do cần làm và <strong>giữ đúng tổng tiền thực tế</strong>.
+                  Diễn giải tên dịch vụ, đơn giá niêm yết và mô tả kỹ thuật trong danh mục thành <strong>3 mục tư vấn dễ hiểu</strong>, không tự chẩn đoán lỗi xe.
                 </p>
               </div>
 
               <div class="dark-card highlight">
                 <span class="pill" style="background: #2563EB; color: #FFFFFF; align-self: flex-start;">Chức năng AI03 · Có bộ lọc giá</span>
-                <h3>Gợi ý Báo giá Nháp</h3>
+                <h3>Sinh Báo giá Nháp từ Hạng mục</h3>
                 <p style="margin: 0;">
-                  Phân tích mô tả triệu chứng xe để đề xuất danh sách dịch vụ &amp; phụ tùng cần kiểm tra, sau đó đi qua <strong>bộ lọc đối chiếu CSDL</strong>.
+                  Sinh bản nháp báo giá JSON dựa trên <strong>dịch vụ &amp; phụ tùng đã chọn trên phiếu</strong> (theo đúng Đề tài 80277), đi qua <strong>bộ lọc đối chiếu CSDL</strong>.
                 </p>
               </div>
             </div>
@@ -1301,16 +1301,16 @@
               </div>
               <div class="cols-3" style="gap: 16px;">
                 <div style="background: rgba(15, 23, 42, 0.75); border-left: 4px solid #60A5FA; border-radius: 10px; padding: 14px 16px;">
-                  <div style="font-size: 16px; font-weight: 800; color: #FFFFFF; margin-bottom: 4px;">Bước 1 · Lọc theo Danh mục</div>
-                  <div style="font-size: 14px; color: #CBD5E1;">Tự động loại bỏ mọi dịch vụ hoặc phụ tùng do AI tự nghĩ ra mà không có trong CSDL xưởng.</div>
+                  <div style="font-size: 16px; font-weight: 800; color: #FFFFFF; margin-bottom: 4px;">Bước 1 · Khớp dòng Hạng mục Phiếu</div>
+                  <div style="font-size: 14px; color: #CBD5E1;">Tự động loại bỏ mọi dịch vụ/phụ tùng lạ ngoài phiếu hoặc dòng bị mô hình lặp lại nhiều lần.</div>
                 </div>
                 <div style="background: rgba(15, 23, 42, 0.75); border-left: 4px solid #3B82F6; border-radius: 10px; padding: 14px 16px;">
-                  <div style="font-size: 16px; font-weight: 800; color: #FFFFFF; margin-bottom: 4px;">Bước 2 · Gắn lại Đơn giá CSDL</div>
-                  <div style="font-size: 14px; color: #CBD5E1;">Không dùng đơn giá do AI sinh ra; lấy lại 100% đơn giá niêm yết chuẩn từ bảng danh mục.</div>
+                  <div style="font-size: 16px; font-weight: 800; color: #FFFFFF; margin-bottom: 4px;">Bước 2 · Giữ cứng Đơn giá CSDL</div>
+                  <div style="font-size: 14px; color: #CBD5E1;">Chỉ chấp nhận đúng số lượng &amp; đơn giá đã chốt trong CSDL; gắn nhãn rõ ghi chú tham khảo của AI.</div>
                 </div>
                 <div style="background: rgba(15, 23, 42, 0.75); border-left: 4px solid #10B981; border-radius: 10px; padding: 14px 16px;">
-                  <div style="font-size: 16px; font-weight: 800; color: #FFFFFF; margin-bottom: 4px;">Bước 3 · Cộng lại Tổng tiền</div>
-                  <div style="font-size: 14px; color: #CBD5E1;">Tính lại thành tiền từng dòng và tổng cộng bằng thuật toán số nguyên chính xác tuyệt đối.</div>
+                  <div style="font-size: 16px; font-weight: 800; color: #FFFFFF; margin-bottom: 4px;">Bước 3 · Bảo toàn Tổng tiền Backend</div>
+                  <div style="font-size: 14px; color: #CBD5E1;">Bỏ qua tổng tiền do AI tự cộng nếu lệch; luôn lấy tổng tiền số nguyên chính thức do Backend tính.</div>
                 </div>
               </div>
             </div>
@@ -1489,7 +1489,7 @@
                 <div class="big-metric-sub">Hỗ trợ gói Free Tier (Groq / Gemini)</div>
               </div>
               <div class="big-metric-card">
-                <div class="big-metric-num">226 / 226</div>
+                <div class="big-metric-num">231 / 231</div>
                 <div class="big-metric-title">Ca Kiểm thử Tự động</div>
                 <div class="big-metric-sub">Đạt 100% nghiệp vụ &amp; bảo mật</div>
               </div>
@@ -1520,9 +1520,9 @@
                     <span class="latency-val">3,99 s</span>
                   </div>
                   <div class="latency-row">
-                    <span class="latency-name">AI03 · Gợi ý báo giá nháp</span>
-                    <div class="latency-bar-bg"><div class="latency-bar-fill" style="width: 34.4%;"></div></div>
-                    <span class="latency-val">3,44 s</span>
+                    <span class="latency-name">AI03 · Sinh báo giá nháp</span>
+                    <div class="latency-bar-bg"><div class="latency-bar-fill" style="width: 29.8%;"></div></div>
+                    <span class="latency-val">2,98 s</span>
                   </div>
                   <div class="latency-row" style="margin-bottom: 0;">
                     <span class="latency-name">Dự phòng nội bộ khi mất mạng</span>

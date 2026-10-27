@@ -41,7 +41,7 @@ PERMISSIONS: dict[str, set[str]] = {
     'appointment.edit':  LE_TAN_VA_QUAN_LY,
     'catalog.edit':      QUAN_LY,
     'order.create':      LE_TAN_VA_QUAN_LY,
-    'order.progress':    KTE,
+    'order.progress':    {'MANAGER', 'RECEPTIONIST', 'TECHNICIAN'},
     'order.assign':      {'MANAGER', 'RECEPTIONIST'},
     'order.item':        KTE,
     'order.accept':      LE_TAN_VA_QUAN_LY,
@@ -49,7 +49,7 @@ PERMISSIONS: dict[str, set[str]] = {
     'warranty.manage':   LE_TAN_VA_QUAN_LY,
     'quote.manage':      LE_TAN_VA_QUAN_LY,
     'quote.approve':     QUAN_LY,
-    'invoice.manage':    QUAN_LY,
+    'invoice.manage':    {'MANAGER', 'RECEPTIONIST', 'CASHIER'},
     'payment.record':    {'MANAGER', 'CASHIER'},
     'user.edit':         QUAN_LY,
 }
@@ -57,12 +57,14 @@ PERMISSIONS: dict[str, set[str]] = {
 #: Vai trò được sửa phiếu không cần được phân công.
 PHAN_CONG_CHINH = {'MANAGER', 'RECEPTIONIST'}
 
-#: Lợi trình chuyển trạng thái hợp lệ của phiếu sửa chữa.
+#: Lộ trình chuyển trạng thái hợp lệ của phiếu sửa chữa.
+#: Tiến tới theo từng bước; các trạng thái đang xử lý (INSPECTING, ESTIMATING,
+#: REPAIRING) cho phép kéo lùi về bước trước đó để điều chỉnh hoặc báo giá lại.
 CHUYEN_TRANG_THAI: dict[str, list[str]] = {
     'RECEIVED':   ['INSPECTING', 'CANCELLED'],
-    'INSPECTING': ['ESTIMATING', 'CANCELLED'],
-    'ESTIMATING': ['REPAIRING', 'INSPECTING', 'CANCELLED'],
-    'REPAIRING':  ['COMPLETED', 'INSPECTING'],
+    'INSPECTING': ['ESTIMATING', 'RECEIVED', 'CANCELLED'],
+    'ESTIMATING': ['REPAIRING', 'INSPECTING', 'RECEIVED', 'CANCELLED'],
+    'REPAIRING':  ['COMPLETED', 'ESTIMATING', 'INSPECTING', 'RECEIVED', 'CANCELLED'],
     'COMPLETED':  [],
     'CANCELLED':  [],
 }

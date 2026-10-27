@@ -11,6 +11,9 @@ import {
   Trash2,
   FileText,
   ClipboardCheck,
+  Pencil,
+  Printer,
+  Sparkles,
 } from "lucide-react";
 import { api, q, ApiError } from "@/services/api";
 import { useLookups } from "@/services/lookups";
@@ -75,6 +78,10 @@ function Detail() {
     ...q.quotations({ q: String(oid), moi_trang: 100 }),
     enabled: can("quote.manage"),
   });
+  const aiGanDay = useQuery({
+    ...q.aiRecent(),
+    enabled: can("ai.run") || can("ai.review"),
+  });
   const [ghiChu, setGhiChu] = useState("");
   const [loai, setLoai] = useState<"dich_vu" | "phu_tung">("dich_vu");
   const [ma, setMa] = useState<string>("");
@@ -86,6 +93,8 @@ function Detail() {
   const [ghiChuNghiemThu, setGhiChuNghiemThu] = useState("");
   const [dangXoa, setDangXoa] = useState(false);
   const [maXoa, setMaXoa] = useState("");
+  const [dangSuaGhiChu, setDangSuaGhiChu] = useState(false);
+  const [ghiChuKyThuatMoi, setGhiChuKyThuatMoi] = useState("");
 
   const loi = (e: unknown) => toast.error(e instanceof ApiError ? e.message : "Thao tác thất bại.");
 
@@ -208,6 +217,25 @@ function Detail() {
     },
     onError: loi,
   });
+  const luuGhiChuKyThuat = useMutation({
+    mutationFn: () => api.capNhatGhiChuPhieu(oid, ghiChuKyThuatMoi.trim() || null),
+    onSuccess: async (kq) => {
+      toast.success(kq.thong_bao);
+      setDangSuaGhiChu(false);
+      await qc.invalidateQueries({ queryKey: ["orders"] });
+    },
+    onError: loi,
+  });
+  const chayAiBaoGia = useMutation({
+    mutationFn: () => api.aiRun({ kind: "quote", repair_order_id: oid }),
+    onSuccess: async (kq) => {
+      toast.success(kq.thong_bao);
+      await qc.invalidateQueries({ queryKey: ["ai-recent"] });
+      await qc.invalidateQueries({ queryKey: ["ai-results"] });
+      await qc.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+    onError: loi,
+  });
 
   if (!area("orders")) return <NoAccess />;
   if (ds.isPending) return <DangTai mat="Đang tải phiếu…" />;
@@ -230,8 +258,15 @@ function Detail() {
   const ketThuc = phieu.status === "COMPLETED" || phieu.status === "CANCELLED";
   const ktvDuocPhep = user?.role !== "TECHNICIAN" || phieu.technician_id === user.id;
   const coSuaHangMuc = can("order.item") && ktvDuocPhep && !ketThuc && !hoa_don;
-  const coChuyenTT = can("order.progress") && ktvDuocPhep;
+  const coChuyenTT = can("order.progress") && ktvDuocPhep && !hoa_don;
   const coPhanCong = can("order.assign") && !ketThuc;
+  const coTheXoaPhieu =
+    can("order.create") &&
+    !ketThuc &&
+    hang_muc.length === 0 &&
+    !hoa_don &&
+    !tiep_nhan &&
+    dsBaoGia.length === 0;
 
   return (
     <>
@@ -256,6 +291,24 @@ function Detail() {
             )}
             {phieu.acceptance_at && <Pill t="success">Đã nghiệm thu</Pill>}
             <StatusPill s={phieu.status} />
+            <Button size="sm" variant="outline" className="no-print" onClick={() => window.print()}>
+              <Printer className="size-3.5" />
+              In phiếu
+            </Button>
+            {coChuyenTT && !ketThuc && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="no-print"
+                onClick={() => {
+                  setGhiChuKyThuatMoi(phieu.technical_notes ?? "");
+                  setDangSuaGhiChu(true);
+                }}
+              >
+                <Pencil className="size-3.5" />
+                Sửa ghi chú kỹ thuật
+              </Button>
+            )}
             {coChuyenTT &&
               N.chuyenTrangThai(phieu.status).map((tt) => (
                 <Button
@@ -273,7 +326,7 @@ function Detail() {
                 Nghiệm thu (khách ký nhận)
               </Button>
             )}
-            {can("order.create") && (
+            {coTheXoaPhieu && (
               <Button
                 size="sm"
                 variant="destructive"
@@ -449,24 +502,74 @@ function Detail() {
             title={
               <span className="flex items-center gap-2">
                 <FileText className="size-4" />
-                Báo giá
+                Báo giá & Gợi ý AI03
               </span>
             }
             action={
-              can("quote.manage") &&
-              !ketThuc && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={taoBG.isPending}
-                  onClick={() => hopQuyen("quote.manage") && taoBG.mutate()}
-                >
-                  <Plus className="size-4" />
-                  Tạo báo giá nháp
-                </Button>
-              )
+              <div className="flex flex-wrap items-center gap-2">
+                {can("ai.run") && !ketThuc && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={chayAiBaoGia.isPending}
+                    onClick={() => hopQuyen("ai.run") && chayAiBaoGia.mutate()}
+                  >
+                    <Sparkles className="size-3.5 text-ai" />
+                    {chayAiBaoGia.isPending ? "Đang tạo AI03…" : "Gợi ý báo giá (AI03)"}
+                  </Button>
+                )}
+                {can("quote.manage") && !ketThuc && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={taoBG.isPending}
+                    onClick={() => hopQuyen("quote.manage") && taoBG.mutate()}
+                  >
+                    <Plus className="size-4" />
+                    Tạo báo giá nháp
+                  </Button>
+                )}
+              </div>
             }
           >
+            {(() => {
+              const kqAi03 = (aiGanDay.data?.dong ?? []).find(
+                (a) => a.kind === "quote" && a.repair_order_id === oid,
+              );
+              if (!kqAi03) return null;
+              return (
+                <div className="mb-4 rounded-md border border-ai/30 bg-ai-soft/60 p-3 text-xs">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="flex items-center gap-1.5 font-semibold text-foreground">
+                      <Sparkles className="size-3.5 text-ai" />
+                      Bản giải trình báo giá nháp AI03 (#{kqAi03.id})
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <Pill
+                        t={
+                          kqAi03.review_status === "APPROVED"
+                            ? "success"
+                            : kqAi03.review_status === "REJECTED"
+                              ? "danger"
+                              : "warning"
+                        }
+                      >
+                        {N.trangThai(kqAi03.review_status)}
+                      </Pill>
+                      <Link
+                        to="/ai-review"
+                        className="text-[11px] font-medium text-primary hover:underline"
+                      >
+                        Duyệt tại Trợ lý AI →
+                      </Link>
+                    </div>
+                  </div>
+                  <pre className="mt-2 max-h-40 overflow-y-auto whitespace-pre-wrap rounded border bg-card p-2.5 font-sans text-xs leading-relaxed text-foreground">
+                    {kqAi03.output_text}
+                  </pre>
+                </div>
+              );
+            })()}
             {!can("quote.manage") ? (
               <p className="text-sm text-muted-foreground">
                 Cần quyền quản lý báo giá để xem danh sách báo giá của phiếu.
@@ -633,7 +736,21 @@ function Detail() {
                 {can("order.create") && !ketThuc && (
                   <div className="mt-3">
                     <Button variant="outline" size="sm" asChild>
-                      <Link to="/inspection">Đi tới màn tiếp nhận</Link>
+                      <Link
+                        to="/inspection"
+                        onClick={() => {
+                          try {
+                            sessionStorage.setItem(
+                              "garagetools_intake_prefill",
+                              JSON.stringify({ phieuId: String(phieu.id) }),
+                            );
+                          } catch {
+                            /* ignore */
+                          }
+                        }}
+                      >
+                        Đi tới màn tiếp nhận
+                      </Link>
                     </Button>
                   </div>
                 )}
@@ -674,7 +791,7 @@ function Detail() {
                   title="Chưa lập hoá đơn"
                   desc="Hoá đơn do backend tính tổng từ hạng mục phiếu."
                 />
-                {can("invoice.manage") && phieu.status !== "CANCELLED" && phieu.tong > 0 && (
+                {can("invoice.manage") && phieu.status === "COMPLETED" && phieu.tong > 0 && (
                   <Button
                     className="mt-3 w-full"
                     size="sm"
@@ -683,6 +800,11 @@ function Detail() {
                   >
                     Lập hoá đơn cho phiếu này
                   </Button>
+                )}
+                {phieu.status !== "COMPLETED" && phieu.status !== "CANCELLED" && (
+                  <p className="mt-2 text-center text-xs text-muted-foreground">
+                    Chuyển phiếu sang trạng thái <b>Đã hoàn thành</b> để lập hoá đơn.
+                  </p>
                 )}
               </div>
             ) : (
@@ -791,6 +913,37 @@ function Detail() {
               onClick={() => hopQuyen("order.accept") && nghiemThu.mutate()}
             >
               Xác nhận nghiệm thu
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={dangSuaGhiChu} onOpenChange={(o) => !o && setDangSuaGhiChu(false)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Cập nhật ghi chú kỹ thuật · Phiếu #{phieu.id}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 text-sm">
+            <p className="text-muted-foreground">
+              Ghi nhận yêu cầu của khách, triệu chứng hư hỏng hoặc kết luận kiểm tra kỹ thuật. Thay
+              đổi sẽ được lưu vết tự động vào Nhật ký sửa chữa.
+            </p>
+            <Textarea
+              value={ghiChuKyThuatMoi}
+              onChange={(e) => setGhiChuKyThuatMoi(e.target.value)}
+              placeholder="Nhập ghi chú kỹ thuật của phiếu…"
+              className="min-h-[100px]"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDangSuaGhiChu(false)}>
+              Huỷ
+            </Button>
+            <Button
+              disabled={luuGhiChuKyThuat.isPending}
+              onClick={() => hopQuyen("order.progress") && luuGhiChuKyThuat.mutate()}
+            >
+              Lưu ghi chú kỹ thuật
             </Button>
           </DialogFooter>
         </DialogContent>

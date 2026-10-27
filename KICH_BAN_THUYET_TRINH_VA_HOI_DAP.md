@@ -23,7 +23,7 @@
 | **Slide 08** | **Tối (Navy)** | **Trọng tâm AIA331:** Thiết kế 3 chức năng Trợ lý AI & Bộ lọc 3 bước chống bịa giá | Nguyễn Đức Dũng | 1,5 phút |
 | **Slide 09** | Sáng | Giao diện Trung tâm AI — Cơ chế Hàng chờ ở trạng thái **“Chờ duyệt”** | Nguyễn Đức Dũng | 1 phút |
 | **Slide 10** | Sáng | Giao diện Phê duyệt kết quả AI — Chuyển sang **“Đã duyệt”** kèm tên người duyệt | Nguyễn Đức Dũng | 1 phút |
-| **Slide 11** | Sáng | Kết quả đo độ trễ thực tế trên Groq API (`< 4 giây`) & kiểm thử tự động (`226/226`) | Nguyễn Đức Dũng | 1 phút |
+| **Slide 11** | Sáng | Kết quả đo độ trễ thực tế trên Groq API (`< 4 giây`) & kiểm thử tự động (`231/231`) | Nguyễn Đức Dũng | 1 phút |
 | **Slide 12** | **Tối (Navy)** | Tổng kết kết quả đạt được, giới hạn hiện tại, hướng phát triển & Cảm ơn | Nguyễn Đức Dũng | 1 phút |
 
 ---
@@ -51,12 +51,12 @@
 
 ### SLIDE 03: Phân quyền 4 Vai trò Nhân sự & Kiến trúc Hệ thống
 > *"Ở Slide 03, hệ thống được phân quyền theo đúng 4 vị trí công việc tại xưởng:*
-> - ***Quản lý xưởng:** Quản trị danh mục, điều chỉnh kho và là người phê duyệt kết quả AI.*
-> - ***Lễ tân / Cố vấn:** Tiếp nhận khách, lập phiếu sửa chữa, báo giá và dùng AI hỗ trợ tư vấn.*
-> - ***Kỹ thuật viên:** Được cô lập phạm vi dữ liệu — mỗi kỹ thuật viên khi đăng nhập chỉ nhìn thấy và cập nhật tiến độ trên đúng các phiếu được giao cho mình.*
-> - ***Thu ngân:** Phụ trách phát hành hóa đơn, giảm giá và thu tiền.*
+> - ***Quản lý xưởng:** Quản trị danh mục, lập hóa đơn, điều chỉnh kho và là người phê duyệt kết quả AI.*
+> - ***Lễ tân / Cố vấn:** Tiếp nhận khách 1-chạm từ lịch hẹn, chạy AI01 tóm tắt lịch sử xe ngay trước khi lập phiếu, điều phối trạng thái, lập báo giá nháp và lập hóa đơn khi phiếu đã hoàn thành.*
+> - ***Kỹ thuật viên:** Được cô lập phạm vi dữ liệu hoàn toàn trên cả Tổng quan, Lịch sử và Phiếu sửa chữa — mỗi kỹ thuật viên chỉ nhìn thấy, cập nhật tiến độ, sửa ghi chú kỹ thuật và chạy AI03 trên đúng các phiếu được phân công cho mình.*
+> - ***Thu ngân:** Phụ trách tra cứu hóa đơn, đối soát công nợ và ghi nhận thanh toán từng phần hoặc toàn bộ.*
 >
-> *Bên dưới là kiến trúc 4 tầng độc lập từ giao diện React đến tầng bảo mật, xử lý nghiệp vụ và cơ sở dữ liệu 21 bảng."*
+> *Bên dưới là kiến trúc 4 tầng độc lập từ giao diện React 19 đến tầng bảo mật, xử lý nghiệp vụ và cơ sở dữ liệu 21 bảng."*
 
 ---
 
@@ -64,7 +64,7 @@
 > *"Sang Slide 04, em xin trình bày luồng vận hành của một phiếu sửa chữa qua 6 trạng thái: **Tiếp nhận → Kiểm tra → Báo giá → Đang sửa → Hoàn thành**, cùng nhánh rẽ **Đã hủy**.*
 >
 > *Hệ thống kiểm soát chặt 2 điểm:*
-> - *Thứ nhất, phiếu chỉ được chuyển sang **Hoàn thành** khi đã có ít nhất một hạng mục dịch vụ hoặc phụ tùng.*
+> - *Thứ nhất, bảng điều phối Kanban được thiết kế chịu tải cao (30–50+ xe/ngày) với thanh lọc theo Kỹ thuật viên, cuộn độc lập từng cột, chế độ thẻ thu gọn, hỗ trợ kéo tiến/lùi hợp lệ và chỉ cho chuyển sang **Hoàn thành** khi đã có ít nhất một hạng mục.*
 > - *Thứ hai, khi hủy một phiếu đã xuất phụ tùng nhưng chưa thu tiền, hệ thống sẽ **tự động hoàn trả 100% số lượng phụ tùng đó về kho**.*
 >
 > *Hình bên phải là giao diện Quản lý và lọc phiếu sửa chữa theo từng trạng thái."*
@@ -93,13 +93,13 @@
 ---
 
 ### SLIDE 08: Trọng tâm Học phần AIA331 — 3 Chức năng Trợ lý AI & Bộ lọc Chống bịa giá
-> *"Sang phần trọng tâm của học phần Ứng dụng AI ở Slide 08, nhóm thiết kế 3 chức năng Trợ lý AI:*
-> - ***AI01 – Tóm tắt lịch sử xe:** Tổng hợp nhanh các lần sửa trước và cảnh báo rõ hạng mục còn hạn bảo hành.*
-> - ***AI02 – Giải thích dịch vụ cho khách:** Chuyển bảng kê kỹ thuật thành lời tư vấn dễ hiểu và giữ đúng tổng tiền trên phiếu.*
-> - ***AI03 – Gợi ý báo giá nháp từ triệu chứng:** Để chặn triệt để hiện tượng AI bịa giá, nhóm xây dựng **Bộ lọc hậu xử lý 3 bước**:*
->   - ***Bước 1:** Tự động xóa bỏ mọi dịch vụ/phụ tùng do AI tự nghĩ ra mà không có trong danh mục xưởng.*
->   - ***Bước 2:** Gắn lại 100% đơn giá niêm yết chuẩn từ cơ sở dữ liệu.*
->   - ***Bước 3:** Cộng lại thành tiền và tổng cộng bằng thuật toán số nguyên."*
+> *"Sang phần trọng tâm của học phần Ứng dụng AI ở Slide 08, bám sát đặc tả Đề tài 80277 (AI chỉ giải thích và tổng hợp dựa trên dữ liệu sửa chữa được cung cấp, tuyệt đối không tự chẩn đoán lỗi xe), nhóm thiết kế 3 chức năng Trợ lý AI:*
+> - ***AI01 – Tóm tắt lịch sử xe:** Tổng hợp nhanh các lần sửa trước, trạng thái phiếu, hạng mục đã làm và ghi chú kỹ thuật thành 4 mục chuẩn, đồng thời tự động ẩn danh tên chủ xe trước khi gửi sang LLM.*
+> - ***AI02 – Giải thích dịch vụ cho khách:** Diễn giải tên dịch vụ, đơn giá niêm yết và mô tả kỹ thuật trong danh mục thành 3 mục tư vấn dễ hiểu cho khách hàng.*
+> - ***AI03 – Sinh báo giá nháp từ dịch vụ và phụ tùng đã chọn:** Để chặn triệt để hiện tượng AI bịa giá hoặc lặp dòng, nhóm xây dựng **Bộ lọc hậu xử lý 3 bước**:*
+>   - ***Bước 1:** Đối chiếu từng dòng JSON của AI với hạng mục thực tế trên phiếu, loại bỏ mọi mục lạ hoặc dòng bị lặp lại nhiều lần.*
+>   - ***Bước 2:** Chỉ chấp nhận đúng số lượng và đơn giá đã chốt trong CSDL, đồng thời gắn nhãn rõ ghi chú tham khảo của AI.*
+>   - ***Bước 3:** Bỏ qua tổng tiền do AI tự cộng nếu lệch và luôn giữ tổng tiền số nguyên chính thức do Backend tính."*
 
 ---
 
@@ -119,8 +119,8 @@
 
 ### SLIDE 11: Kết quả Đo kiểm Độ trễ AI & Kiểm thử Toàn diện
 > *"Ở Slide 11 là các con số đo kiểm thực nghiệm của dự án:*
-> - *Khi gọi mô hình ngôn ngữ lớn thật qua dịch vụ **Groq API** (sử dụng gói miễn phí **0 VNĐ**), thời gian phản hồi thực tế chỉ từ **2,46 giây đến 3,99 giây**, nhanh hơn rất nhiều so với ngưỡng mục tiêu 10 giây. Khi mất mạng, chế độ dự phòng nội bộ phản hồi tức thì trong 1 mili-giây.*
-> - *Về chất lượng phần mềm, hệ thống đã vượt qua **226 trên 226 ca kiểm thử tự động**, cùng đầy đủ các kịch bản kiểm thử biên và luồng nghiệp vụ khép kín."*
+> - *Khi gọi mô hình ngôn ngữ lớn thật qua dịch vụ **Groq API** (sử dụng gói miễn phí **0 VNĐ**), thời gian phản hồi thực tế chỉ từ **2,46 giây đến 3,99 giây** (AI01: 2,46s; AI03: 2,98s; AI02: 3,99s), nhanh hơn rất nhiều so với ngưỡng mục tiêu 10 giây. Khi mất mạng, chế độ dự phòng nội bộ phản hồi tức thì trong 1 mili-giây.*
+> - *Về chất lượng phần mềm, hệ thống đã vượt qua **231 trên 231 ca kiểm thử tự động**, cùng đầy đủ các kịch bản kiểm thử biên và luồng nghiệp vụ khép kín."*
 
 ---
 

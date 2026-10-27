@@ -453,6 +453,22 @@ class TestPhanQuyen(CoSoApi):
         self.assertEqual(r.status_code, 403)
         self.assertEqual(self.client.get('/api/orders').status_code, 200)
 
+    def test_ky_thuat_vien_co_lap_quyen_xem_va_chay_ai03_theo_phan_cong(self):
+        # Phân công phiếu 12 cho kỹ thuật viên khác / bỏ phân công.
+        self.api('post', '/api/orders/12/assign', {'technician_id': None})
+        self.dang_nhap('ky_thuat_vien')
+        ds = self.client.get('/api/orders?moi_trang=50').json()['dong']
+        self.assertNotIn(12, [d['id'] for d in ds])
+        self.assertIn(10, [d['id'] for d in ds])
+        self.assertEqual(self.client.get('/api/orders/12').status_code, 403)
+        self.assertEqual(self.client.get('/api/orders/10').status_code, 200)
+        self.assertEqual(
+            self.api('post', '/api/ai/run',
+                     {'kind': 'quote', 'repair_order_id': 12}).status_code, 409)
+        self.assertEqual(
+            self.api('post', '/api/ai/run',
+                     {'kind': 'quote', 'repair_order_id': 10}).status_code, 201)
+
 
 # ===========================================================================
 class TestBaoCaoVaTraCuu(CoSoApi):
@@ -865,6 +881,32 @@ class TestChongTaiPhat(CoSoApi):
                      {'name': 'Dich Vu Boolean', 'price': True})
         self.assertEqual(r.status_code, 400, r.text)
         self.assertEqual(r.json()['loi'], 'dau_vao_khong_hop_le')
+
+    def test_chan_ap_dung_bao_gia_khi_phieu_da_co_hang_muc_trung(self):
+        ton_truoc = self.q1('SELECT stock FROM parts WHERE id = 1')['stock']
+        # Nhân viên đã thêm tay phụ tùng 1 vào phiếu 12 (trừ kho 2 cái).
+        self.api('post', '/api/orders/12/items',
+                 {'loai': 'phu_tung', 'ma': 1, 'qty': 2})
+        self.assertEqual(
+            self.q1('SELECT stock FROM parts WHERE id = 1')['stock'],
+            ton_truoc - 2)
+        # Lập báo giá cũng chứa phụ tùng 1 rồi duyệt và bấm áp dụng -> phải chặn 409.
+        qid = self.api('post', '/api/quotations', {'repair_order_id': 12}).json()['id']
+        self.api('post', '/api/quotations/%d/items' % qid,
+                 {'loai': 'phu_tung', 'ma': 1, 'qty': 2})
+        self.api('post', '/api/quotations/%d/send' % qid)
+        self.api('post', '/api/quotations/%d/review' % qid,
+                 {'quyet_dinh': 'APPROVED'})
+        r = self.api('post', '/api/quotations/%d/apply' % qid)
+        self.assertEqual(r.status_code, 409, r.text)
+        self.assertEqual(r.json()['loi'], 'trung_du_lieu')
+        # Kho không bị trừ thêm lần 2 và dòng hạng mục trên phiếu không bị nhân đôi.
+        self.assertEqual(
+            self.q1('SELECT stock FROM parts WHERE id = 1')['stock'],
+            ton_truoc - 2)
+        self.assertEqual(
+            self.q1('SELECT COUNT(*) c FROM repair_order_items'
+                    ' WHERE repair_order_id = 12 AND part_id = 1')['c'], 1)
 
 
 if __name__ == '__main__':

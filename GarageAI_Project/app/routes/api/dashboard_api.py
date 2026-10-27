@@ -13,10 +13,10 @@ router = APIRouter(tags=['api-he-thong'])
 
 @router.get('/dashboard')
 def dashboard(request: Request):
-    quyen(request, 'dashboard.view')
+    user = quyen(request, 'dashboard.view')
     return JSONResponse({
-        'kpi': reports.tong_quan(),
-        'trang_thai': reports.phieu_theo_trang_thai(),
-        'gan_nhat': reports.phieu_moi_nhat(8),
+        'kpi': reports.tong_quan(user=user),
+        'trang_thai': reports.phieu_theo_trang_thai(user=user),
+        'gan_nhat': reports.phieu_moi_nhat(8, user=user),
         'doanh_thu': reports.bao_cao_doanh_thu(6),
     })

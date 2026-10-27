@@ -27,7 +27,7 @@ Mã nguồn của hệ thống được tổ chức thành hai nhánh chính t�
 \hline
 \texttt{frontend/src/} & Ứng dụng giao diện chính gồm 16 màn hình trong \texttt{src/routes/}, \texttt{src/lib/rbac.tsx}, \texttt{src/services/api.ts} và kiểm thử \texttt{vitest}. & React 19, TanStack Start, Tailwind v4\\
 \hline
-\texttt{GarageAI\_Project/tests/} \& \texttt{scripts/*.ps1} & Bộ 226 ca kiểm thử Python (\texttt{run\_all.py}) và 4 kịch bản PowerShell (\texttt{smoke.ps1}, \texttt{e2e.ps1}, \texttt{backup.ps1}, \texttt{restore.ps1}). & Python \texttt{unittest}, PowerShell\\
+\texttt{GarageAI\_Project/tests/} \& \texttt{scripts/*.ps1} & Bộ 231 ca kiểm thử Python (\texttt{run\_all.py}), 28 ca kiểm thử Frontend (\texttt{vitest}) và 4 kịch bản PowerShell (\texttt{smoke.ps1}, \texttt{e2e.ps1}, \texttt{backup.ps1}, \texttt{restore.ps1}). & Python \texttt{unittest}, Vitest, PowerShell\\
 \hline
 \end{tabularx}
 \end{table}
@@ -48,11 +48,11 @@ Trong \texttt{app/services/security\_matrix.py}, biến \texttt{PERMISSIONS} án
 \hline
 \thead{Phân hệ} & \thead{Thao tác} & \thead{Quản lý (\texttt{MANAGER})} & \thead{Lễ tân (\texttt{RECEPTIONIST})} & \thead{Kỹ thuật viên (\texttt{TECHNICIAN})} & \thead{Thu ngân (\texttt{CASHIER})}\\
 \hline
-\multirow{3}{*}{Phiếu sửa chữa} & Xem danh sách / Chi tiết & Toàn bộ phiếu & Toàn bộ phiếu & Xem phiếu (\texttt{order.view}) & Toàn bộ phiếu (Chỉ xem)\\
+\multirow{3}{*}{Phiếu sửa chữa} & Xem danh sách / Chi tiết & Toàn bộ phiếu & Toàn bộ phiếu & Chỉ phiếu được giao (\texttt{duoc\_gan\_cong}) & Toàn bộ phiếu (Chỉ xem)\\
 \cline{2-6}
 & Tạo phiếu / Giao KTV / Nghiệm thu & Cho phép & Cho phép & Từ chối (HTTP 403) & Từ chối (HTTP 403)\\
 \cline{2-6}
-& Đổi trạng thái / Thêm hạng mục / Ghi log & Cho phép & Bị chặn thêm hạng mục; chỉ giao KTV / nghiệm thu & Chỉ trên phiếu có \texttt{technician\_id == user.id} & Từ chối (HTTP 403)\\
+& Đổi trạng thái / Sửa ghi chú / Ghi log & Cho phép & Cho phép điều phối trạng thái; chặn thêm hạng mục & Chỉ trên phiếu có \texttt{technician\_id == user.id} & Từ chối (HTTP 403)\\
 \hline
 \multirow{2}{*}{Báo giá} & Tạo \& Gửi báo giá (\texttt{quote.manage}) & Cho phép & Cho phép & Từ chối (HTTP 403) & Từ chối (HTTP 403)\\
 \cline{2-6}
@@ -62,7 +62,7 @@ Trong \texttt{app/services/security\_matrix.py}, biến \texttt{PERMISSIONS} án
 \cline{2-6}
 & Duyệt kết quả (\texttt{ai.review}) & \textbf{Duy nhất cho phép} & Từ chối (HTTP 403) & Từ chối (HTTP 403) & Từ chối (HTTP 403)\\
 \hline
-Hóa đơn \& Thu & Lập hóa đơn / Thu tiền & Lập HĐ \& Thu tiền & Chỉ xem hóa đơn & Từ chối (HTTP 403) & \textbf{Thu tiền \& Hủy khoản thu}\\
+Hóa đơn \& Thu & Lập hóa đơn / Thu tiền & Lập HĐ \& Thu tiền & Lập HĐ khi phiếu \texttt{COMPLETED} & Từ chối (HTTP 403) & \textbf{Lập HĐ, Thu tiền \& Hủy khoản thu}\\
 \hline
 Kho \& Danh mục & Sửa danh mục / Nhập chỉnh kho & Toàn quyền & Nhập/Chỉnh kho (\texttt{stock.manage}) & Chỉ xem danh mục & Chỉ xem danh mục\\
 \hline
@@ -142,8 +142,8 @@ Giao diện người dùng tại \texttt{frontend/src/routes/} gồm 16 màn hì
 
 Các điểm nổi bật trên giao diện thực tế gồm:
 \begin{enumerate}[noitemsep,topsep=2pt]
-  \item \textbf{Tổng quan Garage \& Bảng điều phối Kanban}: Thống kê trực tiếp số phiếu đang mở, doanh thu thực thu, cảnh báo phụ tùng chạm mức tồn tối thiểu (\texttt{stock <= min\_stock}) và bảng kéo-thả theo dõi 6 trạng thái của phiếu sửa chữa.
-  \item \textbf{Màn hình Chi tiết Phiếu sửa chữa, Báo giá và Bảo hành}: Cho phép thao tác liên hoàn từ ghi biên bản tiếp nhận (\texttt{intake\_records}), lập và áp dụng báo giá một lần, xuất phụ tùng/dịch vụ, ghi nhật ký kỹ thuật, nghiệm thu bàn giao xe đến lập hóa đơn và cấp phiếu bảo hành.
+  \item \textbf{Tổng quan Garage \& Bảng điều phối Kanban chịu tải cao (30--50+ xe/ngày)}: Thống kê trực tiếp số phiếu đang mở, doanh thu thực thu, cảnh báo phụ tùng chạm mức tồn tối thiểu (\texttt{stock <= min\_stock}) và bảng kéo-thả 6 trạng thái hỗ trợ cuộn độc lập từng cột, lọc theo Kỹ thuật viên, chế độ thẻ thu gọn (\textit{Compact Mode}) và thu gọn cột kết thúc.
+  \item \textbf{Màn hình Tiếp nhận xe tích hợp AI01 \& Chi tiết Phiếu sửa chữa tích hợp AI03}: Cho phép chạy AI01 tóm tắt lịch sử xe ngay trước khi lập phiếu tiếp nhận, cập nhật ghi chú kỹ thuật xuyên suốt quá trình kiểm tra, chạy AI03 gợi ý giải trình báo giá ngay trong phiếu, nghiệm thu bàn giao, lập hóa đơn, cấp bảo hành và in ấn biểu mẫu (\texttt{@media print}).
   \item \textbf{Màn hình Trợ lý AI \& Hàng đợi Duyệt kết quả (\texttt{/ai} và \texttt{/ai-review})}: Tách biệt rõ khu vực chạy thử nghiệm 3 chức năng AI01--AI03 và hàng đợi duyệt dành riêng cho Quản lý (\texttt{MANAGER}).
 \end{enumerate}
 

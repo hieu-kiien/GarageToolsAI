@@ -132,10 +132,16 @@ def _cat_ngoi_dung(text):
     return text[:get_settings().AI_MAX_CONTEXT] + '\n[dữ liệu bị cắt bớt do vượt giới hạn độ dài]'
 
 
-def _lay_input(text):
+def _lay_input(text, *, du_phong: bool = False):
     s = get_settings()
-    return {'provider': s.AI_PROVIDER, 'model': s.AI_MODEL or s.OPENAI_MODEL,
-            'do_dai_input': len(text or '')}
+    fallback = bool(du_phong and s.AI_PROVIDER != 'mock')
+    return {
+        'provider': s.AI_PROVIDER,
+        'provider_thuc_te': 'mock' if du_phong else s.AI_PROVIDER,
+        'fallback_used': fallback,
+        'model': s.AI_MODEL or s.OPENAI_MODEL,
+        'do_dai_input': len(text or ''),
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -166,26 +172,31 @@ def tom_tat_lich_su(vehicle_id):
             ' LEFT JOIN parts pt ON pt.id = i.part_id'
             ' WHERE i.repair_order_id = ?', (p['id'],))
         chitiet = '; '.join('%s x%d' % (i['ten'], i['qty']) for i in items) or 'chưa có hạng mục'
-        dong.append('  - %s: %s (%s). Hạng mục: %s'
-                    % (p['created_at'], p['id'], p['status'], chitiet))
+        ghi_chu_kt = str(p.get('technical_notes') or '').strip()
+        phan_ghi_chu = ('. Ghi chú kỹ thuật: %s' % ghi_chu_kt) if ghi_chu_kt else ''
+        dong.append('  - %s: %s (%s). Hạng mục: %s%s'
+                    % (p['created_at'], p['id'], p['status'], chitiet, phan_ghi_chu))
 
+    # Không gửi họ tên chủ xe (dữ liệu cá nhân nhạy cảm) sang nhà cung cấp AI ngoài.
     if phieu:
-        lich_su = ('Xe: %s %s %s\nKhách hàng: %s\nSố lần sửa chữa: %d\nCác lần sửa chữa:\n%s'
-                   % (xe['plate'], xe['brand'], xe['model'], xe['customer_name'],
+        lich_su = ('Xe: %s %s %s\nSố lần sửa chữa: %d\nCác lần sửa chữa:\n%s'
+                   % (xe['plate'], xe['brand'], xe['model'],
                       len(phieu), '\n'.join(dong)))
     else:
-        lich_su = ('Xe: %s %s %s\nKhách hàng: %s\nSố lần sửa chữa: 0\nCác lần sửa chữa: (không có)'
-                   % (xe['plate'], xe['brand'], xe['model'], xe['customer_name']))
+        lich_su = ('Xe: %s %s %s\nSố lần sửa chữa: 0\nCác lần sửa chữa: (không có)'
+                   % (xe['plate'], xe['brand'], xe['model']))
 
     user = get_settings().render_prompt(get_settings().load_prompt('history.txt'),
                                   repair_history=lich_su)
     out = goi(get_settings().load_prompt('system.txt'), user)
+    du_phong = out is None
 
-    if out is None:                       # chế độ mock
+    if du_phong:                          # chế độ mock / dự phòng
         out = _mock_history(xe, phieu, dong)
 
     return AiResult(kind='history', repair_order_id=None,
-                    input_json=json.dumps(_lay_input(user), ensure_ascii=False),
+                    input_json=json.dumps(_lay_input(user, du_phong=du_phong),
+                                          ensure_ascii=False),
                     output_text=out, is_valid=bool(out))
 
 
@@ -220,8 +231,9 @@ def giai_thich_dich_vu(service_id):
         service='Tên dịch vụ: %s\nĐơn giá niêm yết: %s đồng\nMô tả trong danh mục: %s'
                 % (dv['name'], gia_niemyet, dv['description'] or '(danh mục chưa có mô tả)'))
     out = goi(get_settings().load_prompt('system.txt'), user)
+    du_phong = out is None
 
-    if out is None:                       # chế độ mock
+    if du_phong:                          # chế độ mock / dự phòng
         if not dv['description']:
             out = ('1. Dịch vụ là gì: Danh mục chưa có mô tả cho dịch vụ này\n'
                    '2. Hạng mục đang ghi nhận: %s\n'
@@ -233,7 +245,8 @@ def giai_thich_dich_vu(service_id):
                    % (dv['description'], dv['name'], gia_niemyet))
 
     return AiResult(kind='explain', repair_order_id=None,
-                    input_json=json.dumps(_lay_input(user), ensure_ascii=False),
+                    input_json=json.dumps(_lay_input(user, du_phong=du_phong),
+                                          ensure_ascii=False),
                     output_text=out, is_valid=bool(out))
 
 
@@ -295,8 +308,9 @@ def bao_gia_nhap(order_id):
     user = get_settings().render_prompt(get_settings().load_prompt('quote.txt'),
                                   items=danh_sach, backend_total=backend_total)
     raw = goi(get_settings().load_prompt('system.txt'), user)
+    du_phong = raw is None
 
-    if raw is None:                       # chế độ mock
+    if du_phong:                          # chế độ mock / dự phòng
         parsed = None
     else:
         parsed = _phan_tich_json(raw)
@@ -311,16 +325,17 @@ def bao_gia_nhap(order_id):
                % (order_id, body_lines,
                   format(backend_total, ',').replace(',', '.')))
         return AiResult(kind='quote', repair_order_id=order_id,
-                        input_json=json.dumps({'items': len(items),
+                        input_json=json.dumps({**_lay_input(user, du_phong=du_phong),
+                                               'items': len(items),
                                                'backend_total': backend_total,
                                                'doc_ai_doc_duoc': False}, ensure_ascii=False),
                         output_text=out, is_valid=True)
 
     # Lọc lại: chỉ giữ hạng mục khớp với phiếu, tên, số lượng và đơn giá.
-    # Dữ liệu trả về từ mô hình là dữ liệu KHÔNG TIN CẬY: có thể là danh sách
-    # thay vì đối tượng, có thể thiếu khoá, có thể chứa chuỗi thay vì số. Mọi
-    # phép chuyển kiểu phải bọc try, nếu không sẽ thành lỗi 500 cho người dùng.
+    # Mỗi dòng CSDL (theo i['id']) chỉ được khớp tối đa một lần để ngăn mô hình
+    # lặp lại cùng một dòng hàng làm sai lệch bảng hiển thị so với backend_total.
     hop_le = []
+    da_khop: set[int] = set()
     doc_ai = parsed.get('items')
     for p in (doc_ai if isinstance(doc_ai, list) else []):
         if not isinstance(p, dict):
@@ -331,7 +346,9 @@ def bao_gia_nhap(order_id):
         if so_luong is None or don_gia is None:
             continue
         for i in items:
-            if ten == i['ten'] and so_luong == i['qty'] and don_gia == i['unit_price']:
+            if (i['id'] not in da_khop and ten == i['ten']
+                    and so_luong == i['qty'] and don_gia == i['unit_price']):
+                da_khop.add(i['id'])
                 hop_le.append({'name': i['ten'], 'qty': i['qty'],
                                'unit_price': i['unit_price'], 'subtotal': i['subtotal']})
                 break
@@ -345,13 +362,16 @@ def bao_gia_nhap(order_id):
                 if tong_ai is not None and tong_ai != backend_total else '')
 
     ghi_chu = parsed.get('notes')
-    ghi_chu = str(ghi_chu) if isinstance(ghi_chu, str) else ''
+    ghi_chu = str(ghi_chu).strip()[:300] if isinstance(ghi_chu, str) else ''
+    if ghi_chu:
+        ghi_chu = 'Ghi chú tham khảo (do AI sinh, cần nhân viên kiểm tra): %s' % ghi_chu
     out = ('Bảng báo giá nháp cho phiếu sửa chữa số %d\n%s\nTổng dự kiến: %s đồng\n%s\n%s\n'
            'Báo giá nháp, cần nhân viên kiểm tra trước khi sử dụng.'
            % (order_id, thanh, format(backend_total, ',').replace(',', '.'),
               canh_bao, ghi_chu))
     return AiResult(kind='quote', repair_order_id=order_id,
-                    input_json=json.dumps({'items': len(items), 'backend_total': backend_total,
+                    input_json=json.dumps({**_lay_input(user, du_phong=False),
+                                           'items': len(items), 'backend_total': backend_total,
                                            'doc_ai_doc_duoc': True}, ensure_ascii=False),
                     output_text=out, is_valid=True)
 

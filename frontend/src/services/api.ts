@@ -147,8 +147,13 @@ export const api = {
   dashboard: () => goi<Dashboard>("GET", "/dashboard"),
 
   // --- phiếu sửa chữa ---
-  orders: (p: ThamSoDanhSach & { trang_thai?: string | undefined } = {}) =>
-    goi<PhanTrang<PhieuDong>>("GET", "/orders", p),
+  orders: (
+    p: ThamSoDanhSach & {
+      trang_thai?: string | undefined;
+      ktv?: string | undefined;
+      ngay?: string | undefined;
+    } = {},
+  ) => goi<PhanTrang<PhieuDong>>("GET", "/orders", p),
   order: (id: number) => goi<ChiTietPhieu>("GET", `/orders/${id}`),
   taoPhieu: (body: {
     vehicle_id: number;
@@ -159,6 +164,10 @@ export const api = {
     goi<{ thong_bao: string; phieu: unknown }>("POST", `/orders/${id}/status`, { status }),
   phanCong: (id: number, technician_id: number | null) =>
     goi<{ thong_bao: string }>("POST", `/orders/${id}/assign`, { technician_id }),
+  capNhatGhiChuPhieu: (id: number, technical_notes: string | null) =>
+    goi<{ thong_bao: string; phieu: unknown }>("POST", `/orders/${id}/notes`, {
+      technical_notes,
+    }),
   themHangMuc: (id: number, body: { loai: "dich_vu" | "phu_tung"; ma: number; qty: number }) =>
     goi<{ thong_bao: string }>("POST", `/orders/${id}/items`, body),
   goHangMuc: (id: number, iid: number) =>

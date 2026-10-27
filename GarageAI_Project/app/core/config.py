@@ -143,7 +143,7 @@ class Settings:
         self.PAGE_SIZE_DEFAULT: int = self._int(
             val('PAGE_SIZE_DEFAULT'), 25, minimum=5, maximum=200)
         self.PAGE_SIZE_MAX: int = self._int(
-            val('PAGE_SIZE_MAX'), 100, minimum=5, maximum=500)
+            val('PAGE_SIZE_MAX'), 500, minimum=5, maximum=1000)
         self.PAGE_SIZE_DEFAULT = min(self.PAGE_SIZE_DEFAULT, self.PAGE_SIZE_MAX)
 
         # --- cơ sở dữ liệu ---

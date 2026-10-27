@@ -359,7 +359,7 @@ function TabLichSu() {
                       <StatusPill s={o.status} />
                     </td>
                     <td className="px-4 py-2.5 text-muted-foreground">
-                      {o.technician_id ? `KTV #${o.technician_id}` : "—"}
+                      {o.ky_thuat_vien ?? (o.technician_id ? `KTV #${o.technician_id}` : "—")}
                     </td>
                     <td className="px-4 py-2.5">
                       <Link

@@ -37,7 +37,7 @@ TRANG = [
     ("03_phieu_sua_chua", "/repair-orders", "quan_ly", "Danh sách phiếu sửa chữa"),
     ("04_chi_tiet_phieu", "/repair-orders/1", "quan_ly", "Chi tiết phiếu sửa chữa, nghiệm thu & sổ cái"),
     ("05_khach_hang", "/customers", "le_tan", "Quản lý khách hàng & hồ sơ phương tiện"),
-    ("06_phuong_tien", "/workflow", "quan_ly", "Bảng điều phối xưởng Kanban 4 trạng thái"),
+    ("06_phuong_tien", "/workflow", "quan_ly", "Bảng điều phối xưởng Kanban 6 trạng thái"),
     ("07_lich_hen", "/appointments", "le_tan", "Quản lý lịch hẹn dịch vụ"),
     ("08_danh_muc", "/catalog", "quan_ly", "Danh mục dịch vụ & đơn giá chuẩn"),
     ("09_tai_khoan", "/users", "quan_ly", "Quản lý tài khoản nhân viên & RBAC"),

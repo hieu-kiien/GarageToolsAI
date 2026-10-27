@@ -5,9 +5,9 @@ from __future__ import annotations
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
-from ...models import (DoiTrangThaiInput, NghiemThuInput, NhatKyInput,
-                      PhanCongInput, TaoPhieuInput, ThemHangMucInput,
-                      TiepNhanInput)
+from ...models import (CapNhatGhiChuInput, DoiTrangThaiInput, NghiemThuInput,
+                      NhatKyInput, PhanCongInput, TaoPhieuInput,
+                      ThemHangMucInput, TiepNhanInput)
 from ...services import billing, orders
 from ...services.security_matrix import TEN_TRANG_THAI
 from .deps import doc_json, quyen, thanh_cong, trang, trang_kq
@@ -17,13 +17,16 @@ router = APIRouter(prefix='/orders', tags=['api-phieu-sua-chua'])
 
 @router.get('')
 def danh_sach(request: Request):
-    quyen(request, 'order.view')
+    user = quyen(request, 'order.view')
     qs = request.query_params
     tr = trang(request)
     dong, tong = orders.danh_sach_phieu(
         tr,
         q=qs.get('q', '').strip(),
-        trang_thai=qs.get('trang_thai', qs.get('status', '')).strip())
+        trang_thai=qs.get('trang_thai', qs.get('status', '')).strip(),
+        user=user,
+        ktv=qs.get('ktv', '').strip(),
+        ngay=qs.get('ngay', '').strip())
     return JSONResponse(trang_kq(dong, tong, tr))
 
 
@@ -37,9 +40,9 @@ async def tao(request: Request):
 
 @router.get('/{oid:int}')
 def chi_tiet(request: Request, oid: int):
-    quyen(request, 'order.view')
+    user = quyen(request, 'order.view')
     return JSONResponse({
-        'phieu': orders.chi_tiet(oid),
+        'phieu': orders.chi_tiet(oid, user=user),
         'hang_muc': orders.hang_muc(oid),
         'nhat_ky': orders.nhat_ky(oid),
         'hoa_don': orders.hoa_don_cua_phieu(oid),
@@ -66,6 +69,16 @@ async def phan_cong(request: Request, oid: int):
     du_lieu = await doc_json(request, PhanCongInput)
     orders.gan_ky_thuat_vien(oid, du_lieu, user)
     return JSONResponse(thanh_cong('Đã cập nhật phân công.', phieu=orders.chi_tiet(oid)))
+
+
+@router.post('/{oid:int}/notes')
+async def cap_nhat_ghi_chu(request: Request, oid: int):
+    user = quyen(request, 'order.progress')
+    du_lieu = await doc_json(request, CapNhatGhiChuInput)
+    orders.cap_nhat_ghi_chu(oid, du_lieu, user)
+    return JSONResponse(thanh_cong('Đã cập nhật ghi chú kỹ thuật.',
+                                   phieu=orders.chi_tiet(oid),
+                                   nhat_ky=orders.nhat_ky(oid)))
 
 
 @router.post('/{oid:int}/items')

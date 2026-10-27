@@ -56,6 +56,9 @@ def chay_ai(request, user, kind: str, *args) -> int:
     elif kind == 'explain':
         r = _chay(_giai_thich, *args)
     elif kind == 'quote':
+        if user is not None:
+            from .orders import _kiem_tra_quyen_thao_tac
+            _kiem_tra_quyen_thao_tac(user, args[0])
         r = _chay(_bao_gia_nhap, *args)
     else:
         raise SaiQuyTac('Chức năng AI không hợp lệ.')
@@ -97,8 +100,8 @@ def ket_qua_gan_nhat(limit: int = 5) -> list[dict]:
     `repair_orders` rồi mới tới `vehicles`.
     """
     return fetch_all(
-        'SELECT a.id, a.kind, a.output_text, a.review_status, a.is_valid,'
-        ' a.created_at, v.plate'
+        'SELECT a.id, a.kind, a.repair_order_id, a.output_text, a.review_status,'
+        ' a.is_valid, a.created_at, v.plate'
         ' FROM ai_results a'
         ' LEFT JOIN repair_orders r ON r.id = a.repair_order_id'
         ' LEFT JOIN vehicles v ON v.id = r.vehicle_id'

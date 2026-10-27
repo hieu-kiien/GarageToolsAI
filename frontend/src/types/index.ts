@@ -91,7 +91,11 @@ export interface PhieuDong {
   status: RepairStatus;
   created_at: string;
   technical_notes: string | null;
+  technician_id?: number | null;
   ky_thuat_vien: string | null;
+  khach?: string | null;
+  khach_phone?: string | null;
+  tong?: number;
 }
 
 /** `phieu` trong `GET /api/orders/{id}` — `r.*` cộng các cột JOIN. */
@@ -255,6 +259,7 @@ export interface KetQuaAI {
 export interface KetQuaGanNhat {
   id: number;
   kind: AiKind;
+  repair_order_id?: number | null;
   output_text: string;
   review_status: ReviewStatus;
   is_valid: number;
@@ -413,6 +418,7 @@ export interface LichSuDong {
   khach: string;
   phone: string | null;
   technician_id: number | null;
+  ky_thuat_vien?: string | null;
 }
 
 /** `GET /api/reports/{kind}` — `dong` tuỳ loại báo cáo, backend tự tính. */
@@ -429,7 +435,7 @@ export interface Lookups {
   dich_vu: { id: number; name: string; price: number }[];
   phu_tung: { id: number; name: string; price: number; stock: number }[];
   ky_thuat_vien: { id: number; full_name: string }[];
-  phieu: { id: number; plate: string }[];
+  phieu: { id: number; plate: string; status?: RepairStatus }[];
   vai_tro: Record<Role, string>;
   trang_thai: Record<string, string>;
   chuyen_trang_thai: Record<RepairStatus, RepairStatus[]>;

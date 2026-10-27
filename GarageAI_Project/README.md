@@ -11,7 +11,7 @@ Nhân tạo (AIA331)*, Mã số 80277, Nhóm 23.
 > sổ cái tồn kho (`stock_transactions`), bảo hành, hóa đơn và thanh toán chống
 > đua (`BEGIN IMMEDIATE`), báo cáo thống kê, và ba chức năng AI kèm **Human Review**
 > (hỗ trợ `mock`, `groq`, `openrouter`, `gemini`, `openai`, `9router`, `custom`).
-> Bộ kiểm thử tự động đạt **226/226 ca** (`tests/run_all.py`), kèm kiểm thử
+> Bộ kiểm thử tự động đạt **231/231 ca** (`tests/run_all.py`), kèm kiểm thử
 > Smoke (**31/31**) và E2E nghiệp vụ (**32/32**).
 
 ---
@@ -69,8 +69,8 @@ Chạy toàn bộ bộ kiểm thử tự động Backend:
 python -X utf8 tests/run_all.py
 ```
 
-Kết quả mong đợi: **226/226 đạt** (37 ca ràng buộc CSDL + 6 ca sao lưu/khôi phục +
-133 ca ứng dụng web + 50 ca API JSON `/api/*`), tự sinh lại `TEST_REPORT.md`.
+Kết quả mong đợi: **231/231 đạt** (37 ca ràng buộc CSDL + 6 ca sao lưu/khôi phục +
+136 ca ứng dụng web + 52 ca API JSON `/api/*`), tự sinh lại `TEST_REPORT.md`.
 
 Kiểm tra chất lượng Frontend (`frontend/`):
 

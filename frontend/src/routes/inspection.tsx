@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Plus, UserPlus, Car } from "lucide-react";
+import { Plus, UserPlus, Car, Sparkles, Search } from "lucide-react";
 import { api, q, ApiError } from "@/services/api";
 import { useLookups } from "@/services/lookups";
 import { useNhan, useRole } from "@/lib/rbac";
@@ -46,6 +46,7 @@ function Inspection() {
 
   // Bước 1 — tạo phiếu mới.
   const [xeId, setXeId] = useState("");
+  const [timXe, setTimXe] = useState("");
   const [ktvId, setKtvId] = useState("none");
   const [ghiChuPhieu, setGhiChuPhieu] = useState("");
 
@@ -70,9 +71,48 @@ function Inspection() {
   const [dongXe, setDongXe] = useState("");
   const [namXe, setNamXe] = useState("");
 
-  const phieuMoi = useQuery(q.orders({ moi_trang: 10, trang_thai: "RECEIVED" }));
+  useEffect(() => {
+    try {
+      const sp = new URLSearchParams(window.location.search);
+      const pid = sp.get("phieu_id");
+      const xid = sp.get("xe_id");
+      const gc = sp.get("ghi_chu");
+      if (pid) setPhieuId(pid);
+      if (xid) setXeId(xid);
+      if (gc) setGhiChuPhieu(gc);
+
+      const raw = sessionStorage.getItem("garagetools_intake_prefill");
+      if (raw) {
+        sessionStorage.removeItem("garagetools_intake_prefill");
+        const parsed = JSON.parse(raw) as {
+          phieuId?: string;
+          xeId?: string;
+          ghiChuPhieu?: string;
+        };
+        if (parsed.phieuId) setPhieuId(parsed.phieuId);
+        if (parsed.xeId) setXeId(parsed.xeId);
+        if (parsed.ghiChuPhieu) setGhiChuPhieu(parsed.ghiChuPhieu);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  const phieuMoi = useQuery(q.orders({ moi_trang: 50 }));
   const dsKhach = useQuery({ ...q.customers({ moi_trang: 500 }), enabled: moThemXe });
+  const aiGanDay = useQuery({ ...q.aiRecent(), enabled: can("ai.run") });
   const loi = (e: unknown) => toast.error(e instanceof ApiError ? e.message : "Thao tác thất bại.");
+
+  const chayAiLichSu = useMutation({
+    mutationFn: (vid: number) => api.aiRun({ kind: "history", vehicle_id: vid }),
+    onSuccess: async (kq) => {
+      toast.success(kq.thong_bao);
+      await qc.invalidateQueries({ queryKey: ["ai-recent"] });
+      await qc.invalidateQueries({ queryKey: ["ai-results"] });
+      await qc.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+    onError: loi,
+  });
 
   const taoPhieu = useMutation({
     mutationFn: () =>
@@ -159,8 +199,23 @@ function Inspection() {
 
   if (!area("inspection")) return <NoAccess />;
 
-  const danhSachPhieu = phieuMoi.data?.dong ?? [];
+  const danhSachPhieu = (phieuMoi.data?.dong ?? []).filter(
+    (p) => p.status === "RECEIVED" || p.status === "INSPECTING",
+  );
   const coTaoPhieu = can("order.create");
+  const xeDangChon = L.xe.find((x) => String(x.id) === xeId);
+  const dsXeLoc = L.xe.filter((x) => {
+    const qNorm = timXe.trim().toLowerCase();
+    if (!qNorm) return true;
+    return (
+      String(x.id) === xeId ||
+      x.plate.toLowerCase().includes(qNorm) ||
+      `${x.brand} ${x.model}`.toLowerCase().includes(qNorm)
+    );
+  });
+  const kqAi01Xe = xeDangChon
+    ? (aiGanDay.data?.dong ?? []).find((a) => a.kind === "history" && a.plate === xeDangChon.plate)
+    : undefined;
 
   return (
     <>
@@ -202,18 +257,78 @@ function Inspection() {
                   </button>
                 )}
               </div>
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={timXe}
+                  onChange={(e) => setTimXe(e.target.value)}
+                  placeholder="Gõ biển số hoặc dòng xe để lọc nhanh…"
+                  className="h-8 pl-8 text-xs"
+                  disabled={!coTaoPhieu}
+                />
+              </div>
               <Select value={xeId} onValueChange={setXeId} disabled={!coTaoPhieu}>
                 <SelectTrigger>
                   <SelectValue placeholder="Chọn biển số…" />
                 </SelectTrigger>
                 <SelectContent>
-                  {L.xe.map((x) => (
+                  {dsXeLoc.map((x) => (
                     <SelectItem key={x.id} value={String(x.id)}>
                       {x.plate} — {x.brand} {x.model}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              {xeDangChon && can("ai.run") && (
+                <div className="mt-2 rounded-md border border-ai/30 bg-ai-soft/60 p-3 text-xs">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="flex items-center gap-1.5 font-semibold text-foreground">
+                      <Sparkles className="size-3.5 text-ai" />
+                      AI01 · Tóm tắt lịch sử sửa chữa xe {xeDangChon.plate} trước khi tiếp nhận
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs"
+                      disabled={chayAiLichSu.isPending}
+                      onClick={() => chayAiLichSu.mutate(xeDangChon.id)}
+                    >
+                      <Sparkles className="size-3" />
+                      {chayAiLichSu.isPending
+                        ? "Đang phân tích…"
+                        : kqAi01Xe
+                          ? "Tóm tắt lại (AI01)"
+                          : "Tóm tắt lịch sử xe (AI01)"}
+                    </Button>
+                  </div>
+                  {kqAi01Xe ? (
+                    <div className="mt-2 space-y-1.5">
+                      <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                        <span>Kết quả #{kqAi01Xe.id}</span>
+                        <Pill
+                          t={
+                            kqAi01Xe.review_status === "APPROVED"
+                              ? "success"
+                              : kqAi01Xe.review_status === "REJECTED"
+                                ? "danger"
+                                : "warning"
+                          }
+                        >
+                          {N.trangThai(kqAi01Xe.review_status)}
+                        </Pill>
+                      </div>
+                      <pre className="max-h-36 overflow-y-auto whitespace-pre-wrap rounded border bg-card p-2.5 font-sans text-xs leading-relaxed text-foreground">
+                        {kqAi01Xe.output_text}
+                      </pre>
+                    </div>
+                  ) : (
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      Bấm nút để AI tổng hợp lịch sử các lần vào xưởng trước đây của xe{" "}
+                      <b>{xeDangChon.plate}</b> ngay tại quầy tiếp nhận.
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground">
@@ -274,7 +389,7 @@ function Inspection() {
                     )}
                     {danhSachPhieu.map((p) => (
                       <SelectItem key={p.id} value={String(p.id)}>
-                        #{p.id} — {p.plate}
+                        #{p.id} — {p.plate} ({N.trangThai(p.status)})
                       </SelectItem>
                     ))}
                   </SelectContent>

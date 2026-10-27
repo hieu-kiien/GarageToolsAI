@@ -1,6 +1,6 @@
 # GarageTools AI — Giao diện Web (Frontend)
 
-Giao diện người dùng chính thức của hệ thống **GarageTools AI** (Nhóm 23 — Học phần *Ứng dụng Trí tuệ Nhân tạo AIA331*), xây dựng bằng **React 19**, **TanStack Start / Router / Query**, **Tailwind CSS v4** và **shadcn/ui (Radix UI)**.
+Giao diện người dùng chính thức của hệ thống **GarageTools AI** (Nhóm 23 — Học phần _Ứng dụng Trí tuệ Nhân tạo AIA331_), xây dựng bằng **React 19**, **TanStack Start / Router / Query**, **Tailwind CSS v4** và **shadcn/ui (Radix UI)**.
 
 Toàn bộ dữ liệu được kết nối trực tiếp với Backend FastAPI qua tầng JSON API `/api/*` (không sử dụng dữ liệu giả lập).
 
@@ -18,24 +18,24 @@ Toàn bộ dữ liệu được kết nối trực tiếp với Backend FastAPI 
 
 ## 2. Danh sách 16 màn hình nghiệp vụ (`src/routes/`)
 
-| Đường dẫn | Màn hình | Quyền truy cập (`AREA_QUYEN`) |
-|---|---|---|
-| `/` | Tổng quan xưởng (KPI, doanh thu, cảnh báo kho, kết quả AI gần đây) | `dashboard.view` |
-| `/workflow` | Bảng điều phối Kanban theo trạng thái phiếu sửa chữa | `order.view` |
-| `/repair-orders` | Danh sách phiếu sửa chữa (tìm kiếm, lọc trạng thái, phân trang) | `order.view` |
-| `/repair-orders/$id` | Chi tiết phiếu sửa chữa (biên bản tiếp nhận, hạng mục, báo giá, nghiệm thu, hoá đơn, nhật ký) | `order.view` |
-| `/inspection` | Tiếp nhận xe (tạo liên hoàn khách mới → xe mới → phiếu → biên bản tiếp nhận) | `order.create` |
-| `/appointments` | Quản lý lịch hẹn (tạo/sửa/xoá, lọc trạng thái) | `appointment.view` |
-| `/customers` | Quản lý Khách hàng & Phương tiện (2 tab CRUD đầy đủ, biển số/VIN/km/màu) | `customer.view` ∨ `vehicle.view` |
-| `/quotations` | Danh sách báo giá chính thức | `quote.manage` |
-| `/quotations/$id` | Chi tiết báo giá (thêm/gỡ dòng, gửi khách, duyệt/từ chối, áp dụng vào phiếu trừ kho) | `quote.manage` |
-| `/ai-review` | Trợ lý AI (AI01 Lịch sử, AI02 Giải thích DV, AI03 Báo giá nháp) & Duyệt kết quả (Human Review) | `ai.history` ∨ `ai.explain` ∨ `ai.quote` ∨ `ai.review` |
-| `/inventory` | Kho phụ tùng (sổ cái nhập/xuất/điều chỉnh, cảnh báo chạm ngưỡng tối thiểu) | `stock.manage` ∨ `order.view` |
-| `/catalog` | Danh mục Dịch vụ & Phụ tùng (CRUD dành cho Quản lý) | `catalog.view` |
-| `/warranties` | Quản lý bảo hành theo hạng mục phiếu đã hoàn thành | `warranty.manage` |
-| `/finance` | Hoá đơn & Thanh toán (thu một phần/thu đủ, huỷ khoản thu nhầm) | `report.view` ∨ `payment.record` |
-| `/reports` | Báo cáo thống kê (doanh thu, dịch vụ, phụ tùng, khách hàng, trạng thái) & Tra cứu lịch sử | `report.view` ∨ `history.view` |
-| `/users` | Quản lý tài khoản nhân viên, phân quyền vai trò, khoá/mở khoá & đổi mật khẩu | `user.manage` |
+| Đường dẫn            | Màn hình                                                                                       | Quyền truy cập (`AREA_QUYEN`)                          |
+| -------------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| `/`                  | Tổng quan xưởng (KPI, doanh thu, cảnh báo kho, kết quả AI gần đây)                             | `dashboard.view`                                       |
+| `/workflow`          | Bảng điều phối Kanban theo trạng thái phiếu sửa chữa                                           | `order.view`                                           |
+| `/repair-orders`     | Danh sách phiếu sửa chữa (tìm kiếm, lọc trạng thái, phân trang)                                | `order.view`                                           |
+| `/repair-orders/$id` | Chi tiết phiếu sửa chữa (biên bản tiếp nhận, hạng mục, báo giá, nghiệm thu, hoá đơn, nhật ký)  | `order.view`                                           |
+| `/inspection`        | Tiếp nhận xe (tạo liên hoàn khách mới → xe mới → phiếu → biên bản tiếp nhận)                   | `order.create`                                         |
+| `/appointments`      | Quản lý lịch hẹn (tạo/sửa/xoá, lọc trạng thái)                                                 | `appointment.view`                                     |
+| `/customers`         | Quản lý Khách hàng & Phương tiện (2 tab CRUD đầy đủ, biển số/VIN/km/màu)                       | `customer.view` ∨ `vehicle.view`                       |
+| `/quotations`        | Danh sách báo giá chính thức                                                                   | `quote.manage`                                         |
+| `/quotations/$id`    | Chi tiết báo giá (thêm/gỡ dòng, gửi khách, duyệt/từ chối, áp dụng vào phiếu trừ kho)           | `quote.manage`                                         |
+| `/ai-review`         | Trợ lý AI (AI01 Lịch sử, AI02 Giải thích DV, AI03 Báo giá nháp) & Duyệt kết quả (Human Review) | `ai.history` ∨ `ai.explain` ∨ `ai.quote` ∨ `ai.review` |
+| `/inventory`         | Kho phụ tùng (sổ cái nhập/xuất/điều chỉnh, cảnh báo chạm ngưỡng tối thiểu)                     | `stock.manage` ∨ `order.view`                          |
+| `/catalog`           | Danh mục Dịch vụ & Phụ tùng (CRUD dành cho Quản lý)                                            | `catalog.view`                                         |
+| `/warranties`        | Quản lý bảo hành theo hạng mục phiếu đã hoàn thành                                             | `warranty.manage`                                      |
+| `/finance`           | Hoá đơn & Thanh toán (thu một phần/thu đủ, huỷ khoản thu nhầm)                                 | `report.view` ∨ `payment.record`                       |
+| `/reports`           | Báo cáo thống kê (doanh thu, dịch vụ, phụ tùng, khách hàng, trạng thái) & Tra cứu lịch sử      | `report.view` ∨ `history.view`                         |
+| `/users`             | Quản lý tài khoản nhân viên, phân quyền vai trò, khoá/mở khoá & đổi mật khẩu                   | `user.manage`                                          |
 
 ---
 

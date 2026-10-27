@@ -1,7 +1,10 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { q, ApiError } from "@/services/api";
+import { toast } from "sonner";
+import { Plus, FileText } from "lucide-react";
+import { api, q, ApiError } from "@/services/api";
+import { useLookups } from "@/services/lookups";
 import { useNhan, useRole, fmtNgay, vnd } from "@/lib/rbac";
 import {
   PageHeader,
@@ -14,6 +17,23 @@ import {
   type Tone,
 } from "@/components/app/ui-kit";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/quotations")({
@@ -42,12 +62,36 @@ const toneBaoGia: Record<string, Tone> = {
 };
 
 function List() {
-  const { area, meta } = useRole();
+  const { area, can, meta } = useRole();
   const N = useNhan();
+  const L = useLookups();
+  const qc = useQueryClient();
+  const navigate = useNavigate();
   const [loc, setLoc] = useState("all");
   const [tim, setTim] = useState("");
   const [tuKhoa, setTuKhoa] = useState("");
   const [trang, setTrang] = useState(1);
+
+  const [moTao, setMoTao] = useState(false);
+  const [phieuId, setPhieuId] = useState("");
+  const [hanBaoGia, setHanBaoGia] = useState("");
+  const [ghiChu, setGhiChu] = useState("");
+
+  const taoBG = useMutation({
+    mutationFn: () =>
+      api.taoBaoGia({
+        repair_order_id: Number(phieuId),
+        valid_until: hanBaoGia.trim() || null,
+        note: ghiChu.trim() || null,
+      }),
+    onSuccess: async (kq) => {
+      toast.success(kq.thong_bao);
+      setMoTao(false);
+      await qc.invalidateQueries({ queryKey: ["quotations"] });
+      navigate({ to: "/quotations/$id", params: { id: String(kq.id) } });
+    },
+    onError: (e) => toast.error(e instanceof ApiError ? e.message : "Tạo báo giá thất bại."),
+  });
 
   // Gõ xong 300ms mới gọi backend — tránh một request cho mỗi phím bấm.
   useEffect(() => {
@@ -87,6 +131,22 @@ function List() {
         eyebrow="Vận hành"
         title="Báo giá"
         desc={`${tong} báo giá khớp bộ lọc — tổng tiền do backend tính từ từng hạng mục.`}
+        actions={
+          can("quote.manage") && (
+            <Button
+              size="sm"
+              onClick={() => {
+                setPhieuId("");
+                setHanBaoGia("");
+                setGhiChu("");
+                setMoTao(true);
+              }}
+            >
+              <Plus className="size-4" />
+              Tạo báo giá nháp
+            </Button>
+          )
+        }
       />
       <div className="p-6 lg:p-8">
         <Panel bodyClass="p-0">
@@ -219,6 +279,64 @@ function List() {
           </div>
         </Panel>
       </div>
+
+      <Dialog open={moTao} onOpenChange={(o) => !o && setMoTao(false)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="size-4" />
+              Tạo báo giá nháp
+            </DialogTitle>
+            <DialogDescription>
+              Chọn phiếu sửa chữa đang xử lý để lập báo giá nháp và thêm các hạng mục dịch vụ, phụ
+              tùng.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 text-sm">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Phiếu sửa chữa *</label>
+              <Select value={phieuId} onValueChange={setPhieuId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Chọn phiếu sửa chữa…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {L.phieu
+                    .filter((p) => p.status !== "COMPLETED")
+                    .map((p) => (
+                      <SelectItem key={p.id} value={String(p.id)}>
+                        #{p.id} — {p.plate}
+                        {p.status ? ` (${N.trangThai(p.status)})` : ""}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">
+                Hiệu lực tới ngày (tuỳ chọn)
+              </label>
+              <Input type="date" value={hanBaoGia} onChange={(e) => setHanBaoGia(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Ghi chú</label>
+              <Textarea
+                value={ghiChu}
+                onChange={(e) => setGhiChu(e.target.value)}
+                placeholder="Ghi chú báo giá gửi khách…"
+                className="min-h-[60px]"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMoTao(false)}>
+              Huỷ
+            </Button>
+            <Button disabled={!Number(phieuId) || taoBG.isPending} onClick={() => taoBG.mutate()}>
+              Tạo & mở báo giá
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

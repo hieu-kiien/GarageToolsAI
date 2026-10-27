@@ -233,12 +233,21 @@ def lua_chon_ky_thuat_vien() -> list[dict]:
                      ' AND is_active = 1 ORDER BY full_name')
 
 
-def fetch_all_phieu(limit: int = 40) -> list[dict]:
+def fetch_all_phieu(limit: int = 200, user: dict | None = None) -> list[dict]:
     """Danh sách phiếu chưa huỷ, dùng để chọn phiếu khi tạo báo giá nháp."""
+    if user is not None and user.get('role') == 'TECHNICIAN':
+        return fetch_all(
+            'SELECT r.id, r.status, v.plate FROM repair_orders r'
+            ' JOIN vehicles v ON v.id = r.vehicle_id'
+            " WHERE r.status <> 'CANCELLED' AND r.technician_id = ?"
+            " ORDER BY CASE WHEN r.status = 'COMPLETED' THEN 1 ELSE 0 END, r.id DESC"
+            ' LIMIT ?', (user['id'], limit))
     return fetch_all(
-        'SELECT r.id, v.plate FROM repair_orders r'
+        'SELECT r.id, r.status, v.plate FROM repair_orders r'
         ' JOIN vehicles v ON v.id = r.vehicle_id'
-        " WHERE r.status <> 'CANCELLED' ORDER BY r.id DESC LIMIT ?", (limit,))
+        " WHERE r.status <> 'CANCELLED'"
+        " ORDER BY CASE WHEN r.status = 'COMPLETED' THEN 1 ELSE 0 END, r.id DESC"
+        ' LIMIT ?', (limit,))
 
 
 def dem_ban_ghi(bang: str, dieu_kien: str = '', tham_so: Sequence = ()) -> int:

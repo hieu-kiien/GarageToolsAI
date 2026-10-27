@@ -479,6 +479,12 @@ class NhatKyInput(BaseModel):
         return v
 
 
+class CapNhatGhiChuInput(BaseModel):
+    """Cập nhật ghi chú kỹ thuật của phiếu sửa chữa."""
+    model_config = CoBan
+    technical_notes: str | None = Field(default=None, max_length=1000)
+
+
 # ---------------------------------------------------------------------------
 # Hóa đơn và thanh toán
 # ---------------------------------------------------------------------------

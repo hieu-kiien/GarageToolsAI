@@ -1,8 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Sparkles, CheckCircle2, XCircle, Cpu, ListFilter } from "lucide-react";
+import { Sparkles, CheckCircle2, XCircle, Cpu, ListFilter, ExternalLink } from "lucide-react";
 import { api, q, ApiError } from "@/services/api";
 import { useLookups } from "@/services/lookups";
 import { useNhan, useRole, fmtTime } from "@/lib/rbac";
@@ -212,6 +212,7 @@ function Review() {
                     {L.phieu.map((p) => (
                       <SelectItem key={p.id} value={String(p.id)}>
                         #{p.id} — {p.plate}
+                        {p.status ? ` (${N.trangThai(p.status)})` : ""}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -311,12 +312,25 @@ function Review() {
                         <Cpu className="size-4 text-ai" /> Kết quả #{chon.id}
                         <StatusPill s={chon.review_status} />
                       </div>
-                      {"nguoi_duyet" in chon &&
-                        (chon as { nguoi_duyet: string | null }).nguoi_duyet && (
-                          <span className="text-[11px] text-muted-foreground">
-                            Duyệt bởi {(chon as { nguoi_duyet: string | null }).nguoi_duyet}
-                          </span>
+                      <div className="flex items-center gap-2">
+                        {chon.repair_order_id && (
+                          <Button variant="outline" size="sm" className="h-7 text-xs" asChild>
+                            <Link
+                              to="/repair-orders/$id"
+                              params={{ id: String(chon.repair_order_id) }}
+                            >
+                              <ExternalLink className="size-3" />
+                              Mở phiếu #{chon.repair_order_id}
+                            </Link>
+                          </Button>
                         )}
+                        {"nguoi_duyet" in chon &&
+                          (chon as { nguoi_duyet: string | null }).nguoi_duyet && (
+                            <span className="text-[11px] text-muted-foreground">
+                              Duyệt bởi {(chon as { nguoi_duyet: string | null }).nguoi_duyet}
+                            </span>
+                          )}
+                      </div>
                     </div>
                     <div className="max-h-[320px] overflow-y-auto rounded-md border bg-muted/40 p-3">
                       <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed">

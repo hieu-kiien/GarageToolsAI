@@ -28,7 +28,7 @@ Khi muốn chạy với mô hình ngôn ngữ thật miễn phí của Groq tron
 
 Thực thi các lệnh sau để khởi tạo cơ sở dữ liệu \texttt{garage.db}, chạy Backend FastAPI, chạy giao diện React 19 và kiểm chứng toàn bộ bộ kiểm thử tự động:
 
-\begin{lstlisting}[aboveskip=2pt,belowskip=2pt,caption={Các lệnh khởi tạo CSDL, chạy hệ thống, kiểm thử 226 ca và sao lưu}]
+\begin{lstlisting}[aboveskip=2pt,belowskip=2pt,caption={Các lệnh khởi tạo CSDL, chạy hệ thống, kiểm thử 231 ca và sao lưu}]
 # 1. Khoi tao CSDL (21 bang, 37 chi muc, 171 dong du lieu mau) va chay Backend
 cd GarageAI_Project
 pip install -r requirements.txt
@@ -40,7 +40,7 @@ cd ../frontend
 npm install
 npm run dev
 
-# 3. Chay toan bo 226 ca kiem thu tu dong Backend (tu dong dung AI_PROVIDER=mock)
+# 3. Chay toan bo 231 ca kiem thu tu dong Backend (tu dong dung AI_PROVIDER=mock)
 cd ../GarageAI_Project
 python -X utf8 tests/run_all.py
 
@@ -120,7 +120,7 @@ KT2\newline(12 tiêu chí) & Cấu trúc dự án chuẩn, Auth Argon2id + CSRF 
 \hline
 KT3\newline(12 tiêu chí) & Tích hợp AI01--AI03, Đa nhà cung cấp, Tách tệp Prompt, Thử nghiệm 3 vòng, Lọc chống bịa giá, Fallback \texttt{\_goi\_mock}, Human Review \& AI Review code. & Chương 4 (Mục 4.3--4.4), Chương 5 (Mục 5.4), Chương 6 \& Chương 7 (Bảng 7.1--7.4) \& Phụ lục B. & \texttt{app/ai\_gateway.py}, \texttt{app/services/ai.py}, \texttt{config/prompts/*.txt}, \texttt{KT3\_PROMPT\_EXPERIMENTS.md}, \texttt{KT3\_AI\_REVIEW.md}. \\
 \hline
-Cuối kỳ\newline(20 tiêu chí) & Quy trình khép kín End-to-End, Sao lưu \& Khôi phục CSDL, UI/UX đồng bộ, Độ trễ Groq $<4$s, Docker Compose, Báo cáo, Slide \& Kịch bản thuyết trình. & Toàn bộ 8 Chương và Phụ lục A, B, C (khớp 100\% giữa Báo cáo, Slide và Mã nguồn). & \texttt{scripts/backup.ps1}, \texttt{restore.ps1}, \texttt{Dockerfile}, \texttt{docker-compose.yml}, \textbf{226/226} ca kiểm thử Python + \textbf{31} Smoke + \textbf{32} E2E + \textbf{35} UAT đạt 100\%. \\
+Cuối kỳ\newline(20 tiêu chí) & Quy trình khép kín End-to-End, Sao lưu \& Khôi phục CSDL, UI/UX đồng bộ, Độ trễ Groq $<4$s, Docker Compose, Báo cáo, Slide \& Kịch bản thuyết trình. & Toàn bộ 8 Chương và Phụ lục A, B, C (khớp 100\% giữa Báo cáo, Slide và Mã nguồn). & \texttt{scripts/backup.ps1}, \texttt{restore.ps1}, \texttt{Dockerfile}, \texttt{docker-compose.yml}, \textbf{231/231} ca kiểm thử Python + \textbf{28/28} Frontend + \textbf{31} Smoke + \textbf{32} E2E + \textbf{35} UAT đạt 100\%. \\
 \hline
 \end{tabularx}
 \end{table}
