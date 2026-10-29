@@ -85,8 +85,8 @@ def create_app() -> FastAPI:
     _chay_migration()
     app = FastAPI(
         title=settings.APP_NAME,
-        docs_url=None, redoc_url=None, openapi_url=None,
-        max_content_length=settings.MAX_CONTENT_LENGTH)
+        docs_url=None, redoc_url=None, openapi_url=None)
+    app.state.max_content_length = settings.MAX_CONTENT_LENGTH
 
     app.mount('/static', StaticFiles(directory=str(settings.STATIC_DIR)),
               name='static')
