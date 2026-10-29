@@ -403,6 +403,13 @@ export const api = {
     ),
   aiReview: (id: number, quyet_dinh: "APPROVED" | "REJECTED") =>
     goi<{ thong_bao: string }>("POST", `/ai/results/${id}/review`, { quyet_dinh }),
+  aiToQuotation: (id: number) =>
+    goi<{
+      thong_bao: string;
+      quotation_id: number;
+      repair_order_id: number;
+      added_items: number;
+    }>("POST", `/ai/results/${id}/to-quotation`),
 };
 
 export const q = {

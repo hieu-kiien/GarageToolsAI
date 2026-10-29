@@ -100,7 +100,7 @@ function Inspection() {
 
   const phieuMoi = useQuery(q.orders({ moi_trang: 50 }));
   const dsKhach = useQuery({ ...q.customers({ moi_trang: 500 }), enabled: moThemXe });
-  const aiGanDay = useQuery({ ...q.aiRecent(), enabled: can("ai.run") });
+  const aiGanDay = useQuery({ ...q.aiRecent(), enabled: can("ai.history") });
   const loi = (e: unknown) => toast.error(e instanceof ApiError ? e.message : "Thao tác thất bại.");
 
   const chayAiLichSu = useMutation({
@@ -214,7 +214,10 @@ function Inspection() {
     );
   });
   const kqAi01Xe = xeDangChon
-    ? (aiGanDay.data?.dong ?? []).find((a) => a.kind === "history" && a.plate === xeDangChon.plate)
+    ? (aiGanDay.data?.dong ?? []).find(
+        (a) =>
+          a.kind === "history" && (a.vehicle_id === xeDangChon.id || a.plate === xeDangChon.plate),
+      )
     : undefined;
 
   return (
@@ -279,7 +282,7 @@ function Inspection() {
                   ))}
                 </SelectContent>
               </Select>
-              {xeDangChon && can("ai.run") && (
+              {xeDangChon && can("ai.history") && (
                 <div className="mt-2 rounded-md border border-ai/30 bg-ai-soft/60 p-3 text-xs">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="flex items-center gap-1.5 font-semibold text-foreground">
@@ -303,8 +306,16 @@ function Inspection() {
                   </div>
                   {kqAi01Xe ? (
                     <div className="mt-2 space-y-1.5">
-                      <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                        <span>Kết quả #{kqAi01Xe.id}</span>
+                      <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-muted-foreground">
+                        <span className="flex items-center gap-1.5">
+                          <span>Kết quả #{kqAi01Xe.id}</span>
+                          {kqAi01Xe.provider_thuc_te && (
+                            <Pill t="ai">
+                              {kqAi01Xe.provider_thuc_te}
+                              {kqAi01Xe.model ? ` · ${kqAi01Xe.model}` : ""}
+                            </Pill>
+                          )}
+                        </span>
                         <Pill
                           t={
                             kqAi01Xe.review_status === "APPROVED"
@@ -317,7 +328,7 @@ function Inspection() {
                           {N.trangThai(kqAi01Xe.review_status)}
                         </Pill>
                       </div>
-                      <pre className="max-h-36 overflow-y-auto whitespace-pre-wrap rounded border bg-card p-2.5 font-sans text-xs leading-relaxed text-foreground">
+                      <pre className="max-h-44 overflow-y-auto whitespace-pre-wrap rounded border bg-card p-2.5 font-sans text-xs leading-relaxed text-foreground">
                         {kqAi01Xe.output_text}
                       </pre>
                     </div>

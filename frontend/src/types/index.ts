@@ -240,6 +240,15 @@ export interface KhoPhanTrang extends PhanTrang<GiaoDichKho> {
 }
 
 // --- AI --------------------------------------------------------------------
+export interface GoiYHangMucAI {
+  loai: "dich_vu" | "phu_tung";
+  ma: number;
+  name: string;
+  qty: number;
+  unit_price: number;
+  subtotal: number;
+}
+
 /** Dòng `GET /api/ai/results` (hàng chờ duyệt). */
 export interface KetQuaAI {
   id: number;
@@ -253,6 +262,13 @@ export interface KetQuaAI {
   created_at: string;
   plate: string | null;
   nguoi_duyet: string | null;
+  vehicle_id?: number | null;
+  service_id?: number | null;
+  service_name?: string | null;
+  provider_thuc_te?: string | null;
+  model?: string | null;
+  fallback_used?: boolean;
+  suggested_items?: GoiYHangMucAI[];
 }
 
 /** Dòng `GET /api/ai/recent`. */
@@ -265,6 +281,13 @@ export interface KetQuaGanNhat {
   is_valid: number;
   created_at: string;
   plate: string | null;
+  vehicle_id?: number | null;
+  service_id?: number | null;
+  service_name?: string | null;
+  provider_thuc_te?: string | null;
+  model?: string | null;
+  fallback_used?: boolean;
+  suggested_items?: GoiYHangMucAI[];
 }
 
 // --- Khách hàng, xe, lịch hẹn ----------------------------------------------

@@ -2,10 +2,18 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Package, Pencil, Plus, Trash2, Wrench } from "lucide-react";
+import { Package, Pencil, Plus, Sparkles, Trash2, Wrench } from "lucide-react";
 import { api, q, ApiError } from "@/services/api";
 import { useRole, vnd } from "@/lib/rbac";
-import { DangTai, Empty, NoAccess, PageHeader, Panel, Pill } from "@/components/app/ui-kit";
+import {
+  DangTai,
+  Empty,
+  NoAccess,
+  PageHeader,
+  Panel,
+  Pill,
+  StatusPill,
+} from "@/components/app/ui-kit";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -111,6 +119,10 @@ function BangDichVu() {
   const [dienGiai, setDienGiai] = useState("");
   const [hoatDong, setHoatDong] = useState(true);
   const [xoaId, setXoaId] = useState<number | null>(null);
+  const [dvAi, setDvAi] = useState<DichVuDong | null>(null);
+
+  const coAiExplain = can("ai.explain");
+  const aiGan = useQuery({ ...q.aiRecent(), enabled: coAiExplain });
 
   // Gõ xong 300ms mới gọi backend — tránh một request cho mỗi phím bấm.
   useEffect(() => {
@@ -157,7 +169,23 @@ function BangDichVu() {
     },
   });
 
+  const chayAiExplain = useMutation({
+    mutationFn: (service_id: number) => api.aiRun({ kind: "explain", service_id }),
+    onSuccess: async (kq) => {
+      toast.success(kq.thong_bao);
+      await qc.invalidateQueries({ queryKey: ["ai-recent"] });
+      await qc.invalidateQueries({ queryKey: ["ai-results"] });
+    },
+    onError: loi,
+  });
+
   const coSua = can("catalog.edit");
+  const coThaoTac = coSua || coAiExplain;
+  const kqAiExplain = dvAi
+    ? (aiGan.data?.dong ?? []).find(
+        (a) => a.kind === "explain" && (a.service_id === dvAi.id || a.service_name === dvAi.name),
+      )
+    : undefined;
   const hopLe = ten.trim().length >= 2 && soHopLe(gia, true);
 
   const moTao = () => {
@@ -232,7 +260,7 @@ function BangDichVu() {
                   <th className="px-4 py-2 font-medium">Tên dịch vụ</th>
                   <th className="px-4 py-2 text-right font-medium">Đơn giá</th>
                   <th className="px-4 py-2 font-medium">Trạng thái</th>
-                  {coSua && <th className="px-4 py-2 text-right font-medium">Thao tác</th>}
+                  {coThaoTac && <th className="px-4 py-2 text-right font-medium">Thao tác</th>}
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -246,22 +274,37 @@ function BangDichVu() {
                         {d.is_active ? "Đang dùng" : "Ngừng dùng"}
                       </Pill>
                     </td>
-                    {coSua && (
+                    {coThaoTac && (
                       <td className="px-4 py-2.5 text-right">
                         <div className="flex justify-end gap-1">
-                          <Button size="sm" variant="ghost" onClick={() => moSua(d)}>
-                            <Pencil className="size-3.5" />
-                            Sửa
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="text-destructive hover:text-destructive"
-                            onClick={() => setXoaId(d.id)}
-                          >
-                            <Trash2 className="size-3.5" />
-                            Xoá
-                          </Button>
+                          {coAiExplain && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-ai hover:text-ai"
+                              onClick={() => setDvAi(d)}
+                            >
+                              <Sparkles className="size-3.5" />
+                              Giải thích AI
+                            </Button>
+                          )}
+                          {coSua && (
+                            <>
+                              <Button size="sm" variant="ghost" onClick={() => moSua(d)}>
+                                <Pencil className="size-3.5" />
+                                Sửa
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="text-destructive hover:text-destructive"
+                                onClick={() => setXoaId(d.id)}
+                              >
+                                <Trash2 className="size-3.5" />
+                                Xoá
+                              </Button>
+                            </>
+                          )}
                         </div>
                       </td>
                     )}
@@ -366,6 +409,72 @@ function BangDichVu() {
             <Button disabled={!hopLe || luu.isPending} onClick={() => luu.mutate()}>
               {dangSua ? "Lưu thay đổi" : "Thêm dịch vụ"}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={dvAi !== null}
+        onOpenChange={(o) => {
+          if (!o) setDvAi(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="size-4 text-ai" />
+              Giải thích dịch vụ cho khách (AI02)
+            </DialogTitle>
+            <DialogDescription>
+              {dvAi ? `${dvAi.name} · Đơn giá niêm yết: ${vnd(dvAi.price)}` : ""}
+            </DialogDescription>
+          </DialogHeader>
+
+          {dvAi && (
+            <div className="space-y-3 text-sm">
+              {kqAiExplain ? (
+                <div className="rounded-md border border-ai/30 bg-ai-soft/40 p-3">
+                  <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <span className="font-medium text-ai">Bản giải thích #{kqAiExplain.id}</span>
+                    <div className="flex items-center gap-1.5">
+                      {kqAiExplain.provider_thuc_te && (
+                        <Pill t={kqAiExplain.fallback_used ? "warning" : "ai"}>
+                          {kqAiExplain.provider_thuc_te}
+                        </Pill>
+                      )}
+                      <StatusPill s={kqAiExplain.review_status} />
+                    </div>
+                  </div>
+                  <pre className="whitespace-pre-wrap font-sans text-xs leading-relaxed">
+                    {kqAiExplain.output_text}
+                  </pre>
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Chưa có bản giải thích AI02 cho dịch vụ này. Nhấn nút bên dưới để AI biên dịch mô
+                  tả kỹ thuật sang ngôn ngữ tư vấn khách hàng dễ hiểu.
+                </p>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDvAi(null)}>
+              Đóng
+            </Button>
+            {dvAi && (
+              <Button
+                disabled={chayAiExplain.isPending}
+                onClick={() => chayAiExplain.mutate(dvAi.id)}
+              >
+                <Sparkles className="size-3.5" />
+                {chayAiExplain.isPending
+                  ? "Đang tạo…"
+                  : kqAiExplain
+                    ? "Tạo lại bản giải thích (AI02)"
+                    : "Chạy AI giải thích (AI02)"}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

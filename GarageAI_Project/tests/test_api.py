@@ -418,6 +418,52 @@ class TestAiVaPheDuyet(CoSoApi):
         self.assertEqual(r.status_code, 403)
         self.assertEqual(r.json()['loi'], 'khong_co_quyen')
 
+    def test_ai_meta_va_chuyen_ai03_thanh_bao_gia_nhap(self):
+        # 1. AI01 (history) trả về plate và vehicle_id trong /api/ai/recent
+        r1 = self.api('post', '/api/ai/run', {'kind': 'history', 'vehicle_id': 1})
+        self.assertEqual(r1.status_code, 201, r1.text)
+        rid1 = r1.json()['id']
+
+        # 2. AI02 (explain) trả về service_id và service_name
+        r2 = self.api('post', '/api/ai/run', {'kind': 'explain', 'service_id': 1})
+        self.assertEqual(r2.status_code, 201, r2.text)
+        rid2 = r2.json()['id']
+
+        recent = self.client.get('/api/ai/recent').json()['dong']
+        m1 = next(x for x in recent if x['id'] == rid1)
+        m2 = next(x for x in recent if x['id'] == rid2)
+        self.assertEqual(m1['vehicle_id'], 1)
+        self.assertTrue(m1['plate'])
+        self.assertEqual(m2['service_id'], 1)
+        self.assertTrue(m2['service_name'])
+
+        # 3. AI03 trên phiếu mới chưa có hạng mục nhưng có ghi chú kỹ thuật -> gợi ý từ danh mục & lập báo giá nháp
+        ro = self.api('post', '/api/orders', {
+            'vehicle_id': 1,
+            'technical_notes': 'Thay dầu máy, lọc dầu và kiểm tra má phanh trước',
+        })
+        self.assertEqual(ro.status_code, 201, ro.text)
+        oid = ro.json()['id']
+
+        r3 = self.api('post', '/api/ai/run', {'kind': 'quote', 'repair_order_id': oid})
+        self.assertEqual(r3.status_code, 201, r3.text)
+        rid3 = r3.json()['id']
+
+        recent2 = self.client.get('/api/ai/recent').json()['dong']
+        m3 = next(x for x in recent2 if x['id'] == rid3)
+        self.assertTrue(len(m3.get('suggested_items') or []) >= 1)
+
+        rq = self.api('post', '/api/ai/results/%d/to-quotation' % rid3, {})
+        self.assertEqual(rq.status_code, 201, rq.text)
+        qid = rq.json()['quotation_id']
+        self.assertGreaterEqual(rq.json()['added_items'], 1)
+
+        q_row = self.q1('SELECT status, total FROM quotations WHERE id = ?', (qid,))
+        self.assertEqual(q_row['status'], 'DRAFT')
+        self.assertGreater(q_row['total'], 0)
+        q_items = self.q1('SELECT COUNT(*) c FROM quotation_items WHERE quotation_id = ?', (qid,))
+        self.assertGreaterEqual(q_items['c'], 1)
+
 
 # ===========================================================================
 class TestPhanQuyen(CoSoApi):

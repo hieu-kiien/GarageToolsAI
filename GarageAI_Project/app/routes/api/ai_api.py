@@ -43,14 +43,14 @@ def danh_sach_ket_qua(request: Request):
 
 @router.get('/recent')
 def ket_qua_gan_nhat(request: Request):
-    """5 kết quả mới nhất — cần ít nhất một trong ba quyền AI."""
+    """Các kết quả mới nhất — cần ít nhất một trong các quyền AI."""
     user = nguoi_dung_hien_tai(request)
     if user is None:
         raise KhongXacThuc('Chưa đăng nhập.')
-    if not any(co_the_quyen(user, ca[0]) for ca in CA_CHAY.values()):
+    if not any(co_the_quyen(user, ca[0]) for ca in CA_CHAY.values()) and not co_the_quyen(user, 'ai.review'):
         raise KhongCoQuyen('Bạn không có quyền dùng AI.')
     from ...core.config import get_settings
-    return JSONResponse({'dong': ai_svc.ket_qua_gan_nhat(5),
+    return JSONResponse({'dong': ai_svc.ket_qua_gan_nhat(25),
                          'ten_kinh': TEN_KINH,
                          'provider': get_settings().AI_PROVIDER})
 
@@ -84,3 +84,14 @@ async def duyet(request: Request, rid: int):
     kq = ai_svc.duyet_ket_qua(rid, du_lieu.quyet_dinh, user)
     return JSONResponse(thanh_cong('Đã %s kết quả AI.' % (
         'duyệt' if du_lieu.quyet_dinh == 'APPROVED' else 'từ chối'), **kq))
+
+
+@router.post('/results/{rid:int}/to-quotation')
+def tao_bao_gia_tu_ai(request: Request, rid: int):
+    """Chuyển đề xuất báo giá nháp AI03 thành bản ghi Báo giá (`quotations` DRAFT)."""
+    user = quyen(request, 'quote.manage')
+    kq = ai_svc.tao_bao_gia_tu_ai(rid, user)
+    return JSONResponse(
+        thanh_cong('Đã khởi tạo báo giá nháp #%d từ kết quả AI.' % kq['quotation_id'], **kq),
+        status_code=201,
+    )

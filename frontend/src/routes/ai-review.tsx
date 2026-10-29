@@ -1,8 +1,16 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Sparkles, CheckCircle2, XCircle, Cpu, ListFilter, ExternalLink } from "lucide-react";
+import {
+  Sparkles,
+  CheckCircle2,
+  XCircle,
+  Cpu,
+  ListFilter,
+  ExternalLink,
+  FileText,
+} from "lucide-react";
 import { api, q, ApiError } from "@/services/api";
 import { useLookups } from "@/services/lookups";
 import { useNhan, useRole, fmtTime } from "@/lib/rbac";
@@ -49,6 +57,7 @@ function Review() {
   const N = useNhan();
   const L = useLookups();
   const qc = useQueryClient();
+  const nav = useNavigate();
 
   const coDuyet = can("ai.review");
 
@@ -114,6 +123,18 @@ function Review() {
       await qc.invalidateQueries({ queryKey: ["ai-results"] });
       await qc.invalidateQueries({ queryKey: ["ai-recent"] });
       await qc.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+    onError: loi,
+  });
+
+  const taoBgTuAi = useMutation({
+    mutationFn: (id: number) => api.aiToQuotation(id),
+    onSuccess: async (kq) => {
+      toast.success(kq.thong_bao);
+      await qc.invalidateQueries({ queryKey: ["quotations"] });
+      await qc.invalidateQueries({ queryKey: ["ai-results"] });
+      await qc.invalidateQueries({ queryKey: ["ai-recent"] });
+      nav({ to: "/quotations/$id", params: { id: String(kq.quotation_id) } });
     },
     onError: loi,
   });
@@ -264,7 +285,7 @@ function Review() {
                 ))}
               </div>
             ) : (
-              <span className="text-[11px] text-muted-foreground">5 kết quả mới nhất</span>
+              <span className="text-[11px] text-muted-foreground">25 kết quả mới nhất</span>
             )
           }
           bodyClass="p-0"
@@ -294,8 +315,13 @@ function Review() {
                             {N.trangThai(d.review_status)}
                           </Pill>
                         </div>
-                        <div className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground">
+                        <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
                           {d.plate && <Plate>{d.plate}</Plate>}
+                          {d.service_name && (
+                            <span className="truncate font-medium text-foreground/80">
+                              {d.service_name}
+                            </span>
+                          )}
                           <span className="tabular">{fmtTime(d.created_at)}</span>
                         </div>
                       </div>
@@ -308,11 +334,32 @@ function Review() {
                 {chon && (
                   <>
                     <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 text-sm font-semibold">
+                      <div className="flex flex-wrap items-center gap-2 text-sm font-semibold">
                         <Cpu className="size-4 text-ai" /> Kết quả #{chon.id}
                         <StatusPill s={chon.review_status} />
+                        {chon.provider_thuc_te && (
+                          <Pill t={chon.fallback_used ? "warning" : "ai"}>
+                            {chon.provider_thuc_te}
+                            {chon.model ? ` · ${chon.model}` : ""}
+                          </Pill>
+                        )}
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        {chon.kind === "quote" &&
+                          chon.repair_order_id &&
+                          can("quote.manage") &&
+                          chon.review_status !== "REJECTED" && (
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              className="h-7 text-xs"
+                              disabled={taoBgTuAi.isPending}
+                              onClick={() => taoBgTuAi.mutate(chon.id)}
+                            >
+                              <FileText className="size-3" />
+                              Lập báo giá nháp từ AI03
+                            </Button>
+                          )}
                         {chon.repair_order_id && (
                           <Button variant="outline" size="sm" className="h-7 text-xs" asChild>
                             <Link

@@ -80,7 +80,7 @@ function Detail() {
   });
   const aiGanDay = useQuery({
     ...q.aiRecent(),
-    enabled: can("ai.run") || can("ai.review"),
+    enabled: can("ai.quote") || can("ai.explain") || can("ai.review"),
   });
   const [ghiChu, setGhiChu] = useState("");
   const [loai, setLoai] = useState<"dich_vu" | "phu_tung">("dich_vu");
@@ -233,6 +233,16 @@ function Detail() {
       await qc.invalidateQueries({ queryKey: ["ai-recent"] });
       await qc.invalidateQueries({ queryKey: ["ai-results"] });
       await qc.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+    onError: loi,
+  });
+  const taoBgTuAi = useMutation({
+    mutationFn: (aiId: number) => api.aiToQuotation(aiId),
+    onSuccess: async (kq) => {
+      toast.success(kq.thong_bao);
+      await qc.invalidateQueries({ queryKey: ["quotations"] });
+      await qc.invalidateQueries({ queryKey: ["orders"] });
+      navigate({ to: "/quotations/$id", params: { id: String(kq.quotation_id) } });
     },
     onError: loi,
   });
@@ -507,12 +517,12 @@ function Detail() {
             }
             action={
               <div className="flex flex-wrap items-center gap-2">
-                {can("ai.run") && !ketThuc && (
+                {can("ai.quote") && ktvDuocPhep && !ketThuc && (
                   <Button
                     size="sm"
                     variant="outline"
                     disabled={chayAiBaoGia.isPending}
-                    onClick={() => hopQuyen("ai.run") && chayAiBaoGia.mutate()}
+                    onClick={() => hopQuyen("ai.quote") && chayAiBaoGia.mutate()}
                   >
                     <Sparkles className="size-3.5 text-ai" />
                     {chayAiBaoGia.isPending ? "Đang tạo AI03…" : "Gợi ý báo giá (AI03)"}
@@ -540,11 +550,17 @@ function Detail() {
               return (
                 <div className="mb-4 rounded-md border border-ai/30 bg-ai-soft/60 p-3 text-xs">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className="flex items-center gap-1.5 font-semibold text-foreground">
+                    <span className="flex flex-wrap items-center gap-1.5 font-semibold text-foreground">
                       <Sparkles className="size-3.5 text-ai" />
-                      Bản giải trình báo giá nháp AI03 (#{kqAi03.id})
+                      Bản giải trình & đề xuất báo giá nháp AI03 (#{kqAi03.id})
+                      {kqAi03.provider_thuc_te && (
+                        <Pill t="ai">
+                          {kqAi03.provider_thuc_te}
+                          {kqAi03.model ? ` · ${kqAi03.model}` : ""}
+                        </Pill>
+                      )}
                     </span>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <Pill
                         t={
                           kqAi03.review_status === "APPROVED"
@@ -556,6 +572,18 @@ function Detail() {
                       >
                         {N.trangThai(kqAi03.review_status)}
                       </Pill>
+                      {can("quote.manage") && !ketThuc && kqAi03.review_status !== "REJECTED" && (
+                        <Button
+                          size="sm"
+                          variant="default"
+                          className="h-6 px-2 text-[11px]"
+                          disabled={taoBgTuAi.isPending}
+                          onClick={() => taoBgTuAi.mutate(kqAi03.id)}
+                        >
+                          <Plus className="size-3" />
+                          {taoBgTuAi.isPending ? "Đang tạo…" : "Lập báo giá nháp từ AI03"}
+                        </Button>
+                      )}
                       <Link
                         to="/ai-review"
                         className="text-[11px] font-medium text-primary hover:underline"
@@ -564,7 +592,7 @@ function Detail() {
                       </Link>
                     </div>
                   </div>
-                  <pre className="mt-2 max-h-40 overflow-y-auto whitespace-pre-wrap rounded border bg-card p-2.5 font-sans text-xs leading-relaxed text-foreground">
+                  <pre className="mt-2 max-h-48 overflow-y-auto whitespace-pre-wrap rounded border bg-card p-2.5 font-sans text-xs leading-relaxed text-foreground">
                     {kqAi03.output_text}
                   </pre>
                 </div>
