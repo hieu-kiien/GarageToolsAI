@@ -430,44 +430,96 @@ def bao_gia_nhap(order_id):
     ghi_chu_phieu = str(phieu.get('technical_notes') or '').strip()
 
     if not items:
-        # Phiếu chưa được nhập hạng mục: tự động đối chiếu ghi chú tiếp nhận với
-        # danh mục dịch vụ & phụ tùng trong CSDL để đề xuất báo giá nháp tham khảo.
+        # Phiếu chưa được nhập hạng mục: cung cấp toàn bộ danh mục đang hoạt động
+        # cho LLM đối chiếu với ghi chú tiếp nhận (hoặc dùng bộ lọc từ khóa khi mock).
         services = db.fetch_all(
             'SELECT id, name, price, description FROM services WHERE is_active = 1 ORDER BY id')
         parts = db.fetch_all(
             'SELECT id, name, price, stock, description FROM parts'
             ' WHERE is_active = 1 AND stock > 0 ORDER BY id')
-        goi_y = _goi_y_tu_danh_muc(ghi_chu_phieu, services, parts)
-        tong_goi_y = sum(int(g['subtotal']) for g in goi_y)
+        sv_map = {int(s['id']): s for s in services}
+        pt_map = {int(p['id']): p for p in parts}
 
+        ds_dv_str = '\n'.join(
+            '  * DV#%d: %s | giá: %d đồng | mô tả: %s'
+            % (s['id'], s['name'], s['price'], s.get('description') or 'không có')
+            for s in services
+        )
+        ds_pt_str = '\n'.join(
+            '  * PT#%d: %s | giá: %d đồng | tồn: %d'
+            % (p['id'], p['name'], p['price'], p['stock'])
+            for p in parts
+        )
+        ly_do = (
+            'Ghi chú tiếp nhận trên phiếu: "%s".' % ghi_chu_phieu
+            if ghi_chu_phieu
+            else 'Phiếu chưa có ghi chú triệu chứng chi tiết.'
+        )
+
+        catalog_prompt = (
+            'Phiếu sửa chữa #%d của xe %s (%s %s) hiện chưa có hạng mục được chốt.\n'
+            '%s\n\n'
+            'DANH MỤC DỊCH VỤ ĐANG HOẠT ĐỘNG:\n%s\n\n'
+            'DANH MỤC PHỤ TÙNG CÒN TỒN KHO:\n%s\n\n'
+            'Hãy chọn các mã dịch vụ (service_ids) và mã phụ tùng (part_ids) trong danh mục trên '
+            'THỰC SỰ PHÙ HỢP với triệu chứng/ghi chú của xe (nếu triệu chứng không liên quan tới bất kỳ '
+            'dịch vụ/phụ tùng nào trong danh mục, ví dụ sơn gò đồng vỏ xe hoặc gương chiếu hậu mà danh mục '
+            'chưa có, hãy để danh sách rỗng [] và giải thích rõ trong notes). '
+            'Trả về DUY NHẤT một JSON hợp lệ theo mẫu:\n'
+            '{"service_ids": [1], "part_ids": [1], "notes": "Nhận định kỹ thuật và tư vấn cụ thể cho khách hàng"}'
+            % (order_id, phieu['plate'], phieu['brand'], phieu['model'], ly_do, ds_dv_str, ds_pt_str)
+        )
+        raw = goi(get_settings().load_prompt('system.txt'), catalog_prompt)
+        du_phong = raw is None
+        parsed = None if du_phong else _phan_tich_json(raw)
+
+        goi_y: list[dict] = []
+        ghi_chu_ai = ''
+        if isinstance(parsed, dict):
+            if isinstance(parsed.get('notes'), str):
+                ghi_chu_ai = parsed['notes'].strip()[:400]
+            s_ids = parsed.get('service_ids') if isinstance(parsed.get('service_ids'), list) else []
+            p_ids = parsed.get('part_ids') if isinstance(parsed.get('part_ids'), list) else []
+            da_dv: set[int] = set()
+            da_pt: set[int] = set()
+            for sid in s_ids:
+                sid_int = _so_nguyen(sid)
+                if sid_int and sid_int in sv_map and sid_int not in da_dv:
+                    da_dv.add(sid_int)
+                    s_row = sv_map[sid_int]
+                    goi_y.append({
+                        'loai': 'dich_vu',
+                        'ma': sid_int,
+                        'name': s_row['name'],
+                        'qty': 1,
+                        'unit_price': int(s_row['price']),
+                        'subtotal': int(s_row['price']),
+                    })
+            for pid in p_ids:
+                pid_int = _so_nguyen(pid)
+                if pid_int and pid_int in pt_map and pid_int not in da_pt:
+                    da_pt.add(pid_int)
+                    p_row = pt_map[pid_int]
+                    goi_y.append({
+                        'loai': 'phu_tung',
+                        'ma': pid_int,
+                        'name': p_row['name'],
+                        'qty': 1,
+                        'unit_price': int(p_row['price']),
+                        'subtotal': int(p_row['price']),
+                    })
+
+        # Nếu ở chế độ mock hoặc LLM không trả về đúng JSON, dùng bộ đối chiếu từ khóa
+        if not isinstance(parsed, dict):
+            goi_y = _goi_y_tu_danh_muc(ghi_chu_phieu, services, parts)
+
+        tong_goi_y = sum(int(g['subtotal']) for g in goi_y)
         dong_goi_y = '\n'.join(
             '- [%s] %s x%d: %s đồng'
             % ('Dịch vụ' if g['loai'] == 'dich_vu' else 'Phụ tùng',
                g['name'], g['qty'], _fmt_tien(g['subtotal']))
             for g in goi_y
         )
-        ly_do = (
-            'Ghi chú tiếp nhận trên phiếu: "%s".' % ghi_chu_phieu
-            if ghi_chu_phieu
-            else 'Phiếu chưa có ghi chú triệu chứng chi tiết, hệ thống đề xuất gói kiểm tra/bảo dưỡng cơ bản.'
-        )
-
-        # Nếu có kết nối LLM thật, nhờ LLM viết thêm câu tư vấn ngắn gọn dựa trên danh mục gợi ý
-        user_ctx = (
-            'Xe: %s %s %s\n%s\nHạng mục gợi ý từ danh mục xưởng:\n%s\nTổng dự kiến: %d'
-            % (phieu['plate'], phieu['brand'], phieu['model'], ly_do, dong_goi_y, tong_goi_y)
-        )
-        user_prompt = get_settings().render_prompt(
-            get_settings().load_prompt('quote.txt'),
-            items=user_ctx,
-            backend_total=tong_goi_y,
-        )
-        raw = goi(get_settings().load_prompt('system.txt'), user_prompt)
-        du_phong = raw is None
-        parsed = None if du_phong else _phan_tich_json(raw)
-        ghi_chu_ai = ''
-        if isinstance(parsed, dict) and isinstance(parsed.get('notes'), str):
-            ghi_chu_ai = parsed['notes'].strip()[:300]
 
         out_lines = [
             'Phiếu sửa chữa số %d chưa có hạng mục nào được ghi nhận nên chưa thể lập báo giá nháp chính thức từ hạng mục đã chốt.' % order_id,
@@ -475,7 +527,7 @@ def bao_gia_nhap(order_id):
             'Đề xuất hạng mục tham khảo từ danh mục xưởng (Xe %s – %s %s):' % (
                 phieu['plate'], phieu['brand'], phieu['model']),
             ly_do,
-            dong_goi_y or '(Chưa có danh mục phù hợp)',
+            dong_goi_y or '(Chưa có hạng mục tương ứng trong danh mục niêm yết hiện tại — cần kỹ thuật viên kiểm tra và báo giá riêng)',
             'Tổng dự kiến theo đề xuất: %s đồng' % _fmt_tien(tong_goi_y),
         ]
         if ghi_chu_ai:
@@ -486,7 +538,7 @@ def bao_gia_nhap(order_id):
             kind='quote',
             repair_order_id=order_id,
             input_json=json.dumps({
-                **_lay_input(user_prompt, du_phong=du_phong),
+                **_lay_input(catalog_prompt, du_phong=du_phong),
                 'plate': phieu['plate'],
                 'vehicle_id': int(phieu['vehicle_id']),
                 'items': [],
@@ -647,3 +699,181 @@ def _phan_tich_json(raw):
         except ValueError:
             return None
     return None
+
+
+# ---------------------------------------------------------------------------
+# AI Chat – Trợ lý hội thoại tương tác trực tiếp với dữ liệu xưởng
+# ---------------------------------------------------------------------------
+def _goi_openai_messages(messages: list[dict]) -> str:
+    s = get_settings()
+    if s.AI_PROVIDER != '9router' and not (s.AI_API_KEY or s.OPENAI_API_KEY):
+        raise AiError('Chưa cấu hình khóa API')
+    try:
+        import httpx
+    except ImportError:
+        raise AiError('Thiếu thư viện httpx')
+
+    try:
+        r = httpx.post(
+            _chat_url(s),
+            headers=_headers(s),
+            json={
+                'model': s.AI_MODEL or s.OPENAI_MODEL,
+                'temperature': 0.2,
+                'messages': messages,
+            },
+            timeout=s.AI_TIMEOUT,
+        )
+    except httpx.TimeoutException:
+        raise AiError('Nhà cung cấp AI không phản hồi trong %d giây' % s.AI_TIMEOUT)
+    except Exception:
+        log.exception('Lỗi kết nối nhà cung cấp AI (chat)')
+        raise AiError('Không kết nối được nhà cung cấp AI')
+
+    if r.status_code == 429:
+        raise AiError('Nhà cung cấp AI đang giới hạn số yêu cầu, vui lòng thử lại sau')
+    if r.status_code >= 400:
+        log.warning('AI chat trả mã lỗi %d', r.status_code)
+        raise AiError('Nhà cung cấp AI trả lỗi %d' % r.status_code)
+    try:
+        return r.json()['choices'][0]['message']['content']
+    except Exception:
+        raise AiError('Phản hồi AI không đúng định dạng mong đợi')
+
+
+def _ngu_canh_xuong(vehicle_id: int | None = None, repair_order_id: int | None = None) -> str:
+    """Tổng hợp dữ liệu thực tế từ CSDL xưởng (ẩn thông tin cá nhân chủ xe)."""
+    from .core import db
+
+    lines: list[str] = ['=== DỮ LIỆU THỰC TẾ TẠI XƯỞNG (CSDL SQLite) ===']
+
+    # 1. Danh mục dịch vụ
+    dv = db.fetch_all(
+        'SELECT id, name, price, description FROM services WHERE is_active = 1 ORDER BY id')
+    lines.append('\n[1. BẢNG GIÁ DỊCH VỤ NIÊM YẾT (%d dịch vụ)]:' % len(dv))
+    for s in dv:
+        lines.append('  - DV#%d: %s | %s đồng | Mô tả: %s'
+                     % (s['id'], s['name'], _fmt_tien(s['price']), s.get('description') or 'Chưa có mô tả'))
+
+    # 2. Danh mục phụ tùng & tồn kho
+    pt = db.fetch_all(
+        'SELECT id, sku, name, price, stock, min_stock FROM parts WHERE is_active = 1 ORDER BY id')
+    lines.append('\n[2. KHO PHỤ TÙNG (%d mặt hàng)]:' % len(pt))
+    for p in pt:
+        canh_bao = ''
+        if int(p['stock']) <= 0:
+            canh_bao = ' [HẾT HÀNG]'
+        elif int(p['stock']) <= int(p.get('min_stock') or 0):
+            canh_bao = ' [SẮP HẾT - dưới mức cảnh báo %d]' % int(p.get('min_stock') or 0)
+        lines.append('  - PT#%d (%s): %s | %s đồng | Tồn kho: %d%s'
+                     % (p['id'], p.get('sku') or 'N/A', p['name'], _fmt_tien(p['price']), p['stock'], canh_bao))
+
+    # 3. Các phiếu sửa chữa gần đây / đang mở
+    phieu_ds = db.fetch_all(
+        'SELECT r.id, r.vehicle_id, r.status, r.technical_notes, r.created_at,'
+        '       v.plate, v.brand, v.model, v.year, v.odometer'
+        ' FROM repair_orders r JOIN vehicles v ON v.id = r.vehicle_id'
+        ' ORDER BY r.id DESC LIMIT 12')
+    lines.append('\n[3. DANH SÁCH PHIẾU SỬA CHỮA (%d phiếu)]:' % len(phieu_ds))
+    for r in phieu_ds:
+        items = db.fetch_all(
+            'SELECT COALESCE(s.name, pt.name) AS ten, i.qty, i.unit_price, i.qty * i.unit_price AS sub'
+            ' FROM repair_order_items i'
+            ' LEFT JOIN services s ON s.id = i.service_id'
+            ' LEFT JOIN parts pt ON pt.id = i.part_id'
+            ' WHERE i.repair_order_id = ?', (r['id'],))
+        tong = sum(int(i['sub']) for i in items)
+        hm_str = '; '.join('%s x%d (%s đ)' % (i['ten'], i['qty'], _fmt_tien(i['sub'])) for i in items) or 'Chưa có hạng mục'
+        lines.append(
+            '  - Phiếu #%d | Xe %s (%s %s) | Trạng thái: %s | Tổng hạng mục: %s đồng | Ghi chú KT: %s | Chi tiết: %s'
+            % (r['id'], r['plate'], r['brand'], r['model'], r['status'],
+               _fmt_tien(tong), r.get('technical_notes') or 'Không có', hm_str))
+
+    # 4. Bảo hành đang hiệu lực
+    bh_ds = db.fetch_all(
+        'SELECT w.id, w.repair_order_id, w.end_date, v.plate, COALESCE(s.name, pt.name) AS ten'
+        ' FROM warranties w'
+        ' JOIN repair_orders r ON r.id = w.repair_order_id'
+        ' JOIN vehicles v ON v.id = r.vehicle_id'
+        ' LEFT JOIN services s ON s.id = w.service_id'
+        ' LEFT JOIN parts pt ON pt.id = w.part_id'
+        " WHERE w.status = 'ACTIVE' ORDER BY w.end_date DESC")
+    if bh_ds:
+        lines.append('\n[4. BẢO HÀNH ĐANG CÒN HIỆU LỰC]:')
+        for b in bh_ds:
+            lines.append('  - Xe %s (Phiếu #%d): %s — hiệu lực đến %s'
+                         % (b['plate'], b['repair_order_id'], b['ten'], b['end_date']))
+
+    # 5. Ngữ cảnh chi tiết nếu người dùng ghim một xe hoặc phiếu cụ thể
+    if vehicle_id:
+        xe = db.fetch_one('SELECT * FROM vehicles WHERE id = ?', (vehicle_id,))
+        if xe:
+            lines.append('\n[5. XE ĐANG ĐƯỢC CHỌN TRONG HỘI THOẠI]: Biển số %s — %s %s (Năm SX: %s, ODO: %s km)'
+                         % (xe['plate'], xe['brand'], xe['model'],
+                            xe.get('year') or 'N/A', _fmt_tien(xe['odometer']) if xe.get('odometer') else 'N/A'))
+    if repair_order_id:
+        logs = db.fetch_all(
+            'SELECT note, created_at FROM repair_logs WHERE repair_order_id = ? ORDER BY id DESC LIMIT 10',
+            (repair_order_id,))
+        if logs:
+            lines.append('\n[6. NHẬT KÝ KỸ THUẬT CỦA PHIẾU #%d]:' % repair_order_id)
+            for lg in logs:
+                lines.append('  - %s: %s' % (lg['created_at'], lg['note']))
+
+    return '\n'.join(lines)
+
+
+def chat_voi_ai(
+    messages: list[dict],
+    *,
+    vehicle_id: int | None = None,
+    repair_order_id: int | None = None,
+) -> dict:
+    """Trò chuyện trực tiếp nhiều lượt với Trợ lý AI dựa trên dữ liệu thực của xưởng."""
+    s = get_settings()
+    ngu_canh = _ngu_canh_xuong(vehicle_id=vehicle_id, repair_order_id=repair_order_id)
+    sys_prompt = (
+        s.load_prompt('system.txt')
+        + '\n\nBạn đang ở chế độ TRỢ LÝ HỘI THOẠI TRỰC TIẾP (AI Chat) của hệ thống GarageTools AI.\n'
+        + 'Dưới đây là toàn bộ dữ liệu thực tế hiện có trong cơ sở dữ liệu của xưởng:\n\n'
+        + ngu_canh
+        + '\n\nQuy tắc trả lời hội thoại:\n'
+        + '- Trả lời tự nhiên, rõ ràng, chuyên nghiệp bằng tiếng Việt có dấu.\n'
+        + '- Bám sát 100% số liệu thực tế trong CSDL ở trên (biển số xe, mã phiếu, đơn giá niêm yết, tồn kho phụ tùng, bảo hành).\n'
+        + '- Khi tư vấn dịch vụ/phụ tùng cho triệu chứng hỏng hóc, hãy trích dẫn đúng mã và đơn giá niêm yết trong CSDL, đồng thời nhắc rõ đây là mức giá tham khảo để cố vấn lập báo giá nháp.'
+    )
+
+    lich_su_hop_le: list[dict] = [{'role': 'system', 'content': sys_prompt}]
+    for m in messages[-10:]:
+        role = m.get('role')
+        content = str(m.get('content') or '').strip()
+        if role in ('user', 'assistant') and content:
+            lich_su_hop_le.append({'role': role, 'content': content[:2000]})
+
+    du_phong = False
+    reply: str | None = None
+    if s.AI_PROVIDER == 'mock':
+        du_phong = True
+    else:
+        try:
+            reply = _goi_openai_messages(lich_su_hop_le)
+        except AiError:
+            log.warning('AI chat lỗi, chuyển sang phản hồi dự phòng')
+            du_phong = True
+
+    if not reply:
+        cau_hoi_cuoi = lich_su_hop_le[-1]['content'] if len(lich_su_hop_le) > 1 else ''
+        reply = (
+            'Hệ thống đang ở chế độ dự phòng (mock) nên chưa kết nối mô hình hội thoại trực tiếp.\n'
+            'Câu hỏi của bạn: "%s"\n\n'
+            'Tóm tắt nhanh dữ liệu xưởng hiện tại:\n%s'
+            % (cau_hoi_cuoi[:200], '\n'.join(ngu_canh.splitlines()[:18]))
+        )
+
+    return {
+        'reply': reply.strip(),
+        'provider': s.AI_PROVIDER,
+        'provider_thuc_te': 'mock' if du_phong else s.AI_PROVIDER,
+        'model': s.AI_MODEL or s.OPENAI_MODEL,
+        'fallback_used': bool(du_phong and s.AI_PROVIDER != 'mock'),
+    }

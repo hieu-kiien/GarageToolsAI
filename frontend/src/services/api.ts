@@ -410,6 +410,19 @@ export const api = {
       repair_order_id: number;
       added_items: number;
     }>("POST", `/ai/results/${id}/to-quotation`),
+  aiChat: (body: {
+    messages: { role: "user" | "assistant"; content: string }[];
+    vehicle_id?: number | null | undefined;
+    repair_order_id?: number | null | undefined;
+  }) =>
+    goi<{
+      thong_bao: string;
+      reply: string;
+      provider: string;
+      provider_thuc_te: string;
+      model: string;
+      fallback_used: boolean;
+    }>("POST", "/ai/chat", body),
 };
 
 export const q = {

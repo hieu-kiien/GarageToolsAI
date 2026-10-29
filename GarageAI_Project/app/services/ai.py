@@ -17,6 +17,7 @@ import json
 from .. import crud
 from ..ai_gateway import AiError
 from ..ai_gateway import bao_gia_nhap as _bao_gia_nhap
+from ..ai_gateway import chat_voi_ai as _chat_voi_ai
 from ..ai_gateway import giai_thich_dich_vu as _giai_thich
 from ..ai_gateway import tom_tat_lich_su as _tom_tat
 from ..core import ratelimit
@@ -252,3 +253,23 @@ def tao_bao_gia_tu_ai(result_id: int, user) -> dict:
         'repair_order_id': ro_id,
         'added_items': so_dong_them,
     }
+
+
+def chat(request, user, messages: list[dict], *,
+         vehicle_id: int | None = None,
+         repair_order_id: int | None = None) -> dict:
+    """Trò chuyện trực tiếp với Trợ lý AI dựa trên dữ liệu thực của xưởng."""
+    ratelimit.kiem_tra_ai(request)
+    if repair_order_id and user['role'] == 'TECHNICIAN':
+        phieu = fetch_one('SELECT technician_id FROM repair_orders WHERE id = ?',
+                          (repair_order_id,))
+        if phieu is None or phieu['technician_id'] != user['id']:
+            raise SaiQuyTac('Kỹ thuật viên chỉ tra cứu chuyên sâu trên phiếu được phân công cho mình.')
+    try:
+        return _chat_voi_ai(
+            messages,
+            vehicle_id=vehicle_id,
+            repair_order_id=repair_order_id,
+        )
+    except AiError as e:
+        raise LoiDichVu(str(e))

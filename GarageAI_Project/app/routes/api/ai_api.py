@@ -95,3 +95,40 @@ def tao_bao_gia_tu_ai(request: Request, rid: int):
         thanh_cong('Đã khởi tạo báo giá nháp #%d từ kết quả AI.' % kq['quotation_id'], **kq),
         status_code=201,
     )
+
+
+@router.post('/chat')
+async def chat_ai(request: Request):
+    """Hội thoại trực tiếp với Trợ lý AI dựa trên dữ liệu thực tế của xưởng."""
+    user = nguoi_dung_hien_tai(request)
+    if user is None:
+        raise KhongXacThuc('Chưa đăng nhập.')
+    if not any(co_the_quyen(user, ca[0]) for ca in CA_CHAY.values()) and not co_the_quyen(user, 'ai.review'):
+        raise KhongCoQuyen('Bạn không có quyền dùng AI.')
+    try:
+        body = await request.json()
+    except Exception:
+        raise DauVaoKhongHopLe('Dữ liệu hội thoại không hợp lệ.')
+    if not isinstance(body, dict):
+        raise DauVaoKhongHopLe('Dữ liệu hội thoại phải là đối tượng JSON.')
+    raw_msgs = body.get('messages')
+    if not isinstance(raw_msgs, list) or not raw_msgs:
+        raise DauVaoKhongHopLe('Vui lòng nhập nội dung câu hỏi cho Trợ lý AI.',
+                               truong={'messages': 'Danh sách tin nhắn không được để trống.'})
+    msgs = []
+    for m in raw_msgs[-10:]:
+        if isinstance(m, dict):
+            r = str(m.get('role') or '').strip()
+            c = str(m.get('content') or '').strip()
+            if r in ('user', 'assistant') and c:
+                msgs.append({'role': r, 'content': c[:2000]})
+    if not msgs or msgs[-1]['role'] != 'user':
+        raise DauVaoKhongHopLe('Tin nhắn cuối cùng phải từ người dùng.')
+
+    vid = body.get('vehicle_id')
+    roid = body.get('repair_order_id')
+    vid_int = int(vid) if isinstance(vid, int) or (isinstance(vid, str) and vid.isdigit()) else None
+    roid_int = int(roid) if isinstance(roid, int) or (isinstance(roid, str) and roid.isdigit()) else None
+
+    kq = ai_svc.chat(request, user, msgs, vehicle_id=vid_int, repair_order_id=roid_int)
+    return JSONResponse(thanh_cong('Trợ lý AI đã phản hồi.', **kq))

@@ -464,6 +464,14 @@ class TestAiVaPheDuyet(CoSoApi):
         q_items = self.q1('SELECT COUNT(*) c FROM quotation_items WHERE quotation_id = ?', (qid,))
         self.assertGreaterEqual(q_items['c'], 1)
 
+        # 4. AI Chat (/api/ai/chat) phản hồi dữ liệu thực của xưởng
+        r_chat = self.api('post', '/api/ai/chat', {
+            'messages': [{'role': 'user', 'content': 'Xe 30A-1111 đã sửa những gì?'}],
+            'vehicle_id': 1,
+        })
+        self.assertEqual(r_chat.status_code, 200, r_chat.text)
+        self.assertTrue(r_chat.json().get('reply'))
+
 
 # ===========================================================================
 class TestPhanQuyen(CoSoApi):
